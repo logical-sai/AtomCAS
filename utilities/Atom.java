@@ -1,0 +1,57 @@
+package com.AtomCAS.utilities;
+/*
+WELCOME TO: AtomCAS
+Built on one philosophy: No rounding, ever.
+
+Hello, visitor. It appears you come here to investigate this class. Classic old thing
+that's been around since the dawn of computing. But that's not the point. This comment,
+despite its tone, serves only to list possible outputs that can come out of certain inputs.
+If you refuse to follow any of these then enjoy your "perfect" all-nighter.
+RULES TO FOLLOW
+
+SCALARS & SCALARS
+LargeInteger + LargeInteger = LargeInteger;
+LargeInteger - LargeInteger = LargeInteger;
+LargeInteger * LargeInteger = LargeInteger;
+LargeInteger / LargeInteger = LargeFraction; (unless you use the integer division method, then
+you get LargeInteger. But who even does that?)
+LargeInteger ^ LargeInteger = LargeInteger or LargeFraction; (LargeFraction if exponent is negative.
+That's properties of exponents for you.)
+LargeFraction + LargeFraction = LargeFraction;
+LargeFraction - LargeFraction = LargeFraction;
+LargeFraction * LargeFraction = LargeFraction;
+LargeFraction / LargeFraction = LargeFraction;
+LargeFraction ^ LargeFraction = LargePowerMonomial or LargeFraction; (RadicalTerms are a thing.
+Oh, you forgot they were? Your middle school math teacher must be extremely proud of you.)
+
+SCALARS AND TENSORS
+Scalar × Vector → Vector; (commutative property of multiplication.)
+Scalar × Matrix → Matrix; (commutative property of multiplication AGAIN.)
+
+TENSORS AND TENSORS
+Vector + Vector -> Vector; (look at that. Quite the satisfaction.)
+Matrix + Matrix -> Matrix; (it happened again. The math gods are playing nice.)
+Matrix × Vector → Vector; (it feels wrong, I know. But it comes from dot products. Don't worry
+you'll get used to it.)
+Matrix × Matrix → Matrix (this...I don't have to explain.)
+
+LAYERS/MODELS
+Layer applied to Vector → Vector(it's a small step in gradient descent. Learn neural networking.)
+Layer × Layer → maybe composition, maybe forbidden; (do not question these. Not yet.)
+
+WE DON'T TALK ABOUT THESE
+Vector + Scalar → probably forbidden; (Do not question these guys back here. It's for your own good.)
+Vector + Matrix -> forbiden... (You sure you wanna go with this?)
+Exponentiation on Tensors → probably forbidden unless special cases
+
+THE SUMMARY
+When performing an operation, if the result leaves a certain family, promote to the next layer that
+can still represent the result. At least, if that is possible.
+ */
+public abstract class Atom{
+    public abstract Atom copy();
+    public abstract String toString();
+    public String toLatex(){return toString();}
+    public abstract boolean equalsTo(Atom other);
+    public abstract boolean notEqualsTo(Atom other);
+}

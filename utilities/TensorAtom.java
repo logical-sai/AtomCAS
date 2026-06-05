@@ -1,0 +1,9 @@
+package com.AtomCAS.utilities;
+public abstract class TensorAtom extends Atom{
+    public abstract TensorAtom negate();
+    public abstract LargeInteger[] shape();
+    public abstract TensorAtom add(TensorAtom other);
+    public abstract TensorAtom subtract(TensorAtom other);
+    public abstract TensorAtom multiply(TensorAtom other);
+    public abstract TensorAtom scale(LargeFraction scalar);
+}
