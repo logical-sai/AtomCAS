@@ -51,10 +51,9 @@ public class Parser{
         return depth == 0;
     }
     private static ScalarAtom parseAddSubtract(String str){
-        if(str.indexOf("-") == 0)
-            return LargeInteger.zero.subtract(parse(str.substring(1)));
         int index = findMainOperator(str, "+", "-");
         if (index != -1) {
+            if(index == 0) return parse(str.substring(index+1)).negate();
             ScalarAtom left = parse(str.substring(0, index));
             ScalarAtom right = parse(str.substring(index + 1));
             if (str.charAt(index) == '+') return left.add(right);
@@ -99,11 +98,16 @@ public class Parser{
     }
     private static ScalarAtom parseFactorial(String str){
         int index = findMainOperator(str, "!");
-        if(index == 0) throw new IllegalArgumentException("Error: Invalid input");
         if (index != -1){
+            if(index == 0) throw new IllegalArgumentException("Error: Invalid input");
             String left = str.substring(0, index);
-            if(left.matches("-?\\d+")) return parse(parseLargeInteger(left).factorial().toString() + str.substring(index+1));
-            throw new IllegalArgumentException("Error: Factorial currently only defined for positive integers");
+            String right = str.substring(index + 1);
+            ScalarAtom S;
+            if(left.matches("-?\\d+"))
+                S = ((LargeInteger)parse(left)).factorial();
+            else throw new IllegalArgumentException("Error: Factorial currently only defined for positive integers");
+            if(right.isEmpty()) return S;
+            return S.multiply(parse(right));
         }
         return parseSquareRoot(str);
     }
@@ -145,16 +149,17 @@ public class Parser{
                 ScalarAtom righter = parse(str.substring(index2+1));
                 return leftAtom.multiply(rightAtom).add(righter);
             }
-            return leftAtom.multiply(rightAtom).add(LargeInteger.zero);
+            return leftAtom.multiply(rightAtom);
         }
         return parsePower(str);
     }
     private static ScalarAtom parsePower(String str) {
         int index = findMainPowerOperator(str);
-        if(index == -1) return parse(str);
+        if(index == -1) throw new IllegalArgumentException("Error: Invalid input");
         ScalarAtom base = parse(str.substring(0, index));
         ScalarAtom exp = parse(str.substring(index + 1));
         if(exp.isRational()){
+            if(exp.equalsTo(LargeInteger.zero) && base.equalsTo(LargeInteger.zero)) throw new ArithmeticException("Error: Indeterminate form: 0^0");
             switch (exp) {
                 case LargeInteger _ -> {
                     LargeInteger expTemp = (LargeInteger) exp.magnitude();
@@ -163,7 +168,7 @@ public class Parser{
                     while (expTemp.greaterThan(LargeInteger.zero)) {
                         if (expTemp.isOdd()){
                             res = res.multiply(basTemp);
-                            if(expTemp.equals(LargeInteger.one)) break;
+                            if(expTemp.equalsTo(LargeInteger.one)) break;
                         }
                         basTemp = basTemp.square();
                         expTemp = expTemp.longDivision(LargeInteger.two);
@@ -173,24 +178,24 @@ public class Parser{
                 }case LargeFraction largeFraction -> {
                     if (base instanceof LargeInteger || base instanceof LargeFraction)
                         return new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.one), largeFraction).add(LargeInteger.zero);
-                    return new LargePowerNode(base, largeFraction, LargeFraction.zero).add(LargeInteger.zero);
+                    return new LargePowerNode(base, largeFraction, LargeFraction.one);
                 }case RadicalTerm radicalTerm -> {
                     if (base instanceof LargeInteger || base instanceof LargeFraction)
                         return new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.one), radicalTerm.rationalPart).add(LargeInteger.zero);
-                    return new LargePowerNode(base, radicalTerm.rationalPart, LargeFraction.zero).add(LargeInteger.zero);
+                    return new LargePowerNode(base, radicalTerm.rationalPart, LargeFraction.one);
                 }case RadicalTermSum rT -> {
                     if (base instanceof LargeInteger || base instanceof LargeFraction)
                         return new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.one), rT.constant).add(LargeInteger.zero);
-                    return new LargePowerNode(base, rT.constant, LargeFraction.zero).add(LargeInteger.zero);
+                    return new LargePowerNode(base, rT.constant, LargeFraction.one);
                 }case LargePowerNode largePowerNode -> {
                     if (base instanceof LargeInteger || base instanceof LargeFraction){
                         if(base.lessThan(LargeInteger.zero))
-                            return new LargePowerMonomial((LargeFraction) LargeInteger.one.divide(base), (LargeFraction) largePowerNode.base).add(LargeInteger.zero);
+                            return new LargePowerMonomial((LargeFraction) base.reciprocal(), (LargeFraction) largePowerNode.base).add(LargeInteger.zero);
                         return new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.one), (LargeFraction) largePowerNode.base).add(LargeInteger.zero);
                     }
                     if(base.lessThan(LargeInteger.zero))
-                        return new LargePowerNode(base, (LargeFraction) largePowerNode.base, LargeFraction.zero).reciprocal().add(LargeInteger.zero);
-                    return new LargePowerNode(base, (LargeFraction) largePowerNode.base, LargeFraction.zero).add(LargeInteger.zero);
+                        return new LargePowerNode(base, (LargeFraction) largePowerNode.base, LargeFraction.zero).reciprocal();
+                    return new LargePowerNode(base, (LargeFraction) largePowerNode.base, LargeFraction.one);
                 }
                 default -> throw new IllegalArgumentException("Error: Power must be rational");
             }
@@ -281,8 +286,9 @@ public class Parser{
     }
     private static boolean isUnaryMinus(String str, int index) {
         if (str.charAt(index) != '-') return false;
+        if(index == 0) return false;
         char prev = str.charAt(index - 1);
-        return prev == '+' || prev == '-' || prev == '*' || prev == '/' || prev == '^' || prev == '√';
+        return prev == '+' || prev == '-' || prev == '*' || prev == '/' || prev == '^' || prev == 'd' || prev == '√';
     }
     private static int findMainOperator(String str, String... ops) {
         int depth = 0;

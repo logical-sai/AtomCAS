@@ -1,7 +1,8 @@
 package com.AtomCAS.utilities;
-/*
+/**
 WELCOME TO: AtomCAS
-Built on one philosophy: No rounding, ever.
+Built on one philosophy: No rounding, ever. Also when performing an operation, if the result leaves a certain family, promote to the next layer that
+can still represent the result. At least, if that is possible.
 
 Hello, visitor. It appears you come here to investigate this class. Classic old thing
 that's been around since the dawn of computing. But that's not the point. This comment,
@@ -43,11 +44,7 @@ WE DON'T TALK ABOUT THESE
 Vector + Scalar → probably forbidden; (Do not question these guys back here. It's for your own good.)
 Vector + Matrix -> forbiden... (You sure you wanna go with this?)
 Exponentiation on Tensors → probably forbidden unless special cases
-
-THE SUMMARY
-When performing an operation, if the result leaves a certain family, promote to the next layer that
-can still represent the result. At least, if that is possible.
- */
+ **/
 public abstract class Atom{
     public abstract Atom copy();
     public abstract String toString();

@@ -192,7 +192,7 @@ public class LargePolynomial{
         return result;
     }
     public static LargePolynomial minimalPolynomial(ScalarAtom s){
-        if(s instanceof Logarithm || s instanceof Exp) throw new IllegalArgumentException("Error: Transcendental numbers do not have minimal polynomials");
+        if(!s.isAlgebraic()) throw new IllegalArgumentException("Error: Transcendental numbers do not have minimal polynomials");
         return null;
     }
 }

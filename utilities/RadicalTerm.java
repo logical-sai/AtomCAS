@@ -7,7 +7,7 @@ public class RadicalTerm extends ScalarAtom{
         if(c.equalsTo(LargeFraction.zero) || E.equalsTo(LargeFraction.zero)){
             rationalPart = r.copy();
             coefficient = LargeFraction.zero;
-            exponent = new LargePowerMonomial(LargeFraction.zero, LargeFraction.one);
+            exponent = LargePowerMonomial.zero;
             return;
         }else if (E.isRational()) {
             LargeFraction signedBase = E.base;
@@ -15,7 +15,7 @@ public class RadicalTerm extends ScalarAtom{
                 signedBase = signedBase.negate();
             rationalPart = (LargeFraction) r.add(c.multiply(signedBase));
             coefficient = LargeFraction.zero;
-            exponent = new LargePowerMonomial(LargeFraction.zero, LargeFraction.one);
+            exponent = LargePowerMonomial.zero;
             return;
         }
         LargeFraction tempR = r.copy();
@@ -27,11 +27,10 @@ public class RadicalTerm extends ScalarAtom{
         Enum = (LargePowerMonomial) Enum.multiply(Edem2);
         Edem = (LargePowerMonomial) Edem.multiply(Edem2);
         tempC = (LargeFraction) tempC.divide(Edem.base);
-        LargeList<PrimeExponent> pr = Enum.factor();
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(pr.size()); i = i.add(1)){
-            PrimeExponent p = pr.get(i);
-            LargeInteger expTemp = p.exponent.intPart();
-            LargeInteger basTemp = p.base.copy();
+        LargeMap<LargeInteger, LargeFraction> pr = Enum.factor();
+        for(LargeInteger I: pr){
+            LargeInteger expTemp = pr.get(I).intPart();
+            LargeInteger basTemp = I.copy();
             while(expTemp.notEqualsTo(LargeInteger.zero)){
                 if(expTemp.isOdd()){
                     if(expTemp.sign().equalsTo(LargeInteger.negativeOne))
@@ -42,17 +41,13 @@ public class RadicalTerm extends ScalarAtom{
                 basTemp = basTemp.square();
                 expTemp = expTemp.longDivision(LargeInteger.two);
             }
-            pr.set(i, new PrimeExponent(p.base, p.exponent.fracPart()));
-            if(p.exponent.equalsTo(LargeInteger.zero)){
-                pr.remove(i);
-                i= (LargeInteger) i.subtract(LargeInteger.one);
-            }
+            pr.put(I, pr.get(I).fracPart());
         }
         Enum = LargePowerMonomial.buildFromFactors(pr);
         if(Enum.equalsTo(LargeFraction.one)){
             rationalPart = (LargeFraction) tempR.add(tempC);
             coefficient = LargeFraction.zero;
-            exponent = new LargePowerMonomial(LargeFraction.zero, LargeFraction.one);
+            exponent = LargePowerMonomial.zero;
             return;
         }
         rationalPart = tempR.copy();
@@ -128,9 +123,11 @@ public class RadicalTerm extends ScalarAtom{
         if(this.equalsTo(LargeInteger.zero)) return LargeInteger.zero;
         return this.divide(this.magnitude());
     }
-    public boolean isNotInteger(){return coefficient.notEqualsTo(LargeInteger.zero) || !rationalPart.denominator.equalsTo(LargeInteger.one);}
+
     public boolean isNotReal(){return exponent.isNotReal();}
     public boolean isReal(){return exponent.isReal();}
+    @Override
+    public boolean isAlgebraic() {return true;}
     @Override
     public ScalarAtom magnitude(){
         if(this.isReal()){
@@ -143,28 +140,28 @@ public class RadicalTerm extends ScalarAtom{
         ScalarAtom normSquared = this.multiply(this.conjugate());
         if(normSquared.isRational())
             return new RadicalTerm(LargeFraction.zero, LargeFraction.one, new LargePowerMonomial(((RadicalTermSum)normSquared).constant, LargeFraction.half));
-        return new LargePowerNode(normSquared, (LargeFraction) Parser.parse("1/2"), LargeFraction.zero);
+        return new LargePowerNode(normSquared, LargeFraction.half, LargeFraction.one);
     }
-    public RadicalTerm conjugate(){return new RadicalTerm(rationalPart, coefficient, exponent.conjugate());}
+    public RadicalTerm conjugate(){return new RadicalTerm(rationalPart, coefficient.negate(), exponent);}
     @Override
-    public long compareMags(ScalarAtom other) {return this.magnitude().compareTo(other.magnitude());}
+    public long compareMags(ScalarAtom other){
+        if(other instanceof LargeInteger || other instanceof LargeFraction){
+            if(coefficient.equalsTo(LargeInteger.zero)) return rationalPart.compareMags(other);
+            LargeFraction f = (LargeFraction) other.subtract(rationalPart).divide(coefficient);
+            f = f.power(exponent.exponent.denominator.lcm(exponent.exponent2.denominator));
+            LargeFraction o = exponent.power(new LargeFraction(exponent.exponent.denominator.lcm(exponent.exponent2.denominator), LargeInteger.one)).base;
+            return o.compareMags(f);
+        }
+        return this.magnitude().compareTo(other.magnitude());
+    }
     @Override
     public long compareTo(ScalarAtom other) {
-        if(this.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
+        if(this.isNotReal() || other.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
         if(other instanceof LargeInteger || other instanceof LargeFraction){
-            if(coefficient.equalsTo(LargeInteger.zero)) return rationalPart.compareTo(other);
-            LargeFraction f = (LargeFraction) other.subtract(rationalPart).divide(coefficient);
-            f = f.power(exponent.exponent.denominator);
-            LargeFraction o = exponent.power((LargeFraction) exponent.exponent.denominator.divide(LargeInteger.one)).base;
-            long C = o.compareMags(f);
-            if(C == 1L){
-                if(this.sign().equals(LargeInteger.negativeOne)) return -1L;
-                return 1L;
-            }else if(C == -1L){
-                if(other.sign().equalsTo(LargeInteger.negativeOne)) return 1L;
-                return -1L;
-            }
-            return C;
+            ScalarAtom r = this.subtract(other).sign();
+            if(r.equalsTo(LargeInteger.negativeOne)) return -1;
+            else if(r.equalsTo(LargeInteger.one)) return 1;
+            return 0;
         }else if(other instanceof LargePowerMonomial){
             LargeFraction a1 = (LargeFraction) this.floor().divide(LargeInteger.one);
             LargeFraction b1 = (LargeFraction) this.ceil().divide(LargeInteger.one);
@@ -182,7 +179,6 @@ public class RadicalTerm extends ScalarAtom{
                 else b2 = mediant2;
             }
         }else if(other instanceof RadicalTerm){
-            if(other.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
             LargeFraction a1 = (LargeFraction) this.floor().divide(LargeInteger.one);
             LargeFraction b1 = (LargeFraction) this.ceil().divide(LargeInteger.one);
             LargeFraction a2 = (LargeFraction) other.floor().divide(LargeInteger.one);
@@ -237,12 +233,6 @@ public class RadicalTerm extends ScalarAtom{
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
     @Override
-    public ScalarAtom subtract(ScalarAtom other) {
-        if(other instanceof LargePowerMonomial)
-            return this.add(new RadicalTerm(LargeFraction.zero, LargeFraction.negativeOne, (LargePowerMonomial) other));
-        return this.add(other.negate());
-    }
-    @Override
     public ScalarAtom multiply(ScalarAtom f) {
         if(f instanceof LargeFraction || f instanceof LargeInteger) return new RadicalTerm((LargeFraction) this.rationalPart.multiply(f), (LargeFraction) this.coefficient.multiply(f), this.exponent);
         else if(f instanceof LargePowerMonomial) {
@@ -280,11 +270,11 @@ public class RadicalTerm extends ScalarAtom{
         return new RadicalTermSum(rt, rationalPart.cube());
     }
     @Override
-    public RadicalTerm percent() {return new RadicalTerm((LargeFraction) rationalPart.divide(new LargeFraction(100)), (LargeFraction) coefficient.divide(new LargeFraction(100)), exponent);}
-    @Override
-    public RadicalTerm permille() {return new RadicalTerm((LargeFraction) rationalPart.divide(new LargeFraction(1000)), (LargeFraction) coefficient.divide(new LargeFraction(1000)), exponent);}
-    @Override
     public ScalarAtom power(LargeFraction f){return new LargePowerNode(this, f, LargeFraction.one);}
+
+    @Override
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
+
     @Override
     public ScalarAtom reciprocal(){
         if(coefficient.equalsTo(LargeInteger.zero))
@@ -292,56 +282,33 @@ public class RadicalTerm extends ScalarAtom{
         else if(rationalPart.equalsTo(LargeInteger.zero))
             return new RadicalTerm(LargeFraction.zero, coefficient.reciprocal(), exponent.reciprocal());
         else if(this.equalsTo(LargeInteger.zero)) throw new ArithmeticException("Error: Cannot divide by 0");
-        //this part generates the necessary basis for lookup in matrix construction.
-        //it uses a LargeMap with LargePowerMonomial -> LargeFraction
-        LargeMap<LargePowerMonomial, LargeFraction> basis = new LargeMap<>();
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(exponent.exponent2.denominator.multiply(2).totient()); i = i.add(1)){
-            for(LargeInteger j = LargeInteger.zero; j.lessThan(exponent.exponent.denominator); j = j.add(1)){
-                RadicalTerm R = new RadicalTerm(LargeFraction.zero, LargeFraction.one, new LargePowerMonomial(exponent.base, (LargeFraction) j.divide(exponent.exponent.denominator), (LargeFraction) i.divide(exponent.exponent2.denominator)));
-                if(R.notEqualsTo(LargeFraction.one))
-                    basis.put(R.exponent, R.coefficient);
-                else basis.put(new LargePowerMonomial(LargeFraction.one, LargeFraction.one), LargeFraction.one);
-            }
+        else if(this.exponent.exponent.equalsTo(LargeFraction.half) || this.exponent.exponent2.equalsTo(LargeFraction.half))
+            return this.conjugate().divide(this.multiply(this.conjugate()));
+        // reciprocal of a + b*x, where x^n is rational
+        LargeFraction a = rationalPart.copy();
+        LargeFraction b = coefficient.copy();
+        LargeInteger n = exponent.exponent.denominator.lcm(exponent.exponent2.denominator);
+        LargePowerMonomial qAtom = exponent.power(new LargeFraction(n, LargeInteger.one));
+        if (!qAtom.isRational())
+            throw new ArithmeticException("Error: x^n is not rational");
+        LargeFraction q = qAtom.base;
+        if(qAtom.exponent2.equalsTo(LargeInteger.one)) q = q.negate();
+        LargeList<LargeFraction> coeff = new LargeList<>();
+        LargeFraction aPow = a.power(n.subtract(1));
+        LargeFraction bPow = LargeFraction.one;
+        for (LargeInteger k = LargeInteger.zero; k.lessThan(n); k = k.add(1)) {
+            LargeFraction c = (LargeFraction) aPow.multiply(bPow);
+            if (k.isOdd()) c = c.negate();
+            coeff.add(c);
+            aPow = (LargeFraction) aPow.divide(a);
+            bPow = (LargeFraction) bPow.multiply(b);
         }
-        //this part creates the matrix that will store the extracted coefficients, and will represent a linear system over the rationals. RREF then handles the rest.
-        LargeMatrix M = new LargeMatrix();
-        for(LargePowerMonomial E: basis){
-            RadicalTermSum rt = (RadicalTermSum) this.multiply(E).multiply(basis.get(E));
-            LargeVector v = new LargeVector(LargeInteger.zero);
-            v.append(rt.constant);
-            for(LargePowerMonomial L: basis){
-                if(L.equalsTo(LargeInteger.one)) continue;
-                if(rt.sum.containsKey(L))
-                    v.append((LargeFraction) rt.sum.get(L).divide(basis.get(L)));
-                else v.append(LargeFraction.zero);
-            }
-            M.appendRow(v);
-        }
-        LargeVector v = new LargeVector(LargeInteger.zero);
-        v.append(LargeFraction.one);
-        while(v.dimension().lessThan(M.cols())) v.append(LargeFraction.zero);
-        M.appendRow(v);
-        M = M.transpose().reducedRowEchelonForm();
-        LargeList<RadicalTerm> result = new LargeList<>();
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(basis.size()); i = i.add(1))
-            result.add(new RadicalTerm(LargeFraction.zero, (LargeFraction) M.get(i, (LargeInteger) M.cols().subtract(LargeInteger.one)).multiply(basis.get(basis.keyAtIndex(i))), basis.keyAtIndex(i)));
-        RadicalTermSum finale = new RadicalTermSum(result, LargeFraction.zero);
-        if(finale.multiply(this).notEqualsTo(LargeInteger.one))
-            throw new ArithmeticException("Error: Could not find the proper reciprocal. The generated basis(probably incorrect) was " + basis);
-        return finale;
+
+        LargeFraction denom = (LargeFraction) a.power(n).subtract(b.negate().power(n).multiply(q));
+
+        LargeMap<LargePowerMonomial, LargeFraction> map = new LargeMap<>();
+        for (LargeInteger i = LargeInteger.zero; i.lessThan(coeff.size()); i = i.add(1))
+            map.put(exponent.power(new LargeFraction(i, LargeInteger.one)),(LargeFraction) coeff.get(i).divide(denom));
+        return new RadicalTermSum(map, LargeFraction.zero);
     }
-    @Override
-    public ScalarAtom divide(ScalarAtom other) {
-        if(other instanceof LargeFraction || other instanceof LargeInteger) return new RadicalTerm((LargeFraction)rationalPart.divide(other), (LargeFraction)coefficient.divide(other), exponent);
-        else if(other instanceof LargePowerMonomial){
-            LargeList<RadicalTerm> rt = new LargeList<>();
-            rt.add(new RadicalTerm(LargeFraction.zero, this.rationalPart, (LargePowerMonomial) other.reciprocal()));
-            rt.add(new RadicalTerm(LargeFraction.zero, this.coefficient, (LargePowerMonomial) exponent.divide(other)));
-            return new RadicalTermSum(rt, LargeFraction.zero);
-        }
-        else if(other instanceof RadicalTerm || other instanceof RadicalTermSum) return other.reciprocal().multiply(this);
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
-    }
-    @Override
-    public ScalarAtom mod(ScalarAtom other) {return this.subtract(this.divide(other).floor().multiply(other));}
 }

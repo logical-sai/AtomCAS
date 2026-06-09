@@ -1,30 +1,30 @@
 package com.AtomCAS.utilities;
 public class SI extends PhysicalAtom{
-    public static final LargeFraction quecto = (LargeFraction) Parser.parse("1/1000000000000000000000000000000");
-    public static final LargeFraction ronto = (LargeFraction) Parser.parse("1/1000000000000000000000000000");
-    public static final LargeFraction yocto = (LargeFraction) Parser.parse("1/1000000000000000000000000");
-    public static final LargeFraction zepto = (LargeFraction) Parser.parse("1/1000000000000000000000");
-    public static final LargeFraction atto = (LargeFraction) Parser.parse("1/1000000000000000000");
-    public static final LargeFraction femto = (LargeFraction) Parser.parse("1/1000000000000000");
-    public static final LargeFraction pico = (LargeFraction) Parser.parse("1/1000000000000");
-    public static final LargeFraction nano = (LargeFraction) Parser.parse("1/1000000000");
-    public static final LargeFraction micro = (LargeFraction) Parser.parse("1/1000000");
-    static final LargeFraction milli = (LargeFraction) Parser.parse("1/1000");
-    static final LargeFraction centi = (LargeFraction) Parser.parse("1/100");
-    static final LargeFraction deci = (LargeFraction) Parser.parse("1/10");
-    static final LargeFraction unit = LargeFraction.one;
-    static final LargeFraction deka = (LargeFraction) Parser.parse("10");
-    static final LargeFraction hecto = (LargeFraction) Parser.parse("100");
-    static final LargeFraction kilo = (LargeFraction) Parser.parse("1000");
-    static final LargeFraction mega = (LargeFraction) Parser.parse("1000000");
-    static final LargeFraction giga = (LargeFraction) Parser.parse("1000000000");
-    static final LargeFraction tera = (LargeFraction) Parser.parse("1000000000000");
-    static final LargeFraction peta = (LargeFraction) Parser.parse("1000000000000000");
-    static final LargeFraction exa = (LargeFraction) Parser.parse("1000000000000000000");
-    static final LargeFraction zetta = (LargeFraction) Parser.parse("1000000000000000000000");
-    static final LargeFraction yotta = (LargeFraction) Parser.parse("1000000000000000000000000");
-    static final LargeFraction ronna = (LargeFraction) Parser.parse("1000000000000000000000000000");
-    static final LargeFraction quetta = (LargeFraction) Parser.parse("1000000000000000000000000000000");
+    public static final LargeInteger unit = LargeInteger.one;
+    public static final LargeInteger deka = LargeInteger.ten;
+    public static final LargeInteger hecto = LargeInteger.hundred;
+    public static final LargeInteger kilo = LargeInteger.thousand;
+    public static final LargeInteger mega = new LargeInteger(1000000L);
+    public static final LargeInteger giga = new LargeInteger(1000000000L);
+    public static final LargeInteger tera = new LargeInteger(1000000000000L);
+    public static final LargeInteger peta = new LargeInteger(1000000000000000L);
+    public static final LargeInteger exa = new LargeInteger(1000000000000000000L);
+    public static final LargeInteger zetta = (LargeInteger) Parser.parse("10^21");
+    public static final LargeInteger yotta = (LargeInteger) Parser.parse("10^24");
+    public static final LargeInteger ronna = (LargeInteger) Parser.parse("10^27");
+    public static final LargeInteger quetta = (LargeInteger) Parser.parse("10^30");
+    public static final LargeFraction deci = deka.reciprocal();
+    public static final LargeFraction centi = hecto.reciprocal();
+    public static final LargeFraction milli = kilo.reciprocal();
+    public static final LargeFraction micro = mega.reciprocal();
+    public static final LargeFraction nano = giga.reciprocal();
+    public static final LargeFraction pico = tera.reciprocal();
+    public static final LargeFraction femto = peta.reciprocal();
+    public static final LargeFraction atto = exa.reciprocal();
+    public static final LargeFraction zepto = zetta.reciprocal();
+    public static final LargeFraction yocto = yotta.reciprocal();
+    public static final LargeFraction ronto = ronna.reciprocal();
+    public static final LargeFraction quecto = quetta.reciprocal();
     @Override
     public Atom copy() {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
     @Override

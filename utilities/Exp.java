@@ -20,6 +20,29 @@ public class Exp extends ScalarAtom {
         this.power = power;
     }
     @Override
+    public Atom copy() {return new Exp(this.addend, this.coefficient, this.power);}
+    @Override
+    public String toString() {
+        StringBuilder str = new  StringBuilder();
+        if(addend.notEqualsTo(LargeInteger.zero)) str.append(addend);
+        if(coefficient.equalsTo(LargeInteger.zero)){
+            if(str.isEmpty()) str.append("0");
+            return str.toString();
+        }
+        str.append(" + ").append(coefficient).append("*e^(").append(power).append(")");
+        return str.toString();
+    }
+
+    @Override
+    public boolean equalsTo(Atom other) {
+        return false;
+    }
+
+    @Override
+    public boolean notEqualsTo(Atom other) {
+        return false;
+    }
+    @Override
     public LargeInteger floor() {
         return null;
     }
@@ -70,12 +93,10 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public ScalarAtom add(ScalarAtom other) {
-        return null;
-    }
+    public boolean isAlgebraic(){return coefficient.equalsTo(LargeInteger.zero) && addend.isAlgebraic();}
 
     @Override
-    public ScalarAtom subtract(ScalarAtom other) {
+    public ScalarAtom add(ScalarAtom other) {
         return null;
     }
 
@@ -108,39 +129,10 @@ public class Exp extends ScalarAtom {
     public ScalarAtom cube() {
         return null;
     }
-
-    @Override
-    public ScalarAtom percent() {
-        return null;
-    }
-
-    @Override
-    public ScalarAtom permille() {
-        return null;
-    }
     @Override
     public ScalarAtom power(LargeFraction f) {return new Exp(this.addend.power(f), this.coefficient.power(f), this.power.multiply(f));}
     @Override
-    public Atom copy() {return new Exp(this.addend, this.coefficient, this.power);}
-    @Override
-    public String toString() {
-        StringBuilder str = new  StringBuilder();
-        if(addend.notEqualsTo(LargeInteger.zero)) str.append(addend);
-        if(coefficient.equalsTo(LargeInteger.zero)){
-            if(str.isEmpty()) str.append("0");
-            return str.toString();
-        }
-        str.append(" + ").append(coefficient).append("*e^(").append(power).append(")");
-        return str.toString();
-    }
-
-    @Override
-    public boolean equalsTo(Atom other) {
-        return false;
-    }
-
-    @Override
-    public boolean notEqualsTo(Atom other) {
-        return false;
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+        return null;
     }
 }

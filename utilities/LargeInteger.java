@@ -4,6 +4,7 @@ import java.util.ArrayList;
 public class LargeInteger extends ScalarAtom {
     //instance variables
     private final long[] number;
+    private final boolean sign;
     public static final LargeInteger negativeOne = new LargeInteger(-1L);
     public static final LargeInteger zero = new LargeInteger(0L);
     public static final LargeInteger one = new LargeInteger(1L);
@@ -52,13 +53,9 @@ public class LargeInteger extends ScalarAtom {
     public static final LargeInteger hundredFiftySeven = new LargeInteger(157L);
     public static final LargeInteger thousand = new LargeInteger(1000L);
     private static final long BASE = 1000000000L;
-    LargeInteger[] smallPrimes = {two, three, five, seven, eleven, thirteen, seventeen, nineteen, twentyThree, twentyNine, thirtyOne, thirtySeven,
-            fortyOne, fortyThree, fortySeven, fiftyThree, fiftyNine, sixtyOne, sixtySeven, seventyOne, seventyThree, seventyNine, eightyThree, eightyNine,
-            ninetySeven, hundredOne, hundredThree, hundredSeven, hundredNine, hundredThirteen, hundredTwentySeven, hundredThirtyOne, hundredThirtySeven,
-            hundredThirtyNine, hundredFortyNine, hundredFiftyOne, hundredFiftySeven};
     private static final SecureRandom RNG = new SecureRandom();
-    private final boolean sign;
-    //these constructors serve as various ways to build the number from structure of the inputs.
+    private static final LargeInteger TRIAL_LIMIT_PRIME_TEST = new LargeInteger(100_000);
+    private static final LargeInteger TRIAL_LIMIT_FACTOR = new LargeInteger(1_000_000);
     public LargeInteger(long num){
         long numCopy = Math.abs(num);
         if(num == 0){
@@ -73,6 +70,12 @@ public class LargeInteger extends ScalarAtom {
         }
         sign = num < 0;
     }
+    public LargeInteger(String s){
+        ScalarAtom I = Parser.parse(s);
+        if(!(I instanceof LargeInteger)) throw new IllegalArgumentException("Error: Result not an integer");
+        number = ((LargeInteger) I).number;
+        sign = ((LargeInteger) I).sign;
+    }
     private static long[] trimLeadingZeros(long[] arr) {
         int start = 0;
         while (start < arr.length - 1 && arr[start] == 0)
@@ -82,11 +85,27 @@ public class LargeInteger extends ScalarAtom {
         return result;
     }
     LargeInteger(long[] digits, long sign){
-        this.number = trimLeadingZeros(digits.clone());
-        this.sign = sign < 0;
+        ArrayList<Long> D = new ArrayList<>();
+        long part = 0;
+        for(int i = digits.length-1; i >= 0; i--){
+            part += Math.abs(digits[i]);
+            D.addFirst(part % BASE);
+            part = part / BASE;
+        }
+        while(part > 0){
+            D.addFirst(part % BASE);
+            part = part / BASE;
+        }
+        while(D.size() > 1 && D.getFirst() == 0)
+            D.removeFirst();
+        long[] chars = new long[D.size()];
+        for(int i = 0; i < chars.length; i++) chars[i] = D.get(i);
+        this.number = chars;
+        if(number.length == 1 && number[0] == 0) this.sign = false;
+        else this.sign = sign < 0;
     }
     @Override
-    public LargeInteger copy(){return new LargeInteger(number, Long.parseLong(sign().toString()));}
+    public LargeInteger copy(){return new LargeInteger(number, sign ? -1 : 1);}
     //returns a String version that can be printed.
     @Override
     public String toString(){
@@ -127,26 +146,17 @@ public class LargeInteger extends ScalarAtom {
         if(!(other instanceof ScalarAtom)) return true;
         return this.compareTo((ScalarAtom) other) != 0L;
     }
-    //returns the sign of an integer.
-    public LargeInteger sign(){
-        if(number.length == 1 && number[0] == 0L) return zero;
-        return sign ? negativeOne : one;
-    }
-    public LargeInteger negate(){return new LargeInteger(this.number, -1*Long.parseLong(this.sign().toString()));}
+    public LargeInteger negate(){return new LargeInteger(this.number, sign ? 1 : -1);}
     //returns a new integer with the same list as the old one.
     @Override
-    public LargeInteger magnitude(){
-        long[] result = new long[number.length];
-        for(int i = 0; i < number.length; i++) result[i] = Math.abs(number[i]);
-        return new LargeInteger(result, 1);
-    }
+    public LargeInteger magnitude(){return new LargeInteger(this.number, 1L);}
     @Override
     public LargeInteger floor(){return this;}
     @Override
     public LargeInteger ceil(){return this;}
     //this serves as a way to optimize modulo for large integer powers.
     public LargeInteger powMod(LargeInteger exp, LargeInteger rem){
-        if(exp.sign().equalsTo(negativeOne))
+        if(exp.sign)
             throw new ArithmeticException("Error: PowMod not supported for fractions");
         LargeInteger result = one;
         LargeInteger base = (LargeInteger) this.copy().mod(rem);
@@ -174,24 +184,36 @@ public class LargeInteger extends ScalarAtom {
         }
         return (LargeInteger) new LargeInteger(res, 1).add(bottom);
     }
+    public static LargeInteger randomChunks(int chunks){
+        long[] res = new long[chunks];
+        for(int i = 0; i < chunks; i++)
+            res[i] = RNG.nextLong(BASE);
+        return new LargeInteger(res, RNG.nextLong(2));
+    }
     //uses Miller-Rabin to determine if an integer is prime.
-    public boolean isProbablyNotPrime(int rounds){
+    public boolean isProbablyNotPrime(){
         if(this.lessThan(LargeInteger.two))
             return true;
-        if(this.isEven()) return !this.equalsTo(two);
-        for(int i = 1; i < smallPrimes.length; i++){
-            if(this.mod(smallPrimes[i]).equalsTo(LargeInteger.zero))
-                return !this.equalsTo(smallPrimes[i]);
+        LargeInteger copy = this.magnitude();
+        if(copy.isEven())
+            return copy.notEqualsTo(two);
+        if(copy.mod(three).equalsTo(zero))
+            return copy.notEqualsTo(three);
+        for(LargeInteger i = six; i.lessThan(TRIAL_LIMIT_PRIME_TEST); i=i.add(6)){
+            if(copy.mod(i.subtract(1)).equalsTo(zero))
+                return copy.notEqualsTo(i.subtract(1));
+            if(copy.mod(i.add(1)).equalsTo(zero))
+                return copy.notEqualsTo(i.add(1));
         }
         LargeInteger nMinusOne = (LargeInteger) this.subtract(one);
         LargeInteger nMinusTwo = (LargeInteger) this.subtract(two);
         LargeInteger multiplier = nMinusOne.magnitude();
-        int twoPower = 0;
+        long twoPower = 0;
         while(multiplier.isEven()){
             twoPower++;
             multiplier = multiplier.longDivision(two);
         }
-        for(int i = 0; i < rounds; i++){
+        for(int i = 0; i < 120; i++){
             LargeInteger witness = random(two, nMinusTwo);
             if(!isWitness(witness, multiplier, twoPower, nMinusOne))
                 return true;
@@ -199,10 +221,10 @@ public class LargeInteger extends ScalarAtom {
         return false;
     }
     //private helper for isPrime
-    private boolean isWitness(LargeInteger witness, LargeInteger multiplier, int twoPower, LargeInteger nMinusOne){
+    private boolean isWitness(LargeInteger witness, LargeInteger multiplier, long twoPower, LargeInteger nMinusOne){
         LargeInteger x = witness.powMod(multiplier, this);
         if (x.equalsTo(one) || x.equalsTo(nMinusOne)) return true;
-        for (int r = 1; r < twoPower; r++) {
+        for (long r = 1; r < twoPower; r++) {
             x = (LargeInteger) x.multiply(x).mod(this);
             if (x.equalsTo(nMinusOne)) return true;
             if (x.equalsTo(one)) return false;
@@ -220,7 +242,8 @@ public class LargeInteger extends ScalarAtom {
         LargeInteger q;
         LargeInteger x = zero;
         LargeInteger ys = zero;
-        while (g.equalsTo(one)) {
+        long start = System.nanoTime();
+        while(System.nanoTime()-start < 60_000_000_000L && g.equalsTo(one)){
             x = y.copy();
             for (LargeInteger j = zero; j.lessThan(r); j = (LargeInteger) j.add(one))
                 y = (LargeInteger) y.square().add(c).mod(this);
@@ -247,58 +270,110 @@ public class LargeInteger extends ScalarAtom {
         }
         return g;
     }
-    //factors a number using trial division for small primes and batched rhos for the rest. despite the implications, it is not strict prime factorization. why? well, 0 and 1 do not have prime factorizations. however, a total function is basically required in programming.
-    public LargeList<PrimeExponent> factor(){
-        LargeList<PrimeExponent> p = new LargeList<>();
+    /**
+     * Factors a number into multiplicative components. Usually this means prime factors. USUALLY.
+     * In strict mathematics, 1 has an empty factorization, 0 has no prime factorization, and negatives are handled by a separate sign.
+     * However, programming prefers total functions over philosophical purity.
+     * To account for this, 1 returns {1 -> 1}, 0 returns {0 -> 1}, and -1 is treated as a sign-factor.
+     * Also, if the number decides to become a cryptography final boss, the remaining chunk may be treated as one atomic factor.
+     */
+    public LargeMap<LargeInteger, LargeFraction> factor(){
+        LargeMap<LargeInteger, LargeFraction> p = new LargeMap<>();
         if(this.equalsTo(zero)){
-            p.add(new PrimeExponent(zero, (LargeFraction) one.divide(one)));
+            p.put(zero, LargeFraction.one);
             return p;
         }else if(this.equalsTo(one)){
-            p.add(new PrimeExponent(one, (LargeFraction) one.divide(one)));
+            p.put(one, LargeFraction.one);
             return p;
-        }else if(this.sign().equalsTo(negativeOne)) p.add(new PrimeExponent(negativeOne, (LargeFraction) one.divide(one)));
+        }else if(this.sign)
+            p.put(negativeOne, LargeFraction.one);
         LargeInteger copy = this.magnitude();
-        for(LargeInteger s: smallPrimes){
-            LargeInteger exp = zero;
-            while(copy.mod(s).equalsTo(zero)){
-                exp = (LargeInteger) exp.add(one);
-                copy = copy.longDivision(s);
+        if(copy.mod(two).equalsTo(zero)){
+            LargeFraction exp = LargeFraction.zero;
+            while(copy.mod(two).equalsTo(zero)){
+                exp = (LargeFraction) exp.add(one);
+                copy = copy.longDivision(two);
             }
-            if(exp.notEqualsTo(zero)) p.add(new PrimeExponent(s, (LargeFraction) exp.divide(one)));
+            p.put(two, exp);
         }
-        if(copy.equalsTo(one)) return p;
+        if(copy.mod(three).equalsTo(zero)){
+            LargeFraction exp = LargeFraction.zero;
+            while(copy.mod(three).equalsTo(zero)){
+                exp = (LargeFraction) exp.add(one);
+                copy = copy.longDivision(three);
+            }
+            p.put(three, exp);
+        }
+        for(LargeInteger i = six; i.lessThan(TRIAL_LIMIT_FACTOR); i=i.add(6)){
+            if(copy.mod(i.subtract(1)).equalsTo(zero)){
+                LargeFraction exp = LargeFraction.zero;
+                while(copy.mod(i.subtract(1)).equalsTo(zero)){
+                    exp = (LargeFraction) exp.add(one);
+                    copy = copy.longDivision(i.subtract(1));
+                }
+                p.put(i.subtract(1), exp);
+            }
+            if(copy.mod(i.add(1)).equalsTo(zero)){
+                LargeFraction exp = LargeFraction.zero;
+                while(copy.mod(i.add(1)).equalsTo(zero)){
+                    exp = (LargeFraction) exp.add(one);
+                    copy = copy.longDivision(i.add(1));
+                }
+                p.put(i.add(1), exp);
+            }
+            if(copy.equalsTo(one)) return p;
+        }
         //batched rhos
-        while(copy.greaterThan(one) && copy.isProbablyNotPrime(60)){
+        while(copy.greaterThan(one) && copy.isProbablyNotPrime()){
             LargeInteger P = copy.brentRhos();
-            if(P.isProbablyNotPrime(80)){
-                LargeList<PrimeExponent> list = P.factor();
-                for(PrimeExponent pr: list) p.add(new PrimeExponent(pr.base, pr.exponent));
-            }else p.add(new PrimeExponent(P, LargeFraction.one));
+            if(P.equalsTo(one)){
+                System.out.println("Number " + copy + " too difficult to factor; treated as atomic");
+                p.put(copy, LargeFraction.one);
+                return p;
+            }else if(P.isProbablyNotPrime()){
+                LargeMap<LargeInteger, LargeFraction> list = P.factor();
+                for(LargeInteger I: list){
+                    if(p.containsKey(I))
+                        p.put(I, (LargeFraction) p.get(I).add(list.get(I)));
+                    else p.put(I, list.get(I));
+                }
+            }else{
+                if(p.containsKey(P))
+                    p.put(P, (LargeFraction) p.get(P).add(one));
+                else p.put(P, LargeFraction.one);
+            }
             copy = copy.longDivision(P);
         }
-        if(copy.greaterThan(one)) p.add(new PrimeExponent(copy, LargeFraction.one));
-        PrimeExponent.sortBases(p);
-        for(LargeInteger i = one; i.lessThan(p.size()); i = i.add(1)){
-            if(p.get(i).base.equalsTo(p.get((LargeInteger) i.subtract(one)).base)){
-                p.set(i.subtract(1), new PrimeExponent(p.get(i.subtract(1)).base, (LargeFraction) p.get(i.subtract(1)).exponent.add(p.get(i).exponent)));
-                p.remove(i);
-                i= (LargeInteger) i.subtract(one);
-            }
+        if(copy.greaterThan(one)){
+            if(p.containsKey(copy))
+                p.put(copy, (LargeFraction) p.get(copy).add(one));
+            else p.put(copy, LargeFraction.one);
+        }
+        for(LargeInteger i = zero; i.lessThan(p.size()); i=i.add(1)){
+            for(LargeInteger j = i.add(1); j.lessThan(p.size()); j=j.add(1))
+                if(p.keyAtIndex(i).greaterThan(p.keyAtIndex(j)))
+                    p.swap(p.keyAtIndex(i), p.keyAtIndex(j));
         }
         return p;
     }
-    public LargeList<LargeInteger> divisorsProper(){
+    public LargeList<LargeInteger> divisorsProper() {
         LargeList<LargeInteger> result = new LargeList<>();
-        if(sign) result.add(negativeOne);
-        LargeInteger bound = this.magnitude().longSqrt(twentyThree).floor();
-        for (LargeInteger d = one; d.lesserThanOrEqualTo(bound); d = d.add(1))
-            if (this.mod(d).equalsTo(zero))
-                result.add(d);
-        LargeInteger oldSize = result.size().copy();
-        for(LargeInteger i = oldSize.subtract(1); i.greaterThan(zero); i = i.subtract(1)){
-            if(this.longDivision(result.get(i)).notEqualsTo(result.get(i)))
-                result.add(this.longDivision(result.get(i)));
+        if (this.equalsTo(zero) || this.equalsTo(one))
+            return result;
+        LargeMap<LargeInteger, LargeFraction> f = this.magnitude().factor();
+        result.add(LargeInteger.one);
+        for (LargeInteger p : f) {
+            if (p.equalsTo(LargeInteger.negativeOne)) continue;
+            LargeInteger exp = f.get(p).numerator;
+            LargeInteger currentSize = result.size();
+            LargeInteger pPower = LargeInteger.one;
+            for (LargeInteger e = LargeInteger.one; e.lesserThanOrEqualTo(exp); e = e.add(1)) {
+                pPower = (LargeInteger) pPower.multiply(p);
+                for (LargeInteger i = LargeInteger.zero; i.lessThan(currentSize); i = i.add(1))
+                    result.add((LargeInteger) result.get(i).multiply(pPower));
+            }
         }
+        result.removeLast();
         return result;
     }
     public boolean isPerfect(){
@@ -308,13 +383,13 @@ public class LargeInteger extends ScalarAtom {
         return result.equalsTo(this);
     }
     //the inverse of the factor method.
-    public static LargeInteger buildFromFactors(LargeList<PrimeExponent> pr){
+    public static LargeInteger buildFromFactors(LargeMap<LargeInteger, LargeFraction> pr){
         LargeInteger result = one;
-        for(PrimeExponent p: pr){
-            if(p.exponent.denominator.notEqualsTo(one)) throw new ArithmeticException("Error: Result is not rational");
-            if(p.exponent.sign().equalsTo(LargeInteger.negativeOne)) throw new ArithmeticException("Error: Result is not an integer");
-            LargeInteger expTemp = p.exponent.numerator.magnitude();
-            LargeInteger basTemp = p.base.copy();
+        for(LargeInteger p: pr){
+            if(pr.get(p).denominator.notEqualsTo(one)) throw new ArithmeticException("Error: Result is not rational");
+            if(pr.get(p).lessThan(zero)) throw new ArithmeticException("Error: Result is not an integer");
+            LargeInteger expTemp = pr.get(p).numerator.magnitude();
+            LargeInteger basTemp = p.copy();
             while(expTemp.notEqualsTo(zero)){
                 if(expTemp.isOdd()){
                     result = (LargeInteger) result.multiply(basTemp);
@@ -326,17 +401,20 @@ public class LargeInteger extends ScalarAtom {
         }
         return result;
     }
+    private static long compareArrs(long[] arr1, long[] arr2){
+        if(arr1.length > arr2.length) return 1;
+        if(arr1.length < arr2.length) return -1;
+        for(int i = 0; i < arr1.length; i++){
+            if(arr1[i] > arr2[i]) return 1;
+            if(arr1[i] < arr2[i]) return -1;
+        }
+        return 0;
+    }
     @Override
     public long compareMags(ScalarAtom other) {
-        if(other instanceof LargeInteger){
-            if(number.length > ((LargeInteger) other).number.length) return 1L;
-            if(number.length < ((LargeInteger) other).number.length) return -1L;
-            for(int i = 0; i < number.length; i++){
-                if(number[i] > ((LargeInteger) other).number[i]) return 1L;
-                if(number[i] < ((LargeInteger) other).number[i]) return -1L;
-            }
-            return 0L;
-        }else if(other instanceof LargeFraction)
+        if(other instanceof LargeInteger I)
+            return compareArrs(this.number, I.number);
+        else if(other instanceof LargeFraction)
             return this.multiply(((LargeFraction) other).denominator).compareMags(((LargeFraction) other).numerator);
         else if(other instanceof LargePowerMonomial){
             if(other.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
@@ -382,7 +460,7 @@ public class LargeInteger extends ScalarAtom {
                 if(this.sign) return -1L;
                 return 1L;
             }else if(res == -1L){
-                if(l.sign().equalsTo(negativeOne)) return 1L;
+                if(l.lessThan(zero)) return 1L;
                 return -1L;
             }
             return res;
@@ -393,31 +471,26 @@ public class LargeInteger extends ScalarAtom {
                 if(this.sign) return -1L;
                 return 1L;
             }else if(B == -1L){
-                if(l.sign().equalsTo(negativeOne)) return 1L;
+                if(l.lessThan(zero)) return 1L;
                 return -1L;
             }
-            if(this.sign && l.sign().equalsTo(one)) return -1L;
-            else if(!this.sign && l.sign().equalsTo(negativeOne)) return 1L;
+            if(this.sign && l.greaterThan(zero)) return -1L;
+            else if(!this.sign && l.lessThan(zero)) return 1L;
             return 0L;
         }
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
-    public boolean greaterThan(ScalarAtom other){return this.compareTo(other) > 0L;}
-    public boolean lessThan(ScalarAtom other) {return this.compareTo(other) < 0L;}
-    public boolean greaterThanOrEqualTo(ScalarAtom other){return this.compareTo(other) >= 0L;}
-    public boolean lesserThanOrEqualTo(ScalarAtom other){return this.compareTo(other) <= 0L;}
-    @Override
     public boolean isRational() {return true;}
     @Override
     public boolean isReal() {return true;}
     @Override
     public boolean isNotReal() {return false;}
+    @Override
+    public boolean isAlgebraic() {return true;}
     public LargeInteger gcd(LargeInteger other){
-        if(other.equalsTo(LargeInteger.zero)) return this.magnitude();
-        if(this.equalsTo(LargeInteger.zero)) return other.magnitude();
         LargeInteger a = this.magnitude();
         LargeInteger b = other.magnitude();
-        while(b.notEqualsTo(LargeInteger.zero)){
+        while(b.notEqualsTo(zero)){
             LargeInteger r = (LargeInteger) a.mod(b);
             a = b.copy();
             b = r.copy();
@@ -460,7 +533,7 @@ public class LargeInteger extends ScalarAtom {
         }
         return trimLeadingZeros(result);
     }
-    private static long[] subtractMagnitudes(long[] a, long[] b) {
+    private static long[] subtractMagnitudes(long[] a, long[] b){
         long[] result = new long[a.length];
         int ia = a.length - 1;
         int ib = b.length - 1;
@@ -469,22 +542,18 @@ public class LargeInteger extends ScalarAtom {
         while (ir >= 0) {
             long x = a[ia--];
             long y = ib >= 0 ? b[ib--] : 0;
-
             long diff = x - y + borrow;
             result[ir--] = Math.floorMod(diff, BASE);
             borrow = Math.floorDiv(diff, BASE);
         }
         return trimLeadingZeros(result);
     }
-    //This method serves to add two numbers. More details in the method
     @Override
     public ScalarAtom add(ScalarAtom other) {
         //This one adds two integers via base-10^9 chunking. Like every other method, it assumes both are normalized to the best they can be. Runs in time complexity O(n), n being max number of chunks
         if (other instanceof LargeInteger o) {
-            if (this.sign == o.sign) {
-                long[] result = addMagnitudes(this.number, o.number);
-                return new LargeInteger(result, this.sign ? -1 : 1);
-            }
+            if (this.sign == o.sign)
+                return new LargeInteger(addMagnitudes(this.number, o.number), this.sign ? -1 : 1);
             long cmp = this.compareMags(o);
             if (cmp == 0) return LargeInteger.zero;
             if (cmp > 0) {
@@ -513,46 +582,131 @@ public class LargeInteger extends ScalarAtom {
         for(ScalarAtom atom: atoms) result = result.subtract(atom);
         return result;
     }
-    public LargeInteger subtract(long other){return (LargeInteger) this.add(new LargeInteger(other).multiply(negativeOne));}
-    private LargeInteger shift(int n){
-        if(this.sign().equalsTo(zero)) return this;
-        long[] num = new long[number.length + n];
-        System.arraycopy(number, 0, num, 0, number.length);
-        return new LargeInteger(num, sign ? -1 : 1);
+    public LargeInteger subtract(long other){return this.add(other*-1);}
+    private static long[] shift(long[] N, int n){
+        long[] num = new long[N.length + n];
+        System.arraycopy(N, 0, num, 0, N.length);
+        return num;
     }
     private static long[] slice(long[] a, int from, int to) {
         int len = Math.max(0, to - from);
         if(len == 0) return new long[]{0};
+        else if(to > a.length){
+            if(from > a.length)
+                return new long[]{0};
+            long[] out = new long[a.length - from];
+            if (a.length - from >= 0)
+                System.arraycopy(a, from, out, 0, a.length - from);
+            return out;
+        }
         long[] out = new long[len];
-        System.arraycopy(a, from, out, 0, len);
+        if (to - from >= 0) System.arraycopy(a, from, out, 0, to - from);
         return trimLeadingZeros(out);
+    }
+    private static long[] part0Low(long[] x, int n) {
+        int end = x.length;
+        int start = Math.max(0, end - n);
+        return slice(x, start, end);
+    }
+
+    private static long[] part1Mid(long[] x, int n) {
+        int end = Math.max(0, x.length - n);
+        int start = Math.max(0, end - n);
+        if (start >= end) return new long[]{0};
+        return slice(x, start, end);
+    }
+
+    private static long[] part2High(long[] x, int n) {
+        int end = Math.max(0, x.length - 2 * n);
+        if (end == 0) return new long[]{0};
+        return slice(x, 0, end);
+    }
+    private static long[] multiplyMagnitudes(long[] a, long[] b, int m, int n) {
+        if(a.length == 1 && b.length == 1){
+            //direct long multiply
+            return new long[]{a[0]*b[0]};
+        }else if(a.length <= m && b.length <= m){
+            //grade-school multiply
+            long[] result = new long[a.length + b.length];
+            for (int i = a.length - 1; i >= 0; i--) {
+                long carry = 0;
+                for (int j = b.length - 1; j >= 0; j--) {
+                    int pos = i + j + 1;
+                    long cur = result[pos] + a[i] * b[j] + carry;
+                    result[pos] = cur % BASE;
+                    carry = cur / BASE;
+                }
+                int pos = i;
+                while (carry > 0) {
+                    long cur = result[pos] + carry;
+                    result[pos] = cur % BASE;
+                    carry = cur / BASE;
+                    pos--;
+                }
+            }
+            return result;
+        }else if(a.length <= n && b.length <= n){
+            //Karatsuba multiply
+            int R = Math.max(a.length, b.length) / 2;
+            int aSplit = Math.max(0, a.length - R);
+            int bSplit = Math.max(0, b.length - R);
+            long[] high1 = slice(a, 0, aSplit);
+            long[] low1 = slice(a, aSplit, a.length);
+            long[] high2 = slice(b, 0, bSplit);
+            long[] low2 = slice(b, bSplit, b.length);
+            long[] z0 = multiplyMagnitudes(low1, low2, m, n);
+            long[] z2 = multiplyMagnitudes(high1, high2, m, n);
+            long[] z1 = multiplyMagnitudes(addMagnitudes(high1, low1), addMagnitudes(high2, low2), m, n);
+            long[] middle = subtractMagnitudes(z1, addMagnitudes(z2, z0));
+            return addMagnitudes(addMagnitudes(shift(z2, 2 * R), shift(middle, R)), z0);
+        }
+        //Toom-Cook 3 multiply
+        int len = Math.max(a.length, b.length);
+        int R = (len + 2) / 3;
+        //represent this as a2*B^2 + a1*B + a0
+        LargeInteger a0 = new LargeInteger(part0Low(a, R), 1);
+        LargeInteger a1 = new LargeInteger(part1Mid(a, R), 1);
+        LargeInteger a2 = new LargeInteger(part2High(a, R), 1);
+        //represent other as b2*B^2 + b1*B + b0
+        LargeInteger b0 = new LargeInteger(part0Low(b, R), 1);
+        LargeInteger b1 = new LargeInteger(part1Mid(b, R), 1);
+        LargeInteger b2 = new LargeInteger(part2High(b, R), 1);
+
+        LargeInteger p0 = a0.copy();
+        LargeInteger p1 = (LargeInteger) a0.add(a1).add(a2);
+        LargeInteger pm1 = (LargeInteger) a0.subtract(a1).add(a2);
+        LargeInteger p2 = (LargeInteger) a0.add(a1.multiply(2)).add(a2.multiply(4));
+        LargeInteger pinf = a2.copy();
+
+        LargeInteger q0 = b0.copy();
+        LargeInteger q1 = (LargeInteger) b0.add(b1).add(b2);
+        LargeInteger qm1 = (LargeInteger) b0.subtract(b1).add(b2);
+        LargeInteger q2 = (LargeInteger) b0.add(b1.multiply(2)).add(b2.multiply(4));
+        LargeInteger qinf = b2.copy();
+
+        LargeInteger v0 = (LargeInteger) p0.multiply(q0);
+        LargeInteger v1 = (LargeInteger) p1.multiply(q1);
+        LargeInteger vm1 = (LargeInteger) pm1.multiply(qm1);
+        LargeInteger v2 = (LargeInteger) p2.multiply(q2);
+        LargeInteger vinf = (LargeInteger) pinf.multiply(qinf);
+        LargeInteger c0 = v0.copy();
+        LargeInteger c4 = vinf.copy();
+
+        LargeInteger c3 = ((LargeInteger)v2.subtract(v1)).longDivision(new LargeInteger(3));
+        LargeInteger c1 = ((LargeInteger) v1.subtract(vm1)).longDivision(new LargeInteger(2));
+        LargeInteger c2 = (LargeInteger) vm1.subtract(v0);
+
+        c3 = (LargeInteger) ((LargeInteger) c2.subtract(c3)).longDivision(new LargeInteger(2)).add(c4.multiply(2));
+        c2 = (LargeInteger) c2.add(c1).subtract(c4);
+        c1 = (LargeInteger) c1.subtract(c3);
+        LargeInteger result = (LargeInteger) new LargeInteger(shift(c4.number, 4 * R), 1).add(new LargeInteger(shift(c3.number, 3 * R), 1)).add(new LargeInteger(shift(c2.number, 2 * R), 1)).add(new LargeInteger(shift(c1.number, R), 1)).add(c0);
+        return result.number;
     }
     @Override
     public ScalarAtom multiply(ScalarAtom other) {
-        if(other instanceof LargeInteger I){
-            if(this.number.length == 1 && I.number.length == 1){
-                long re = this.number[0] * I.number[0];
-                if(sign ^ I.sign) re = re*-1;
-                return new LargeInteger(re);
-            }
-            int n = Math.max(this.number.length, I.number.length) / 2;
-            long[] a = this.number;
-            long[] b = I.number;
-            int aSplit = Math.max(0, a.length - n);
-            int bSplit = Math.max(0, b.length - n);
-            LargeInteger high1 = new LargeInteger(slice(a, 0, aSplit), 1);
-            LargeInteger low1  = new LargeInteger(slice(a, aSplit, a.length), 1);
-            LargeInteger high2 = new LargeInteger(slice(b, 0, bSplit), 1);
-            LargeInteger low2  = new LargeInteger(slice(b, bSplit, b.length), 1);
-            LargeInteger z0 = (LargeInteger) low1.multiply(low2);
-            LargeInteger z2 = (LargeInteger) high1.multiply(high2);
-            LargeInteger z1 = (LargeInteger) high1.add(low1).multiply(high2.add(low2));
-            LargeInteger middle = (LargeInteger) z1.subtract(z2).subtract(z0);
-            LargeInteger result = (LargeInteger) z2.shift(2 * n).add(middle.shift(n)).add(z0);
-            long signum = 1;
-            if(sign ^ I.sign) signum = -1;
-            return new LargeInteger(result.number, signum);
-        }else if(other instanceof LargeFraction)
+        if(other instanceof LargeInteger I)
+            return new LargeInteger(multiplyMagnitudes(number, I.number, 768, 8192), this.sign ^ I.sign ? -1 : 1);
+        else if(other instanceof LargeFraction)
             return new LargeFraction((LargeInteger) this.multiply(((LargeFraction) other).numerator), ((LargeFraction) other).denominator);
         else if(other instanceof LargePowerMonomial)
             return new LargePowerMonomial(new LargeFraction(this, one), LargeFraction.one).multiply(other);
@@ -563,7 +717,8 @@ public class LargeInteger extends ScalarAtom {
             for(LargePowerMonomial L: R.sum)
                 rt.add(new RadicalTerm(LargeFraction.zero, (LargeFraction) this.multiply(R.sum.get(L)), L));
             return new RadicalTermSum(rt, (LargeFraction) this.multiply(R.constant));
-        }
+        }else if(other instanceof LargePowerNode L)
+            return new LargePowerNode(L.base.multiply(this.power(L.exponent.denominator)), L.exponent, L.signFactor);
         return other.multiply(this);
     }
     public ScalarAtom multiply(ScalarAtom... atoms){
@@ -572,21 +727,52 @@ public class LargeInteger extends ScalarAtom {
         return result;
     }
     public LargeInteger multiply(long greg){return (LargeInteger) this.multiply(new LargeInteger(greg));}
+    private static void normalizeFrom(long[] result, int index) {
+        for (int k = index; k > 0 && result[k] >= BASE; k--) {
+            result[k - 1] += result[k] / BASE;
+            result[k] %= BASE;
+        }
+    }
+    public static long[] squareArray(long[] a, int m, int n) {
+        if(a.length <= m){
+            int R = a.length;
+            long[] result = new long[2 * R];
+            // Off-diagonal terms: 2*a[i]*a[j]
+            for (int i = R - 1; i >= 0; i--) {
+                long carry = 0;
+                for (int j = i - 1; j >= 0; j--) {
+                    int pos = i + j + 1;
+                    long product = 2L * a[i] * a[j] + result[pos] + carry;
+                    result[pos] = product % BASE;
+                    carry = product / BASE;
+                }
+                result[i] += carry;
+                normalizeFrom(result, i);
+            }
+            // Diagonal terms: a[i]^2
+            for (int i = R - 1; i >= 0; i--) {
+                int pos = 2 * i + 1;
+                long product = a[i] * a[i] + result[pos];
+                result[pos] = product % BASE;
+                result[pos - 1] += product / BASE;
+                normalizeFrom(result, pos - 1);
+            }
+            return trimLeadingZeros(result);
+        }else if(a.length <= n){
+            int R = a.length / 2;
+            long[] high = slice(a, 0, a.length - R);
+            long[] low  = slice(a, a.length - R, a.length);
+            long[] z2 = squareArray(high, m, n);
+            long[] z0 = squareArray(low, m, n);
+            long[] sum = addMagnitudes(high, low);
+            long[] z1 = subtractMagnitudes(subtractMagnitudes(squareArray(sum, m, n), z2), z0);
+            return trimLeadingZeros(addMagnitudes(addMagnitudes(shift(z2, 2 * R), shift(z1, R)), z0));
+        }
+        return multiplyMagnitudes(a, a, m, n);
+    }
     @Override
     public LargeInteger square(){
-        if (number.length < 10) {
-            LargeInteger result = zero;
-            for (int i = 0; i < this.number.length; i++)
-                for (int j = i; j < this.number.length; j++) {
-                    LargeInteger term = one;
-                    term = term.shift(2 * this.number.length - i - j - 2);
-                    term = term.multiply(this.number[i] * this.number[j]);
-                    if (i != j) term = term.multiply(2);
-                    result = (LargeInteger) result.add(term);
-                }
-            return result;
-        }
-        return (LargeInteger) this.multiply(this);
+        return new LargeInteger(squareArray(number, 256, 16000), 1);
     }
     @Override
     public LargeInteger cube(){return (LargeInteger) this.square().multiply(this);}
@@ -605,7 +791,7 @@ public class LargeInteger extends ScalarAtom {
         if(other.equalsTo(zero)) throw new ArithmeticException("Error: Cannot divide by 0");
         else if(other.equalsTo(one)) return this;
         else if(this.compareMags(other) < 0L) return LargeInteger.zero;
-        else if(this.compareMags(other) == 0L) return (LargeInteger) this.sign().multiply(other.sign());
+        else if(this.compareMags(other) == 0L) return new LargeInteger(this.sign ^ other.sign ? -1 : 1);
         //knuth-style division
         LargeInteger copy = this.magnitude();
         LargeInteger copy2 = other.magnitude();
@@ -665,7 +851,7 @@ public class LargeInteger extends ScalarAtom {
             }
             quotient.add(qHat);
             int nextIndex = i + copy2.number.length;
-            if (nextIndex < copy.number.length) rt = rt.shift(1).add(copy.number[nextIndex]);
+            if (nextIndex < copy.number.length) rt = new LargeInteger(shift(rt.number, 1), rt.sign ? -1: 1).add(copy.number[nextIndex]);
             remainder = rt.number;
         }
         while(quotient.getFirst() == 0L && quotient.size() > 1) quotient.removeFirst();
@@ -677,45 +863,36 @@ public class LargeInteger extends ScalarAtom {
     }
     public LargeInteger floorDivision(LargeInteger other){
         LargeInteger result = this.longDivision(other);
-        boolean shouldBeNegative = this.sign() != other.sign();
+        boolean shouldBeNegative = this.sign != other.sign;
         if(other.multiply(result).notEqualsTo(this) && shouldBeNegative) result = (LargeInteger) result.subtract(one);
         return result;
     }
-    @Override
-    public ScalarAtom divide(ScalarAtom other) {
-        if(other instanceof LargeInteger) return new LargeFraction(this, (LargeInteger) other);
-        else if(other instanceof LargeFraction) return new LargeFraction((LargeInteger) ((LargeFraction) other).denominator.multiply(this), ((LargeFraction) other).numerator);
-        else if(other instanceof LargePowerMonomial) return new RadicalTerm(LargeFraction.zero, new LargeFraction(this, one), (LargePowerMonomial) other.reciprocal());
-        return other.reciprocal().multiply(this);
+    private static long[] divSmall(long[] a, long d) {
+        long[] result = new long[a.length];
+        long rem = 0;
+        for (int i = 0; i < a.length; i++) {
+            long cur = rem * BASE + a[i];
+            result[i] = cur / d;
+            rem = cur % d;
+        }
+        if (rem != 0)
+            throw new ArithmeticException("Non-exact small division");
+        return trimLeadingZeros(result);
     }
     public LargeInteger totient(){
-        LargeList<PrimeExponent> lk = this.factor();
+        LargeMap<LargeInteger, LargeFraction> lk = this.factor();
         LargeFraction result = LargeFraction.one;
-        for(PrimeExponent p: lk)
-            result = (LargeFraction) result.multiply(LargeFraction.one.subtract(p.base.reciprocal()));
+        for(LargeInteger I: lk)
+            result = (LargeFraction) result.multiply(LargeFraction.one.subtract(I.reciprocal()));
         result = (LargeFraction) result.multiply(this);
         return result.numerator;
     }
     @Override
-    public LargeFraction reciprocal(){return (LargeFraction) one.divide(this);}
+    public LargeFraction reciprocal(){return new LargeFraction(one, this);}
     public LargeInteger remainder(LargeInteger other){return (LargeInteger) this.subtract(this.longDivision(other).multiply(other));}
-    @Override
     public ScalarAtom mod(ScalarAtom other){
-        if(other instanceof LargeInteger I){
-            if(other.equalsTo(zero)) throw new ArithmeticException("Error: Cannot divide by 0");
-            if(I.number.length == 1){
-                long rem = 0L;
-                long absM = I.number[0];
-                for (long chunk : number)
-                    rem = (rem * BASE + chunk) % absM;
-                if (this.sign && rem != 0L)
-                    rem = absM - rem;
-                if (I.sign && rem != 0L)
-                    rem = rem - absM;
-                return new LargeInteger(rem);
-            }
-            return this.subtract(this.floorDivision(I).multiply(other));
-        }
+        if(other instanceof LargeInteger I)
+            return this.subtract(this.floorDivision(I).multiply(I));
         return this.subtract(this.divide(other).floor().multiply(other));
     }
     public LargeInteger mod2(){
@@ -724,10 +901,6 @@ public class LargeInteger extends ScalarAtom {
     }
     public boolean isOdd(){return this.mod2().equalsTo(one);}
     public boolean isEven(){return this.mod2().equalsTo(zero);}
-    @Override
-    public LargeFraction percent(){return new LargeFraction(this, hundred);}
-    @Override
-    public LargeFraction permille(){return new LargeFraction(this, thousand);}
     public LargeInteger nCr(LargeInteger l) {
         if (this.lessThan(l)) return zero;
         else if(l.equalsTo(zero)) return one;
@@ -739,7 +912,7 @@ public class LargeInteger extends ScalarAtom {
         return (LargeFraction) factorial().divide(temp.factorial());
     }
     public LargeFraction power(LargeInteger l){
-        if(l.sign().equalsTo(zero) && this.sign().equalsTo(zero)) throw new ArithmeticException("Error: Indeterminate form: 0^0");
+        if(l.equalsTo(zero) && this.equalsTo(zero)) throw new ArithmeticException("Error: Indeterminate form: 0^0");
         LargeFraction result = LargeFraction.one;
         LargeInteger expTemp = l.magnitude();
         LargeInteger basTemp = this.copy();
@@ -756,6 +929,11 @@ public class LargeInteger extends ScalarAtom {
     }
     @Override
     public ScalarAtom power(LargeFraction f) {return new LargePowerMonomial(new LargeFraction(this, one), f);}
+    @Override
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+        return null;
+    }
+
     public static LargeInteger pow10(int n) {
         if (n < 0) throw new ArithmeticException("Error: Negative exponent yields a non-integer");
         long[] chunks = new long[n/9 + 1];

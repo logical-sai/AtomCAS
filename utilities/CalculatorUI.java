@@ -5,31 +5,37 @@ import java.awt.event.*;
 
 public class CalculatorUI {
     private JFrame frame;
-    private JTextArea display;
+    private JTextArea inputLayer;
+    private JTextArea outputLayer = new JTextArea();
+    private boolean startNewNumber = true;   // editable expression input
     public CalculatorUI() {
         frame = new JFrame("Calculator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1000, 800);
         frame.setLayout(new BorderLayout());
+        inputLayer = new JTextArea("", 4, 30);
+        inputLayer.setLineWrap(true);
+        inputLayer.setWrapStyleWord(false);
+        inputLayer.setEditable(true);
+        inputLayer.setFont(new Font("Arial", Font.PLAIN, 15));
 
-        display = new JTextArea(5, 6);
-        display.setEditable(true);
-        display.setFont(new Font("Arial", Font.PLAIN, 20));
-        frame.add(display, BorderLayout.NORTH);
+        JScrollPane scrollPane = new JScrollPane(inputLayer);
+        frame.add(scrollPane, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(4, 10, 5, 5));
+        buttonPanel.setLayout(new GridLayout(5, 7, 10, 5));
 
         String[] buttons = {
                 "7", "8", "9", "/", "C", "(", ")",
                 "4", "5", "6", "*", "^", "[", "]",
                 "1", "2", "3", "-", "mod", "{", "}",
-                "0", ".", "+", "del", "√", "%", "ENTER"
+                "0", ".", "+", "del", "√", "%", "=",
+                "‰", "!", "gcd", "lcm", "totient", "factor"
         };
 
         for (String text : buttons) {
             JButton button = new JButton(text);
-            button.setFont(new Font("Arial", Font.PLAIN, 10));
+            button.setFont(new Font("TimesNewRoman", Font.PLAIN, 10));
             button.addActionListener(new ButtonClickListener());
             buttonPanel.add(button);
         }
@@ -41,26 +47,29 @@ public class CalculatorUI {
         public void actionPerformed(ActionEvent e) {
             try {
                 String command = ((JButton)e.getSource()).getText();
-                if (command.matches("[0123456789.+\\-*/^()\\[\\]{}√%]") || command.equals("mod")){
-                    display.setText(display.getText() + command);
+                if (command.matches("[0123456789.+\\-*/^()\\[\\]{}√%‰!]") || command.equals("mod"))
+                    inputLayer.setText(inputLayer.getText() + command);
+                else if (command.equals("=")) {
+                    try {
+                        ScalarAtom result = Parser.parse(inputLayer.getText());
+                        inputLayer.setText(result.toString());
+                    } catch (Exception ex) {inputLayer.setText(ex.getMessage());}
                 }else if(command.equals("del")){
-                    if(display.getText().length() > 1)
-                        display.setText(display.getText().substring(0, display.getText().length()-1));
-                    else display.setText("");
-                }else if (command.equals("C"))
-                    display.setText("");
-                else if(command.equals("ENTER"))
-                    display.setText(Parser.parse(display.getText()).toString());
-            } catch (Exception ex) {
-                display.setText(ex.getMessage());
-            }
+                    if(inputLayer.getText().length() > 1)
+                        inputLayer.setText(inputLayer.getText().substring(0, inputLayer.getText().length()-1));
+                    else inputLayer.setText("");
+                }
+                else if (command.equals("C"))
+                    inputLayer.setText("");
+            } catch (Exception ex){JOptionPane.showMessageDialog(frame, ex.toString(), "Error", JOptionPane.ERROR_MESSAGE);}
         }
     }
 
-    public static void main(String[] args) {SwingUtilities.invokeLater(CalculatorUI::new);}
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(CalculatorUI::new);
+    }
 }
 class GraphPanel extends JPanel {
-
     public GraphPanel() {setBackground(Color.WHITE);}
     @Override
     protected void paintComponent(Graphics g) {
@@ -71,7 +80,6 @@ class GraphPanel extends JPanel {
         int height = getHeight();
         int centerX = width / 2;
         int centerY = height / 2;
-
         drawGrid(g2, width, height, centerX, centerY);
         drawAxes(g2, width, height, centerX, centerY);
     }
@@ -95,7 +103,7 @@ class GraphPanel extends JPanel {
         for (int y = centerY; y > 0; y -= scale)
             g2.drawLine(0, y, width, y);
         //labels
-        Font small = new Font("Arial", Font.PLAIN, Math.min(scale /2, 18));
+        Font small = new Font("Arial", Font.PLAIN, 5);
         g2.setColor(Color.BLACK);
         g2.setFont(small);
         FontMetrics fm = g2.getFontMetrics();

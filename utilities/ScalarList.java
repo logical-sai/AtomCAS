@@ -97,6 +97,6 @@ public class ScalarList{
         }
         return sum.divide(list.size().subtract(LargeInteger.one));
     }
-    public LargePowerNode standardDeviation() {return (LargePowerNode) varianceSample().power((LargeFraction) Parser.parse("1/2"));}
-    public LargePowerNode standardDeviationPopulation() {return (LargePowerNode) variancePopulation().power((LargeFraction) Parser.parse("1/2"));}
+    public LargePowerNode standardDeviation() {return (LargePowerNode) varianceSample().power(LargeFraction.half);}
+    public LargePowerNode standardDeviationPopulation() {return (LargePowerNode) variancePopulation().power(LargeFraction.half);}
 }

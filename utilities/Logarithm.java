@@ -33,27 +33,25 @@ public class Logarithm extends ScalarAtom {
     @Override
     public boolean isNotReal() {return false;}
     @Override
-    public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
+    public boolean isAlgebraic() {return argument instanceof Exp;}
     @Override
-    public ScalarAtom subtract(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
+    public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
     @Override
     public ScalarAtom multiply(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
     @Override
-    public ScalarAtom divide(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
-    @Override
     public ScalarAtom reciprocal() {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
-    @Override
-    public ScalarAtom mod(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
     @Override
     public ScalarAtom square() {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
     @Override
     public ScalarAtom cube() {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
     @Override
-    public ScalarAtom percent() {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
-    @Override
-    public ScalarAtom permille() {throw new UnsupportedOperationException("Error: Operation with these two types together not supported yet");}
-    @Override
     public ScalarAtom power(LargeFraction f) {return null;}
+
+    @Override
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+        return null;
+    }
+
     @Override
     public String toString() {return "";}
     @Override

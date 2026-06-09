@@ -10,7 +10,7 @@ public class RadicalTermNode extends ScalarAtom{
         if(K.equalsTo(LargeInteger.one)){
             this.rationalPart = (LargeFraction) R.add(C);
             this.coefficient = LargeFraction.zero;
-            this.exponent = new LargePowerNode(LargeFraction.zero, LargeFraction.one, LargeFraction.zero);
+            this.exponent = new LargePowerNode(LargeFraction.zero, LargeFraction.one, LargeFraction.one);
             return;
         }
         this.rationalPart = R.copy();
@@ -46,21 +46,23 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public boolean isNotReal(){return exponent.isNotReal();}
     @Override
+    public boolean isAlgebraic() {return exponent.isAlgebraic();}
+    @Override
     public ScalarAtom sign() {
         if(this.equalsTo(LargeInteger.zero)) return LargeInteger.zero;
         return this.divide(this.magnitude());
     }
     @Override
     public ScalarAtom magnitude() {
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");
     }
     @Override
     public LargeInteger floor() {
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Error: Operation with this type not supported yet");
     }
     @Override
     public LargeInteger ceil() {
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");
     }
     @Override
     public long compareMags(ScalarAtom other) {
@@ -93,12 +95,6 @@ public class RadicalTermNode extends ScalarAtom{
     public ScalarAtom negate() {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
     @Override
     public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
-
-    @Override
-    public ScalarAtom subtract(ScalarAtom other) {
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
-    }
-
     @Override
     public ScalarAtom multiply(ScalarAtom other) {
         if(other instanceof LargeInteger || other instanceof LargeFraction)
@@ -107,9 +103,7 @@ public class RadicalTermNode extends ScalarAtom{
     }
 
     @Override
-    public ScalarAtom divide(ScalarAtom other) {
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
-    }
+    public ScalarAtom divide(ScalarAtom other) {return other.reciprocal().multiply(this);}
 
     @Override
     public ScalarAtom reciprocal(){return new LargePowerNode(this, LargeFraction.negativeOne, LargeFraction.zero);}
@@ -121,23 +115,22 @@ public class RadicalTermNode extends ScalarAtom{
     public ScalarAtom square() {
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
-
     @Override
     public ScalarAtom cube() {
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
-
     @Override
-    public ScalarAtom percent() {
-        return this.multiply(Parser.parse("1/100"));
-    }
-
+    public ScalarAtom percent() {return this.multiply(SI.centi);}
     @Override
-    public ScalarAtom permille() {
-        return this.multiply(Parser.parse("1/100"));
-    }
+    public ScalarAtom permille() {return this.multiply(SI.milli);}
     @Override
     public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.zero);}
+
+    @Override
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+        return null;
+    }
+
     @Override
     public boolean equalsTo(Atom other) {
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
