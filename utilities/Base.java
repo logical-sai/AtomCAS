@@ -6,22 +6,23 @@ public class Base{
     boolean sign;
     LargeInteger base;
     public Base(LargeFraction N, LargeInteger b) {
+        sign = N.lessThan(LargeInteger.zero);
+        LargeFraction M = N.magnitude();
         if (b.lesserThanOrEqualTo(LargeInteger.one)) throw new IllegalArgumentException("Error: Invalid base");
+        LargeInteger copy = M.intPart();
         //integer part
         intPart = new LargeList<>();
-        LargeInteger copy = N.intPart().magnitude();
-        sign = N.sign().equalsTo(LargeInteger.negativeOne);
-        do{
+        do {
             intPart.addFirst((LargeInteger) copy.mod(b));
             copy = copy.longDivision(b);
-        }while(copy.greaterThan(LargeInteger.zero));
+        } while (copy.greaterThan(LargeInteger.zero));
         //terminating part
         terminatingPart = new LargeList<>();
-        LargeFraction copy2 = N.fracPart().magnitude();
+        LargeFraction copy2 = M.fracPart().magnitude();
         LargeInteger iterCount = LargeInteger.zero;
         while(copy2.denominator.gcd(b).notEqualsTo(LargeInteger.one) && copy2.notEqualsTo(LargeInteger.zero)){
             copy2 = (LargeFraction) copy2.multiply(b);
-            iterCount = (LargeInteger) iterCount.add(LargeInteger.one);
+            iterCount = iterCount.add(1);
         }
         LargeInteger ter = copy2.intPart();
         copy2 = copy2.fracPart();

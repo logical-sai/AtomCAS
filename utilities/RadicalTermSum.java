@@ -24,23 +24,6 @@ public class RadicalTermSum extends ScalarAtom{
             CON = (LargeFraction) CON.add(rx.rationalPart);
         }
         //handle roots of unity
-        boolean hasNonRealUnity = false;
-        for (LargePowerMonomial L : rt) {
-            if (L.exponent2.notEqualsTo(LargeInteger.zero) && L.exponent2.notEqualsTo(LargeInteger.one)) {
-                hasNonRealUnity = true;
-                break;
-            }
-        }
-        if(hasNonRealUnity && rt.containsKey(LargePowerMonomial.sqrt3)){
-            addCoeff(rt, new LargePowerMonomial(LargeFraction.one, LargeFraction.one, new LargeFraction(LargeInteger.one, LargeInteger.six)), rt.get(new LargePowerMonomial(new LargeFraction(3), LargeFraction.half)));
-            addCoeff(rt, new LargePowerMonomial(LargeFraction.one, LargeFraction.one, new LargeFraction(LargeInteger.five, LargeInteger.six)), rt.get(new LargePowerMonomial(new LargeFraction(3), LargeFraction.half)).negate());
-            rt.remove(LargePowerMonomial.sqrt3);
-        }
-        if(hasNonRealUnity && rt.containsKey(LargePowerMonomial.omegaSqrt3)){
-            addCoeff(rt, new LargePowerMonomial(new LargeFraction(-1), LargeFraction.half), rt.get(LargePowerMonomial.omegaSqrt3));
-            addCoeff(rt, new LargePowerMonomial(new LargeFraction(-1), new LargeFraction(LargeInteger.one, LargeInteger.six)), rt.get(LargePowerMonomial.omegaSqrt3));
-            rt.remove(LargePowerMonomial.omegaSqrt3);
-        }
         LargeInteger lc = LargeInteger.one;
         for (LargePowerMonomial L: rt) {
             if (L.isNotReal())
@@ -52,17 +35,24 @@ public class RadicalTermSum extends ScalarAtom{
             if (L.isNotReal() && L.exponent2.multiply(lc).greaterThanOrEqualTo(lt)) {
                 LargePolynomial P = LargePolynomial.cyclotomic(lc.multiply(2));
                 P.coefficients.removeFirst();
-                P = P.multiply(LargeFraction.negativeOne);
-                RadicalTermSum S = (RadicalTermSum) P.plugIn(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
-                for (LargeInteger j = LargeInteger.zero; j.lessThan(L.exponent2.multiply(lc).subtract(lt)); j = j.add(1))
-                    S = (RadicalTermSum) S.multiply(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
-                S = (RadicalTermSum) S.multiply(new LargePowerMonomial(L.base, L.exponent));
-                S = (RadicalTermSum) S.multiply(rt.get(L));
+                P = P.negate();
+                ScalarAtom S = P.plugIn(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
+                S = S.multiply(new LargePowerMonomial(L.base, L.exponent, (LargeFraction) L.exponent2.multiply(lc).subtract(lt).divide(lc)));
+                S = S.multiply(rt.get(L));
                 rt.remove(L);
                 i = i.subtract(1);
-                for(LargePowerMonomial l: S.sum)
-                    addCoeff(rt, l, S.sum.get(l));
-                CON = (LargeFraction) CON.add(S.constant);
+                if(S instanceof LargeInteger || S instanceof LargeFraction)
+                    CON = (LargeFraction) CON.add(S);
+                else if(S instanceof LargePowerMonomial)
+                    rt.put((LargePowerMonomial) S, LargeFraction.one);
+                else if(S instanceof RadicalTerm){
+                    rt.put(((RadicalTerm) S).exponent, ((RadicalTerm) S).coefficient);
+                    CON = (LargeFraction) CON.add(((RadicalTerm) S).rationalPart);
+                }else if(S instanceof RadicalTermSum R){
+                    for(LargePowerMonomial l: R.sum)
+                        addCoeff(rt, l, R.sum.get(l));
+                    CON = (LargeFraction) CON.add(R.constant);
+                }
             }
         }
         //eliminate zeros
@@ -93,7 +83,6 @@ public class RadicalTermSum extends ScalarAtom{
         for(LargePowerMonomial L: sum){
             if(L.isRational()){
                 LargeFraction bas = (LargeFraction) L.base.multiply(sum.get(L));
-                if(L.exponent2.equalsTo(LargeInteger.one)) bas = bas.negate();
                 CON = (LargeFraction) CON.add(bas);
             }else
                 rt.put(L, sum.get(L));
@@ -111,16 +100,25 @@ public class RadicalTermSum extends ScalarAtom{
                 LargePolynomial P = LargePolynomial.cyclotomic(lc.multiply(2));
                 P.coefficients.removeFirst();
                 P = P.multiply(LargeFraction.negativeOne);
-                RadicalTermSum S = (RadicalTermSum) P.plugIn(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
+                ScalarAtom S = P.plugIn(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
                 for (LargeInteger j = LargeInteger.zero; j.lessThan(L.exponent2.multiply(lc).subtract(lt)); j = j.add(1))
-                    S = (RadicalTermSum) S.multiply(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
-                S = (RadicalTermSum) S.multiply(new LargePowerMonomial(L.base, L.exponent));
-                S = (RadicalTermSum) S.multiply(rt.get(L));
+                    S = S.multiply(new LargePowerMonomial(LargeFraction.negativeOne, lc.reciprocal()));
+                S = S.multiply(new LargePowerMonomial(L.base, L.exponent));
+                S = S.multiply(rt.get(L));
                 rt.remove(L);
                 i = i.subtract(1);
-                for(LargePowerMonomial l: S.sum)
-                    addCoeff(rt, l, S.sum.get(l));
-                CON = (LargeFraction) CON.add(S.constant);
+                if(S instanceof LargeInteger || S instanceof LargeFraction)
+                    CON = (LargeFraction) CON.add(S);
+                else if(S instanceof LargePowerMonomial)
+                    rt.put((LargePowerMonomial) S, LargeFraction.one);
+                else if(S instanceof RadicalTerm){
+                    rt.put(((RadicalTerm) S).exponent, ((RadicalTerm) S).coefficient);
+                    CON = (LargeFraction) CON.add(((RadicalTerm) S).rationalPart);
+                }else if(S instanceof RadicalTermSum R){
+                    for(LargePowerMonomial l: R.sum)
+                        addCoeff(rt, l, R.sum.get(l));
+                    CON = (LargeFraction) CON.add(R.constant);
+                }
             }
         }
         //eliminate zeros
@@ -131,7 +129,7 @@ public class RadicalTermSum extends ScalarAtom{
             }
         }
         //sort radicands
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(rt.size().subtract(LargeInteger.one)); i = i.add(1)){
+        for(LargeInteger i = LargeInteger.zero; i.lessThan(rt.size().subtract(1)); i = i.add(1)){
             for(LargeInteger j = i.add(1); j.lessThan(rt.size()); j = j.add(1)){
                 if(rt.keyAtIndex(j).compareMags(rt.keyAtIndex(i)) < 0)
                     rt.swap(rt.keyAtIndex(i), rt.keyAtIndex(j));
@@ -155,14 +153,12 @@ public class RadicalTermSum extends ScalarAtom{
                     str.append(" - ");
                 else if (sum.get(L).greaterThan(LargeInteger.zero))
                     str.append(" + ");
-                if (sum.get(L).notEqualsTo(LargeInteger.one) && sum.get(L).notEqualsTo(LargeInteger.negativeOne))
-                    str.append(sum.get(L).magnitude()).append("*");
             }else{
                 if (sum.get(L).lessThan(LargeInteger.zero))
                     str.append("-");
-                if (sum.get(L).notEqualsTo(LargeInteger.one) && sum.get(L).notEqualsTo(LargeInteger.negativeOne))
-                    str.append(sum.get(L).magnitude()).append("*");
             }
+            if (sum.get(L).notEqualsTo(LargeInteger.one) && sum.get(L).notEqualsTo(LargeInteger.negativeOne))
+                str.append(sum.get(L).magnitude()).append("*");
             str.append(L);
         }
         return str.toString();
@@ -196,15 +192,20 @@ public class RadicalTermSum extends ScalarAtom{
         }
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
-    @Override
-    public boolean notEqualsTo(Atom other) {return !equalsTo(other);}
     public boolean isReal(){
         for (LargePowerMonomial L: sum) if (L.isNotReal()) return false;
         return true;
     }
-    public boolean isNotReal(){return !isReal();}
     public boolean isRational(){return sum.size().equalsTo(LargeInteger.zero);}
     public boolean isAlgebraic(){return true;}
+    @Override
+    public ScalarAtom realPart(){
+        return this.sign().realPart().multiply(this.magnitude());
+    }
+    @Override
+    public ScalarAtom imagPart(){
+        return this.sign().imagPart().multiply(this.magnitude());
+    }
     @Override
     public LargeInteger floor() {
         if(this.isNotReal()) throw new IllegalStateException("Error: Cannot floor or apply ceiling a non-real atom");
@@ -242,21 +243,16 @@ public class RadicalTermSum extends ScalarAtom{
         if(sum.isEmpty()) return constant.ceil();
         return (LargeInteger) this.floor().add(LargeInteger.one);
     }
-    public RadicalTermSum conjugate() {
+    public RadicalTermSum complexConjugate() {
         LargeList<RadicalTerm> rt = new LargeList<>();
         for(LargePowerMonomial L: sum)
-            rt.add(new RadicalTerm(LargeFraction.zero, sum.get(L).negate(), L));
+            rt.add(new RadicalTerm(LargeFraction.zero, sum.get(L), L.complexConjugate()));
         return new RadicalTermSum(rt, this.constant);
-    }
-    @Override
-    public ScalarAtom sign() {
-        if(this.equalsTo(LargeInteger.zero)) return LargeInteger.zero;
-        return this.divide(this.magnitude());
     }
     @Override
     public ScalarAtom magnitude() {
         if (this.isNotReal()){
-            RadicalTermSum R = (RadicalTermSum) this.multiply(this.conjugate());
+            RadicalTermSum R = (RadicalTermSum) this.multiply(this.complexConjugate());
             if(R.isRational()) return new RadicalTerm(LargeFraction.zero, LargeFraction.one, new LargePowerMonomial(R.constant, LargeFraction.half));
             return new LargePowerNode(R, LargeFraction.half, LargeFraction.one);
         }
@@ -278,10 +274,6 @@ public class RadicalTermSum extends ScalarAtom{
         if(s.equalsTo(LargeInteger.negativeOne)) return -1L;
         return 0L;
     }
-    public boolean greaterThan(ScalarAtom other) {return this.compareTo(other) > 0;}
-    public boolean lessThan(ScalarAtom other) {return this.compareTo(other) < 0;}
-    public boolean greaterThanOrEqualTo(ScalarAtom other) {return this.compareTo(other) >= 0;}
-    public boolean lesserThanOrEqualTo(ScalarAtom other) {return this.compareTo(other) <= 0;}
     @Override
     public RadicalTermSum negate() {
         LargeMap<LargePowerMonomial, LargeFraction> rt = new LargeMap<>();
@@ -318,9 +310,9 @@ public class RadicalTermSum extends ScalarAtom{
     @Override
     public ScalarAtom multiply(ScalarAtom other){
         if(other instanceof LargeInteger || other instanceof LargeFraction){
-            LargeMap<LargePowerMonomial, LargeFraction> rt = new LargeMap<>();
+            LargeList<RadicalTerm> rt = new LargeList<>();
             for(LargePowerMonomial m : this.sum)
-                rt.put(m, (LargeFraction) sum.get(m).multiply(other));
+                rt.add(new RadicalTerm(LargeFraction.zero, (LargeFraction) sum.get(m).multiply(other), m));
             return new RadicalTermSum(rt, (LargeFraction) constant.multiply(other));
         }else if(other instanceof LargePowerMonomial){
             LargeList<RadicalTerm> rt = new LargeList<>();
@@ -340,17 +332,31 @@ public class RadicalTermSum extends ScalarAtom{
                 rt = (RadicalTermSum) rt.add(this.multiply(o.sum.get(m)).multiply(m));
             return rt;
         }
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+       return other.multiply(this);
     }
-    public ScalarAtom multiply(LargeList<ScalarAtom> other){
+    public ScalarAtom multiply(ScalarAtom... other){
         ScalarAtom result = this;
         for(ScalarAtom s: other) result = result.multiply(s);
         return result;
     }
     @Override
-    public ScalarAtom square() {return this.multiply(this);}
+    public RadicalTermSum square() {return (RadicalTermSum) this.multiply(this);}
     @Override
-    public ScalarAtom cube() {return this.square().multiply(this);}
+    public RadicalTermSum cube() {return (RadicalTermSum) this.square().multiply(this);}
+    public RadicalTermSum power(LargeInteger exponent){
+        LargeInteger expTemp = exponent.magnitude();
+        RadicalTermSum basTemp = this.copy();
+        RadicalTermSum res = (RadicalTermSum) new RadicalTermSum().add(LargeFraction.one);
+        while(true){
+            if(expTemp.isOdd()){
+                res = (RadicalTermSum) res.multiply(basTemp);
+                if(expTemp.equalsTo(LargeInteger.one)) break;
+            }
+            basTemp = basTemp.square();
+            expTemp = expTemp.longDivision(LargeInteger.two);
+        }
+        return res;
+    }
     @Override
     public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.one);}
 
@@ -358,33 +364,14 @@ public class RadicalTermSum extends ScalarAtom{
     public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return null;
     }
-
-    private static RadicalTermSum asRadicalTermSum(ScalarAtom x) {
-        if (x instanceof RadicalTermSum) return (RadicalTermSum) x;
-        if (x instanceof RadicalTerm){
-            LargeList<RadicalTerm> list = new LargeList<>();
-            list.add((RadicalTerm) x);
-            return new RadicalTermSum(list, LargeFraction.zero);
-        }
-        if (x instanceof LargeInteger || x instanceof LargeFraction)
-            return new RadicalTermSum(new LargeList<>(), (LargeFraction) x.divide(LargeInteger.one));
-        if (x instanceof LargePowerMonomial) {
-            LargeList<RadicalTerm> list = new LargeList<>();
-            list.add(new RadicalTerm(LargeFraction.zero, LargeFraction.one, (LargePowerMonomial) x));
-            return new RadicalTermSum(list, LargeFraction.zero);
-        }
-        throw new UnsupportedOperationException("Error: Cannot convert the input to RadicalTermSum");
-    }
     private static void addBasisIfMissing(LargeList<LargePowerMonomial> basis, LargePowerMonomial x){
         for (LargePowerMonomial b : basis)
             if (b.equalsTo(x)) return;
         basis.add(x);
     }
     private static void addGenIfMissing(LargeList<LargePowerMonomial> gens, LargePowerMonomial candidate) {
-        for (LargePowerMonomial g : gens) {
-            if (g.base.equalsTo(candidate.base) && g.exponent.equalsTo(candidate.exponent) && g.exponent2.equalsTo(candidate.exponent2))
-                return;
-        }
+        for (LargePowerMonomial g : gens)
+            if(g.equalsTo(candidate)) return;
         gens.add(candidate);
     }
     private static LargeInteger indexOfBasis(LargeList<LargePowerMonomial> basis, LargePowerMonomial m) {
@@ -403,10 +390,10 @@ public class RadicalTermSum extends ScalarAtom{
             return constant.reciprocal();
 
         // Easy monomial-only case: 1 / (c*m) = c^-1 * m^-1
-        if (constant.equalsTo(LargeInteger.zero) && sum.size().equalsTo(LargeInteger.one)) {
+        if (sum.size().equalsTo(LargeInteger.one)) {
             LargePowerMonomial m = sum.keyAtIndex(LargeInteger.zero);
             LargeFraction c = sum.get(m);
-            return new RadicalTerm(LargeFraction.zero, c, m).reciprocal();
+            return new RadicalTerm(constant, c, m).reciprocal();
         }
 
         LargeList<LargePowerMonomial> basis = new LargeList<>();
@@ -498,9 +485,7 @@ public class RadicalTermSum extends ScalarAtom{
         LargeMatrix M = new LargeMatrix();
         for (LargePowerMonomial b : basis) {
             RadicalTermSum product = (RadicalTermSum) this.multiply(b);
-            LargeVector colAsRow = new LargeVector(LargeInteger.zero);
-            for (LargeInteger i = LargeInteger.zero; i.lessThan(basis.size()); i = i.add(1))
-                colAsRow.append(LargeFraction.zero);
+            LargeVector colAsRow = new LargeVector(basis.size());
             if (product.constant.notEqualsTo(LargeInteger.zero)) {
                 LargeFraction old = colAsRow.get(LargeInteger.zero);
                 colAsRow.set(LargeInteger.zero, (LargeFraction) old.add(product.constant));
@@ -514,10 +499,8 @@ public class RadicalTermSum extends ScalarAtom{
             }
             M.appendRow(colAsRow);
         }
-        LargeVector rhs = new LargeVector();
-        rhs.append(LargeFraction.one);
-        for (LargeInteger i = LargeInteger.one; i.lessThan(basis.size()); i = i.add(1))
-            rhs.append(LargeFraction.zero);
+        LargeVector rhs = new LargeVector(basis.size());
+        rhs.set(LargeInteger.zero, LargeFraction.one);
         M.appendRow(rhs);
         M = M.transpose().reducedRowEchelonForm();
         LargeFraction cons = M.get(LargeInteger.zero, (LargeInteger) M.cols().subtract(LargeInteger.one));

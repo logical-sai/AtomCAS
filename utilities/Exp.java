@@ -37,11 +37,6 @@ public class Exp extends ScalarAtom {
     public boolean equalsTo(Atom other) {
         return false;
     }
-
-    @Override
-    public boolean notEqualsTo(Atom other) {
-        return false;
-    }
     @Override
     public LargeInteger floor() {
         return null;
@@ -50,11 +45,6 @@ public class Exp extends ScalarAtom {
     @Override
     public LargeInteger ceil() {
         return null;
-    }
-
-    @Override
-    public ScalarAtom sign() {
-        return LargeInteger.zero;
     }
 
     @Override
@@ -88,12 +78,17 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public boolean isNotReal() {
-        return false;
+    public boolean isAlgebraic(){return coefficient.equalsTo(LargeInteger.zero) && addend.isAlgebraic();}
+
+    @Override
+    public ScalarAtom realPart() {
+        return null;
     }
 
     @Override
-    public boolean isAlgebraic(){return coefficient.equalsTo(LargeInteger.zero) && addend.isAlgebraic();}
+    public ScalarAtom imagPart() {
+        return null;
+    }
 
     @Override
     public ScalarAtom add(ScalarAtom other) {
@@ -106,27 +101,7 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public ScalarAtom divide(ScalarAtom other) {
-        return null;
-    }
-
-    @Override
     public ScalarAtom reciprocal() {
-        return null;
-    }
-
-    @Override
-    public ScalarAtom mod(ScalarAtom other) {
-        return null;
-    }
-
-    @Override
-    public ScalarAtom square() {
-        return null;
-    }
-
-    @Override
-    public ScalarAtom cube() {
         return null;
     }
     @Override

@@ -1,49 +1,40 @@
 package com.AtomCAS.utilities;
 public class LargeMatrix extends TensorAtom {
-    private LargeList<LargeList<LargeInteger>> list;
-    LargeFraction factor;
+    private final LargeList<LargeList<LargeInteger>> list;
+    private LargeFraction factor;
     public LargeMatrix(){
         factor = LargeFraction.one;
         list = new LargeList<>();
     }
     public LargeMatrix(LargeList<LargeList<LargeInteger>> list, LargeFraction factor){
-        this.list = new  LargeList<>();
-        this.list.add(list.getFirst());
-        for(LargeInteger i = LargeInteger.one; i.lessThan(list.size()); i = i.add(1)){
-            this.list.add(list.get(i));
-            if(list.get(i).size().notEqualsTo(list.get((LargeInteger) i.subtract(LargeInteger.one)).size()))
-                throw new IllegalStateException("Error: Rows must have same sizes");
+        this.list = new LargeList<>();
+        LargeInteger gc = LargeInteger.zero;
+        for(LargeList<LargeInteger> I: list){
+            for(LargeInteger J: I)
+                gc = gc.gcd(J);
         }
-        this.factor = factor;
-        LargeInteger gc = LargeInteger.one;
-        for(LargeList<LargeInteger> I: this.list){
-            for(LargeInteger U: I)
-                gc = gc.gcd(U);
+        for(LargeList<LargeInteger> I: list){
+            LargeList<LargeInteger> lt = new LargeList<>();
+            for(LargeInteger J: I)
+                lt.add(J.longDivision(gc));
+            this.list.add(lt);
         }
-        this.factor = (LargeFraction) this.factor.multiply(gc);
-        for(LargeList<LargeInteger> I: this.list)
-            for(LargeInteger j = LargeInteger.zero; j.lessThan(I.size()); j = (LargeInteger) j.add(LargeInteger.one))
-                I.set(j, I.get(j).longDivision(gc));
-        if(this.factor.equalsTo(LargeInteger.zero)) this.factor =  LargeFraction.one;
+        this.factor = (LargeFraction) factor.multiply(gc);
     }
     public LargeMatrix(LargeList<LargeList<LargeFraction>> list){
         this.list = new  LargeList<>();
-        LargeList<LargeInteger> dems = new LargeList<>();
-        if(list.size().equalsTo(LargeInteger.zero)) return;
-        LargeInteger lc = list.getFirst().getFirst().denominator;
-        for(LargeList<LargeFraction> I: list){
-            for(LargeFraction J: I)
-                lc = lc.lcm(J.denominator);
+        LargeFraction gc = LargeFraction.zero;
+        for(LargeList<LargeFraction> LF: list){
+            for(LargeFraction F: LF)
+                gc = gc.gcd(F);
         }
-        this.factor = lc.reciprocal();
-        for(LargeList<LargeFraction> I: list){
-            LargeList<LargeInteger> lk = new LargeList<>();
-            for(LargeFraction J: I) lk.add(((LargeFraction)J.multiply(lc)).numerator);
-            this.list.add(lk);
+        for(LargeList<LargeFraction> LF: list){
+            LargeList<LargeInteger> IF = new LargeList<>();
+            for(LargeFraction F: LF)
+                IF.add(((LargeFraction) F.divide(gc)).numerator);
         }
-        LargeMatrix M = new LargeMatrix(this.list, this.factor);
-        this.list = M.list;
-        this.factor = M.factor;
+        this.factor = gc;
+
     }
     public static LargeMatrix identity(LargeInteger n){
         LargeList<LargeList<LargeFraction>> rows = new LargeList<>();
@@ -236,11 +227,9 @@ public class LargeMatrix extends TensorAtom {
         }
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
-    @Override
-    public boolean notEqualsTo(Atom other) {return !equalsTo(other);}
     public LargeFraction determinant() {
         if(this.isNotSquare())
-            throw new ArithmeticException("Error: Determinant is only defined for square matrices");
+            throw new ArithmeticException("Error: Determinant only defined for square matrices");
         LargeInteger n = this.rows();
         if(n.equalsTo(LargeInteger.zero))
             return LargeFraction.one;
@@ -297,7 +286,7 @@ public class LargeMatrix extends TensorAtom {
         }
         LargeInteger rawDet = m.get((LargeInteger) n.subtract(LargeInteger.one)).get((LargeInteger) n.subtract(LargeInteger.one));
         if(sign == -1L)
-            rawDet = (LargeInteger) rawDet.negate();
+            rawDet = rawDet.negate();
         return (LargeFraction) rawDet.multiply(factor.power(n));
     }
     public LargeMatrix rowEchelonFrom(){
@@ -399,11 +388,84 @@ public class LargeMatrix extends TensorAtom {
         LargeInteger rank = LargeInteger.zero;
         LargeMatrix M = this.reducedRowEchelonForm();
         for(LargeList<LargeInteger> L: M.list){
-            LargeInteger count = LargeInteger.zero;
+            boolean nonZero = false;
             for(LargeInteger I: L)
-                if(I.notEqualsTo(LargeInteger.zero)) count = (LargeInteger) count.add(LargeInteger.one);
-            if(count.notEqualsTo(LargeInteger.zero)) rank = (LargeInteger) rank.add(LargeInteger.one);
+                if(I.notEqualsTo(LargeInteger.zero)){
+                    nonZero = true;
+                    break;
+                }
+            if(nonZero) rank = (LargeInteger) rank.add(LargeInteger.one);
         }
         return rank;
+    }
+    public LargePolynomial characteristicPolynomial() {
+        if(this.isNotSquare()) throw new IllegalArgumentException("Error: Characteristic polynomial defined only for square matrices");
+        LargeInteger n = new LargeInteger(this.rows().toString());
+        LargeList<LargeList<LargePolynomial>> M = new LargeList<>();
+
+        for (LargeInteger i = LargeInteger.zero; i.lessThan(n); i = i.add(1)) {
+            LargeList<LargePolynomial> L = new LargeList<>();
+            for (LargeInteger j = LargeInteger.zero; j.lessThan(n); j = j.add(1)){
+                LargePolynomial entry = LargePolynomial.one().multiply(this.get(i, j).negate());
+                if (i.equalsTo(j))
+                    entry = LargePolynomial.x().add(entry);
+                L.add(entry);
+            }
+            M.add(L);
+        }
+        return determinantPolynomial(M);
+    }
+    public static LargePolynomial determinantPolynomial(LargeList<LargeList<LargePolynomial>> input) {
+        if(input.size().notEqualsTo(input.getFirst().size())) throw new IllegalArgumentException("Error: Determinant only defined for square matrices");
+        LargeInteger n = input.size();
+
+        if (n.equalsTo(LargeInteger.zero)) return LargePolynomial.one();
+        if (n.equalsTo(LargeInteger.one)) return input.getFirst().getFirst();
+
+        LargeList<LargeList<LargePolynomial>> m = new LargeList<>();
+        for(LargeList<LargePolynomial> L: input){
+            LargeList<LargePolynomial> R = new LargeList<>();
+            for(LargePolynomial I: L) R.add(I);
+            m.add(R);
+        }
+
+        LargePolynomial previousPivot = LargePolynomial.one();
+        int sign = 1;
+
+        for (LargeInteger k = LargeInteger.zero; k.lessThan(n.subtract(1)); k = k.add(1)) {
+            LargeInteger pivotRow = k;
+
+            while (pivotRow.lessThan(n) && m.get(pivotRow).get(k).isZero())
+                pivotRow=pivotRow.add(1);
+            if (pivotRow.equalsTo(n))
+                return new LargePolynomial();
+            if (pivotRow.notEqualsTo(k)) {
+                LargeList<LargePolynomial> temp = m.get(k);
+                m.set(k, m.get(pivotRow));
+                m.set(pivotRow, temp);
+                sign = -sign;
+            }
+            LargePolynomial pivot = m.get(k).get(k);
+            for (LargeInteger i = k.add(1); i.lessThan(n); i=i.add(1)) {
+                for (LargeInteger j = k.add(1); j.lessThan(n); j=j.add(1)) {
+                    LargePolynomial numerator = m.get(i).get(j).multiply(pivot).subtract(m.get(i).get(k).multiply(m.get(k).get(j)));
+                    if (k.equalsTo(LargeInteger.zero))
+                        m.get(i).set(j, numerator);
+                    else
+                        m.get(i).set(j, numerator.longDivision(previousPivot));
+                }
+            }
+            previousPivot = pivot;
+            // optional cleanup: zero out unused row/column
+            for (LargeInteger i = k.add(1); i.lessThan(n); i=i.add(1))
+                m.get(i).set(k, new LargePolynomial());
+
+            for (LargeInteger i = k.add(1); i.lessThan(n); i=i.add(1))
+                m.get(k).set(i, new LargePolynomial());
+        }
+        LargePolynomial det = m.get(n.subtract(1)).get(n.subtract(1));
+        if (sign < 0)
+            det = det.negate();
+        return det;
     }
 }

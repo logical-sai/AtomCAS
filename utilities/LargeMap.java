@@ -1,11 +1,10 @@
 package com.AtomCAS.utilities;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class LargeMap<K, V> implements Iterable<K>{
-    private LargeList<K> keys;
-    private LargeList<V> values;
+    private final LargeList<K> keys;
+    private final LargeList<V> values;
     public LargeMap(){
         keys = new LargeList<>();
         values = new LargeList<>();
@@ -13,9 +12,16 @@ public class LargeMap<K, V> implements Iterable<K>{
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(size()); i=i.add(1)){
-            sb.append("{").append(keys.get(i)).append(" -> ").append(values.get(i)).append("}");
-            if(i.notEqualsTo(size().subtract(1))) sb.append(", ");
+        for(int i = 0; i < keys.intSize(); i++){
+            sb.append(keys.get(i)).append(" -> ").append(values.get(i));
+            if(i < keys.intSize()-1) sb.append(", ");
+        }
+        if (!keys.intSized()) {
+            sb.append(", ");
+            for (LargeInteger i = new LargeInteger(2147483648L); i.lessThan(size()); i = i.add(1)) {
+                sb.append(keys.get(i)).append(" -> ").append(values.get(i));
+                if (i.notEqualsTo(size().subtract(1))) sb.append(", ");
+            }
         }
         sb.append("}");
         return sb.toString();
@@ -32,7 +38,7 @@ public class LargeMap<K, V> implements Iterable<K>{
         if (key == null || value == null)
             throw new IllegalArgumentException("Null keys/values not allowed");
         LargeInteger index = indexOfKey(key);
-        if(index.equalsTo(LargeInteger.negativeOne)){
+        if(index.lessThan(LargeInteger.zero)){
             keys.add(key);
             values.add(value);
         }else
@@ -71,21 +77,40 @@ public class LargeMap<K, V> implements Iterable<K>{
             throw new IllegalArgumentException("Key not found");
         return values.get(index);
     }
+    public V getOrDefault(K key, V defaultValue) {
+        LargeInteger index = indexOfKey(key);
+        if (index.equalsTo(LargeInteger.negativeOne))
+            return defaultValue;
+        return values.get(index);
+    }
     public void swap(K key1, K key2){
         keys.swap(indexOfKey(key1), indexOfKey(key2));
         values.swap(indexOfKey(key2), indexOfKey(key1));
     }
     @Override
     public Iterator<K> iterator() {
+        if (!keys.intSized())
+            return new Iterator<>() {
+                private LargeInteger index = LargeInteger.zero;
+                @Override
+                public boolean hasNext() {return index.lessThan(values.size());}
+                @Override
+                public K next() {
+                    if (!hasNext()) throw new NoSuchElementException();
+                    K value = keys.get(index);
+                    index = (LargeInteger) index.add(LargeInteger.one);
+                    return value;
+                }
+            };
         return new Iterator<>() {
-            private LargeInteger index = LargeInteger.zero;
+            private int index = 0;
             @Override
-            public boolean hasNext() {return index.lessThan(values.size());}
+            public boolean hasNext() {return index < values.intSize();}
             @Override
             public K next() {
                 if (!hasNext()) throw new NoSuchElementException();
                 K value = keys.get(index);
-                index = (LargeInteger) index.add(LargeInteger.one);
+                index++;
                 return value;
             }
         };

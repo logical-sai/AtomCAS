@@ -1,13 +1,20 @@
 package com.AtomCAS.utilities;
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.*;
 
 public class CalculatorUI {
-    private JFrame frame;
-    private JTextArea inputLayer;
+    private final JFrame frame;
+    private final JTextArea inputLayer;
     private JTextArea outputLayer = new JTextArea();
-    private boolean startNewNumber = true;   // editable expression input
+
+    private final JTree traceTree = new JTree();
+    private final JTextArea traceDetails = new JTextArea();
+
+    private final TraceWindow traceWindow = new TraceWindow();
+    private final JCheckBox traceCheckBox = new JCheckBox("Show trace");
     public CalculatorUI() {
         frame = new JFrame("Calculator");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -30,7 +37,7 @@ public class CalculatorUI {
                 "4", "5", "6", "*", "^", "[", "]",
                 "1", "2", "3", "-", "mod", "{", "}",
                 "0", ".", "+", "del", "√", "%", "=",
-                "‰", "!", "gcd", "lcm", "totient", "factor"
+                "‰", "!", "gcd", "lcm", "factor", "totient", "≈"
         };
 
         for (String text : buttons) {
@@ -40,8 +47,38 @@ public class CalculatorUI {
             buttonPanel.add(button);
         }
 
-        frame.add(buttonPanel, BorderLayout.CENTER);
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.add(buttonPanel, BorderLayout.CENTER);
+        bottomPanel.add(traceCheckBox, BorderLayout.SOUTH);
+
+        traceWindow.setSize(1200, 800);
+        traceWindow.setLocationRelativeTo(frame);
+
+        frame.add(bottomPanel, BorderLayout.CENTER);
+        traceTree.addTreeSelectionListener(e -> {
+            DefaultMutableTreeNode selected =
+                    (DefaultMutableTreeNode) traceTree.getLastSelectedPathComponent();
+            if (selected == null) return;
+
+            Object obj = selected.getUserObject();
+            if (obj instanceof LogNode node)
+                traceDetails.setText(node.detailText());
+        });
+        JSplitPane tracePane = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT,
+                new JScrollPane(traceTree),
+                new JScrollPane(traceDetails)
+        );
+        traceWindow.add(tracePane, BorderLayout.CENTER);
         frame.setVisible(true);
+    }
+    private DefaultMutableTreeNode toSwingNode(LogNode node) {
+        DefaultMutableTreeNode swingNode = new DefaultMutableTreeNode(node);
+
+        for (LogNode child : node.children())
+            swingNode.add(toSwingNode(child));
+
+        return swingNode;
     }
     private class ButtonClickListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
@@ -50,8 +87,34 @@ public class CalculatorUI {
                 if (command.matches("[0123456789.+\\-*/^()\\[\\]{}√%‰!]") || command.equals("mod"))
                     inputLayer.setText(inputLayer.getText() + command);
                 else if (command.equals("=")) {
+                    String input = inputLayer.getText();
+
                     try {
-                        ScalarAtom result = Parser.parse(inputLayer.getText());
+                        if (traceCheckBox.isSelected())
+                            CASTrace.enable();
+                        else
+                            CASTrace.disable();
+
+                        ScalarAtom result = Parser.parse(input);
+
+                        inputLayer.setText(result.toString());
+
+                        if (traceCheckBox.isSelected()) {
+                            LogNode root = CASTrace.root();
+                            traceWindow.showTrace(root);
+                        }
+
+                    } catch (Exception ex) {
+                        inputLayer.setText(ex.getMessage());
+
+                        if (traceCheckBox.isSelected()) {
+                            LogNode root = CASTrace.root();
+                            traceWindow.showTrace(root);
+                        }
+                    }
+                }else if (command.equals("≈")) {
+                    try {
+                        ScalarAtom result = Parser.parse(inputLayer.getText()).approximateToDecimal(new LargeInteger(16));
                         inputLayer.setText(result.toString());
                     } catch (Exception ex) {inputLayer.setText(ex.getMessage());}
                 }else if(command.equals("del")){
@@ -64,9 +127,83 @@ public class CalculatorUI {
             } catch (Exception ex){JOptionPane.showMessageDialog(frame, ex.toString(), "Error", JOptionPane.ERROR_MESSAGE);}
         }
     }
+    static void main(String[] args) {SwingUtilities.invokeLater(CalculatorUI::new);}
+}
+class TraceWindow extends JFrame {
+    private final JTree tree;
+    private final JTextArea details;
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(CalculatorUI::new);
+    public TraceWindow() {
+        super("CAS Trace Log");
+
+        tree = new JTree(new DefaultMutableTreeNode("No trace yet"));
+
+        details = new JTextArea();
+        details.setEditable(false);
+        details.setLineWrap(true);
+        details.setWrapStyleWord(true);
+
+        JScrollPane treeScroll = new JScrollPane(tree);
+        JScrollPane detailsScroll = new JScrollPane(details);
+
+        treeScroll.setPreferredSize(new Dimension(450, 700));
+        detailsScroll.setPreferredSize(new Dimension(500, 700));
+
+        treeScroll.setMinimumSize(new Dimension(250, 400));
+        detailsScroll.setMinimumSize(new Dimension(250, 400));
+
+        JSplitPane splitPane = new JSplitPane(
+                JSplitPane.HORIZONTAL_SPLIT,
+                treeScroll,
+                detailsScroll
+        );
+
+        splitPane.setResizeWeight(0.45);
+        splitPane.setDividerLocation(450);
+
+        setLayout(new BorderLayout());
+        add(splitPane, BorderLayout.CENTER);
+
+        setSize(1000, 750);
+        setMinimumSize(new Dimension(700, 500));
+        setLocationByPlatform(true);
+        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+    }
+
+    public void showTrace(LogNode root) {
+        if (root == null) {
+            tree.setModel(new DefaultTreeModel(
+                    new DefaultMutableTreeNode("No trace available")
+            ));
+            details.setText("");
+        } else {
+            DefaultMutableTreeNode swingRoot = toSwingNode(root);
+            tree.setModel(new DefaultTreeModel(swingRoot));
+
+            details.setText(root.detailText());
+
+            for (int i = 0; i < Math.min(tree.getRowCount(), 8); i++)
+                tree.expandRow(i);
+        }
+
+        tree.revalidate();
+        tree.repaint();
+        details.revalidate();
+        details.repaint();
+
+        if (!isVisible())
+            setVisible(true);
+        setExtendedState(JFrame.NORMAL);
+        toFront();
+    }
+
+    private DefaultMutableTreeNode toSwingNode(LogNode node) {
+        DefaultMutableTreeNode swingNode = new DefaultMutableTreeNode(node);
+
+        for (LogNode child : node.children())
+            swingNode.add(toSwingNode(child));
+
+        return swingNode;
     }
 }
 class GraphPanel extends JPanel {

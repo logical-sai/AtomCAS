@@ -50,5 +50,5 @@ public abstract class Atom{
     public abstract String toString();
     public String toLatex(){return toString();}
     public abstract boolean equalsTo(Atom other);
-    public abstract boolean notEqualsTo(Atom other);
+    public boolean notEqualsTo(Atom other){return !equalsTo(other);}
 }

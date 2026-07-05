@@ -1,0 +1,120 @@
+package com.AtomCAS.utilities;
+public class AlgebraicNumber extends ScalarAtom{
+    public final LargePolynomial minimalPolynomial;
+    public final RationalBox rectangle;
+    public AlgebraicNumber(ScalarAtom s){
+        minimalPolynomial = LargePolynomial.minimalPolynomial(s);
+        rectangle = new RationalBox(s);
+    }
+    @Override
+    public Atom copy() {
+        return null;
+    }
+
+    @Override
+    public String toString() {
+        return "";
+    }
+
+    @Override
+    public boolean equalsTo(Atom other) {
+        return false;
+    }
+
+    @Override
+    public boolean notEqualsTo(Atom other) {
+        return false;
+    }
+    @Override
+    public LargeInteger floor() {
+        return null;
+    }
+
+    @Override
+    public LargeInteger ceil() {
+        return null;
+    }
+
+    @Override
+    public long compareMags(ScalarAtom other) {
+        return 0;
+    }
+
+    @Override
+    public long compareTo(ScalarAtom other) {
+        return 0;
+    }
+
+    @Override
+    public ScalarAtom negate() {
+        return null;
+    }
+
+    @Override
+    public ScalarAtom magnitude() {
+        return null;
+    }
+
+    @Override
+    public boolean isRational() {
+        return false;
+    }
+
+    @Override
+    public boolean isReal() {
+        return false;
+    }
+
+    public boolean isAlgebraic(){return true;}
+
+    @Override
+    public ScalarAtom realPart() {
+        return null;
+    }
+
+    @Override
+    public ScalarAtom imagPart() {
+        return null;
+    }
+
+    @Override
+    public ScalarAtom add(ScalarAtom other) {
+        return null;
+    }
+
+    @Override
+    public ScalarAtom multiply(ScalarAtom other) {
+        return null;
+    }
+
+    @Override
+    public ScalarAtom reciprocal() {
+        return null;
+    }
+
+    @Override
+    public ScalarAtom power(LargeFraction f) {
+        return null;
+    }
+
+    @Override
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+        return null;
+    }
+}
+class RationalInterval{
+    LargeFraction lower;
+    LargeFraction upper;
+    RationalInterval(LargeFraction lower, LargeFraction upper){
+        this.lower = lower;
+        this.upper = upper;
+    }
+}
+class RationalBox{
+    RationalInterval realPart;
+    RationalInterval imagPart;
+    RationalBox(ScalarAtom s){
+        //Strum sequence
+
+    }
+}

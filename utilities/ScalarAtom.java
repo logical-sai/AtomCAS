@@ -20,17 +20,21 @@ public abstract class ScalarAtom extends Atom{
     }
     public abstract ScalarAtom magnitude();
     public abstract boolean isRational();
+    public boolean isNotRational(){return !isRational();}
     public abstract boolean isReal();
-    public abstract boolean isNotReal();
+    public boolean isNotReal(){return !isReal();}
     public abstract boolean isAlgebraic();
+    public boolean isNotAlgebraic(){return !isAlgebraic();}
+    public abstract ScalarAtom realPart();
+    public abstract ScalarAtom imagPart();
     public abstract ScalarAtom add(ScalarAtom other);
     public ScalarAtom subtract(ScalarAtom other){return this.add(other.negate());}
     public abstract ScalarAtom multiply(ScalarAtom other);
     public ScalarAtom divide(ScalarAtom other){return this.multiply(other.reciprocal());}
     public abstract ScalarAtom reciprocal();
     public ScalarAtom mod(ScalarAtom other){return this.subtract(this.divide(other).floor().multiply(other));}
-    public abstract ScalarAtom square();
-    public abstract ScalarAtom cube();
+    public ScalarAtom square(){return this.multiply(this);}
+    public ScalarAtom cube(){return this.multiply(this.square());}
     public ScalarAtom percent(){return this.multiply(SI.centi);}
     public ScalarAtom permille(){return this.multiply(SI.milli);}
     public abstract ScalarAtom power(LargeFraction f);
