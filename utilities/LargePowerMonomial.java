@@ -1,110 +1,99 @@
 package com.AtomCAS.utilities;
-//this class is intended to represent numbers of the form (-1)^x * b^e. x can range within [0, 2) due to modular reductions.
-//as a consequence, later classes treat complex numbers as strictly principal; so one gets expressions like (-1)^(1/3) ≠ -1
-//my original plan was base^exponent. but I realized that was too limited, so I switched to the current format.
-//if the whole thing is rational, collapsing can vary. the b^e part collapses to rational^1. if the result is negative, exponent2 = 1, otherwise it is 0
-//this class is used in simplification in RadicalTerm and later classes.
 public class LargePowerMonomial extends ScalarAtom{
     public final LargeFraction base;
     public final LargeFraction exponent;
     public final LargeFraction exponent2;
-    public static final LargePowerMonomial zero = new LargePowerMonomial(LargeFraction.zero, LargeFraction.one);
-    public static final LargePowerMonomial one = new LargePowerMonomial(LargeFraction.one, LargeFraction.one);
-    public static final LargePowerMonomial sqrt2 = new LargePowerMonomial(new LargeFraction(2),LargeFraction.half);
-    public static final LargePowerMonomial sqrt3 = new LargePowerMonomial(new LargeFraction(3), LargeFraction.half);
-    public static final LargePowerMonomial i = new LargePowerMonomial(LargeFraction.negativeOne, LargeFraction.half);
-    public static final LargePowerMonomial zeta6 = new LargePowerMonomial(LargeFraction.negativeOne, new LargeFraction(LargeInteger.one, LargeInteger.three));
-    public static final LargePowerMonomial zeta12 = new LargePowerMonomial(LargeFraction.negativeOne, new LargeFraction(LargeInteger.one, LargeInteger.six));
-    public static final LargePowerMonomial omegaSqrt3 = new LargePowerMonomial(new LargeFraction(3), LargeFraction.half, LargeFraction.third);
+    public static final LargePowerMonomial ZERO = new LargePowerMonomial(LargeFraction.ZERO, LargeFraction.ONE);
+    public static final LargePowerMonomial ONE = new LargePowerMonomial(LargeFraction.ONE, LargeFraction.ONE);
+    public static final LargePowerMonomial I = new LargePowerMonomial(LargeFraction.NEGATIVE_ONE, LargeFraction.HALF);
     public LargePowerMonomial(LargeFraction num, LargeFraction dem){
-        if(num.notEqualsTo(LargeInteger.zero) && dem.equalsTo(LargeInteger.zero)){
-            base = LargeFraction.one;
-            exponent = LargeFraction.one;
-            exponent2 = LargeFraction.zero;
+        if(num.doesntEqual(LargeInteger.ZERO) && dem.equals(LargeInteger.ZERO)){
+            base = LargeFraction.ONE;
+            exponent = LargeFraction.ONE;
+            exponent2 = LargeFraction.ZERO;
             return;
-        }else if(num.equalsTo(LargeFraction.zero) || num.equalsTo(LargeFraction.one)){
-            if(num.equalsTo(LargeFraction.zero) && dem.lessThan(LargeFraction.zero)) throw new ArithmeticException("Error: Cannot divide by 0");
-            else if(num.equalsTo(LargeFraction.zero) && dem.equalsTo(LargeFraction.zero)) throw new ArithmeticException("Indeterminate form: 0^0");
+        }else if(num.equals(LargeFraction.ZERO) || num.equals(LargeFraction.ONE)){
+            if(num.equals(LargeFraction.ZERO) && dem.lessThan(LargeFraction.ZERO)) throw new ArithmeticException("Error: Cannot divide by 0");
+            else if(num.equals(LargeFraction.ZERO) && dem.equals(LargeFraction.ZERO)) throw new ArithmeticException("Indeterminate form: 0^0");
             base = new LargeFraction(num.numerator, num.denominator);
-            exponent = LargeFraction.one;
-            exponent2 = LargeFraction.zero;
+            exponent = LargeFraction.ONE;
+            exponent2 = LargeFraction.ZERO;
             return;
-        }else if(num.magnitude().equalsTo(LargeInteger.one)){
-            if(num.equalsTo(LargeInteger.one)){
-                exponent2 = LargeFraction.zero;
-                exponent = LargeFraction.one;
-                base = LargeFraction.one;
+        }else if(num.abs().equals(LargeInteger.ONE)){
+            if(num.equals(LargeInteger.ONE)){
+                exponent2 = LargeFraction.ZERO;
+                exponent = LargeFraction.ONE;
+                base = LargeFraction.ONE;
                 return;
             }
-            if(dem.denominator.equalsTo(LargeInteger.one)){
+            if(dem.denominator.equals(LargeInteger.ONE)){
                 if(dem.numerator.isOdd()){
-                    base = LargeFraction.one;
-                    exponent2 = LargeFraction.one;
-                    exponent = LargeFraction.one;
+                    base = LargeFraction.ONE;
+                    exponent2 = LargeFraction.ONE;
+                    exponent = LargeFraction.ONE;
                     return;
                 }
-                base = LargeFraction.one;
-                exponent2 = LargeFraction.zero;
-                exponent = LargeFraction.one;
+                base = LargeFraction.ONE;
+                exponent2 = LargeFraction.ZERO;
+                exponent = LargeFraction.ONE;
                 return;
             }
-            exponent2 = (LargeFraction) dem.copy().mod(LargeInteger.two);
-            exponent = LargeFraction.one;
-            base = LargeFraction.one;
+            exponent2 = (LargeFraction) dem.copy().mod(LargeInteger.TWO);
+            exponent = LargeFraction.ONE;
+            base = LargeFraction.ONE;
             return;
-        }else if(dem.magnitude().equalsTo(LargeInteger.one)){
-            if(dem.sign().equalsTo(LargeInteger.negativeOne)) base = num.reciprocal().magnitude();
-            else base = num.magnitude();
-            if(num.sign().equalsTo(LargeInteger.negativeOne))
-                exponent2 = LargeFraction.one;
-            else exponent2 = LargeFraction.zero;
-            exponent = LargeFraction.one;
+        }else if(dem.abs().equals(LargeInteger.ONE)){
+            if(dem.sign().equals(LargeInteger.NEGATIVE_ONE)) base = num.reciprocal().abs();
+            else base = num.abs();
+            if(num.sign().equals(LargeInteger.NEGATIVE_ONE))
+                exponent2 = LargeFraction.ONE;
+            else exponent2 = LargeFraction.ZERO;
+            exponent = LargeFraction.ONE;
             return;
         }
         LargeMap<LargeInteger, LargeFraction> pr = num.factor();
-        for(LargeInteger I: pr)
+        for(LargeInteger I: pr.keys())
             pr.put(I, (LargeFraction) pr.get(I).multiply(dem));
-        if(pr.containsKey(LargeInteger.negativeOne)){
-            exponent2 = (LargeFraction) pr.get(LargeInteger.negativeOne).mod(LargeInteger.two);
-            pr.remove(LargeInteger.negativeOne);
-            if (pr.size().equalsTo(LargeInteger.zero)){
-                base = LargeFraction.one;
-                exponent = LargeFraction.one;
+        if(pr.containsKey(LargeInteger.NEGATIVE_ONE)){
+            exponent2 = (LargeFraction) pr.get(LargeInteger.NEGATIVE_ONE).mod(LargeInteger.TWO);
+            pr.remove(LargeInteger.NEGATIVE_ONE);
+            if (pr.size().equals(LargeInteger.ZERO)){
+                base = LargeFraction.ONE;
+                exponent = LargeFraction.ONE;
                 return;
             }
-        }else
-            exponent2 = LargeFraction.zero;
-        LargeInteger lc = pr.get(pr.keyAtIndex(LargeInteger.zero)).denominator;
-        for(LargeInteger I: pr) lc = lc.lcm(pr.get(I).denominator);
-        if(lc.equalsTo(LargeInteger.one)){
+        }else exponent2 = LargeFraction.ZERO;
+        LargeInteger lc = pr.get(pr.keyAtIndex(LargeInteger.ZERO)).denominator;
+        for(LargeFraction I: pr.values()) lc = lc.lcm(I.denominator);
+        if(lc.equals(LargeInteger.ONE)){
             base = LargeFraction.buildFromFactors(pr);
-            exponent = LargeFraction.one;
+            exponent = LargeFraction.ONE;
             return;
-        }else if(pr.size().equalsTo(LargeInteger.one)){
-            if(pr.get(pr.keyAtIndex(LargeInteger.zero)).lessThan(LargeInteger.zero)){
-                base = pr.keyAtIndex(LargeInteger.zero).reciprocal();
-                exponent = pr.get(pr.keyAtIndex(LargeInteger.zero)).negate();
+        }else if(pr.size().equals(LargeInteger.ONE)){
+            if(pr.get(pr.keyAtIndex(LargeInteger.ZERO)).lessThan(LargeInteger.ZERO)){
+                base = pr.keyAtIndex(LargeInteger.ZERO).reciprocal();
+                exponent = pr.get(pr.keyAtIndex(LargeInteger.ZERO)).negate();
             }else{
-                base = new LargeFraction(pr.keyAtIndex(LargeInteger.zero), LargeInteger.one);
-                exponent = pr.get(pr.keyAtIndex(LargeInteger.zero));
+                base = new LargeFraction(pr.keyAtIndex(LargeInteger.ZERO), LargeInteger.ONE);
+                exponent = pr.get(pr.keyAtIndex(LargeInteger.ZERO));
             }
             return;
         }
-        LargeFraction G = pr.get(pr.keyAtIndex(LargeInteger.zero));
-        for(LargeInteger I: pr) G = G.gcd(pr.get(I));
-        LargeFraction B = LargeFraction.one;
-        for(LargeInteger I: pr){
+        LargeFraction G = pr.get(pr.keyAtIndex(LargeInteger.ZERO));
+        for(LargeFraction I: pr.values()) G = G.gcd(I);
+        LargeFraction B = LargeFraction.ONE;
+        for(LargeInteger I: pr.keys()){
             LargeInteger expTemp = ((LargeFraction)pr.get(I).divide(G)).numerator;
             LargeInteger basTemp = I.copy();
-            while(expTemp.notEqualsTo(LargeInteger.zero)){
+            while(expTemp.doesntEqual(LargeInteger.ZERO)){
                 if(expTemp.isOdd()){
-                    if(expTemp.lessThan(LargeInteger.zero))
+                    if(expTemp.lessThan(LargeInteger.ZERO))
                         B = (LargeFraction) B.divide(basTemp);
                     else B = (LargeFraction) B.multiply(basTemp);
-                    if(expTemp.magnitude().equalsTo(LargeInteger.one)) break;
+                    if(expTemp.abs().equals(LargeInteger.ONE)) break;
                 }
                 basTemp = basTemp.square();
-                expTemp = expTemp.longDivision(LargeInteger.two);
+                expTemp = expTemp.longDivision(LargeInteger.TWO);
             }
         }
         base = B.copy();
@@ -114,350 +103,344 @@ public class LargePowerMonomial extends ScalarAtom{
         LargePowerMonomial obj = new LargePowerMonomial(base, exponent);
         this.base = obj.base;
         this.exponent = obj.exponent;
-        this.exponent2 = (LargeFraction) exponent2.add(obj.exponent2).mod(LargeInteger.two);
-    }
-    public LargePowerMonomial(String str){
-        ScalarAtom R = Parser.parse(str);
-        if(R instanceof LargeInteger){
-            base = new LargeFraction((LargeInteger) R.magnitude(), LargeInteger.one);
-            exponent = LargeFraction.one;
-            if(R.lessThan(zero)) exponent2 = LargeFraction.one;
-            else exponent2 = LargeFraction.zero;
-            return;
-        }else if(R instanceof LargeFraction){
-            base = (LargeFraction) R.magnitude();
-            exponent = LargeFraction.one;
-            if(R.lessThan(zero)) exponent2 = LargeFraction.one;
-            else exponent2 = LargeFraction.zero;
-            return;
-        }else if(R instanceof LargePowerMonomial){
-            this.base = ((LargePowerMonomial) R).base;
-            this.exponent = ((LargePowerMonomial) R).exponent;
-            this.exponent2 = ((LargePowerMonomial) R).exponent2;
-            return;
-        }
-        R = Parser.parse(R.toString());
-        if(R instanceof LargeInteger){
-            base = new LargeFraction((LargeInteger) R.magnitude(), LargeInteger.one);
-            exponent = LargeFraction.one;
-            if(R.lessThan(zero)) exponent2 = LargeFraction.one;
-            else exponent2 = LargeFraction.zero;
-            return;
-        }else if(R instanceof LargeFraction){
-            base = (LargeFraction) R.magnitude();
-            exponent = LargeFraction.one;
-            if(R.lessThan(zero)) exponent2 = LargeFraction.one;
-            else exponent2 = LargeFraction.zero;
-            return;
-        }else if(R instanceof LargePowerMonomial){
-            this.base = ((LargePowerMonomial) R).base;
-            this.exponent = ((LargePowerMonomial) R).exponent;
-            this.exponent2 = ((LargePowerMonomial) R).exponent2;
-            return;
-        }else if(R instanceof RadicalTerm){
-            if(((RadicalTerm) R).rationalPart.notEqualsTo(zero)){
-                if(((RadicalTerm) R).coefficient.notEqualsTo(zero))
-                    throw new IllegalArgumentException("Error: Result neither rational nor power monomial");
-                base = ((RadicalTerm) R).rationalPart.magnitude();
-                exponent = LargeFraction.one;
-                if(((RadicalTerm) R).rationalPart.lessThan(zero)) exponent2 = LargeFraction.one;
-                else exponent2 = LargeFraction.zero;
-                return;
-            }
-            LargePowerMonomial L = (LargePowerMonomial) ((RadicalTerm) R).coefficient.multiply(((RadicalTerm) R).exponent);
-            this.base = L.base;
-            this.exponent = L.exponent;
-            this.exponent2 = L.exponent2;
-            return;
-        }
-        throw new IllegalArgumentException("Error: Result neither rational nor power monomial");
+        this.exponent2 = (LargeFraction) exponent2.add(obj.exponent2).mod(LargeInteger.TWO);
     }
     @Override
     public LargePowerMonomial copy() {return new LargePowerMonomial(base, exponent, exponent2);}
     @Override
     public String toString(){
         StringBuilder str = new StringBuilder();
-        if(exponent2.notEqualsTo(LargeInteger.zero)){
-            if(exponent2.notEqualsTo(LargeInteger.one))
+        if(exponent2.doesntEqual(LargeInteger.ZERO)){
+            if(exponent2.doesntEqual(LargeInteger.ONE))
                 str.append("(-1)^(").append(exponent2).append(")");
             else
                 str.append("-");
         }
-        if(base.equalsTo(LargeInteger.one)){
+        if(base.equals(LargeInteger.ONE)){
             if(str.isEmpty() || str.toString().equals("-")) str.append("1");
             return str.toString();
         }
         if(!str.toString().equals("-") && !str.isEmpty()) str.append("*");
-        if(base.denominator.notEqualsTo(LargeInteger.one) && exponent.notEqualsTo(LargeInteger.one))
+        if(base.denominator.doesntEqual(LargeInteger.ONE) && exponent.doesntEqual(LargeInteger.ONE))
             str.append("(").append(base).append(")");
         else
-            str.append(base.magnitude());
-        if(exponent.notEqualsTo(LargeFraction.one))
+            str.append(base.abs());
+        if(exponent.doesntEqual(LargeFraction.ONE))
             str.append("^(").append(exponent).append(")");
         return str.toString();
     }
     @Override
     public String toLatex() {
         StringBuilder str = new StringBuilder();
-        if (exponent2.notEqualsTo(LargeInteger.zero)) {
-            if (exponent2.equalsTo(LargeInteger.one))
+        if (exponent2.doesntEqual(LargeInteger.ZERO)) {
+            if (exponent2.equals(LargeInteger.ONE))
                 str.append("-");
             else
                 str.append("(-1)^{").append(exponent2.toLatex()).append("}");
         }
-        if (base.equalsTo(LargeInteger.one)) {
+        if (base.equals(LargeInteger.ONE)) {
             if (str.isEmpty() || str.toString().equals("-")) str.append("1");
             return str.toString();
         }
         if (!str.isEmpty() && !str.toString().equals("-"))
             str.append("\\cdot ");
         String baseLatex = base.toLatex();
-        if (base.denominator.notEqualsTo(LargeInteger.one) || exponent.notEqualsTo(LargeFraction.one))
+        if (base.denominator.doesntEqual(LargeInteger.ONE) || exponent.doesntEqual(LargeFraction.ONE))
             str.append("\\left(").append(baseLatex).append("\\right)");
         else
             str.append(baseLatex);
-        if (exponent.notEqualsTo(LargeFraction.one))
+        if (exponent.doesntEqual(LargeFraction.ONE))
             str.append("^{").append(exponent.toLatex()).append("}");
         return str.toString();
     }
+    // Conceptual LargePowerMonomial implementation
     @Override
-    public boolean equalsTo(Atom other) {
-        if(!(other instanceof ScalarAtom)) return false;
-        if(other instanceof LargeInteger || other instanceof LargeFraction){
-            boolean B = this.base.equalsTo(((ScalarAtom) other).magnitude()) && this.exponent.equalsTo(LargeFraction.one);
-            if(((ScalarAtom) other).sign().equalsTo(LargeInteger.negativeOne))
-                return B && this.exponent2.equalsTo(LargeFraction.one);
-            else if(((ScalarAtom) other).sign().equalsTo(LargeInteger.one))
-                return B && this.exponent2.equalsTo(LargeFraction.zero);
-            return B;
+    public int hashCode() {
+        if (isRational()) {
+            LargeFraction value = base.multiply(exponent2.equals(ONE) ? -1 : 1);
+            return value.hashCode();
         }
-        if(other instanceof LargePowerMonomial)
-            return ((LargePowerMonomial) other).base.equalsTo(this.base) && this.exponent.equalsTo(((LargePowerMonomial) other).exponent) && this.exponent2.equalsTo(((LargePowerMonomial) other).exponent2);
-        if(other instanceof RadicalTerm)
-            return new RadicalTerm(LargeFraction.zero, LargeFraction.one, this).equalsTo(other);
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        int hash = 0;
+        hash = 31 * hash + base.hashCode();
+        hash = 31 * hash + exponent.hashCode();
+        hash = 31 * hash + exponent2.hashCode();
+        return hash;
     }
     @Override
-    public LargePowerMonomial magnitude(){return new LargePowerMonomial(base, exponent);}
+    public boolean equals(Atom other) {
+        if(!(other instanceof ScalarAtom)) return false;
+        switch (other) {
+            case LargeInteger largeInteger -> {
+                boolean B = this.base.equals(largeInteger.abs()) && this.exponent.equals(LargeFraction.ONE);
+                if (largeInteger.lessThan(LargeInteger.ZERO))
+                    return B && this.exponent2.equals(LargeFraction.ONE);
+                else if (largeInteger.greaterThan(LargeInteger.ZERO))
+                    return B && this.exponent2.equals(LargeFraction.ZERO);
+                return B;
+            }
+            case LargeFraction largeFraction -> {
+                boolean B = this.base.equals(largeFraction.abs()) && this.exponent.equals(LargeFraction.ONE);
+                if (largeFraction.lessThan(LargeInteger.ZERO))
+                    return B && this.exponent2.equals(LargeFraction.ONE);
+                else if (largeFraction.greaterThan(LargeInteger.ZERO))
+                    return B && this.exponent2.equals(LargeFraction.ZERO);
+                return B;
+            }
+            case LargePowerMonomial largePowerMonomial -> {return largePowerMonomial.base.equals(this.base) && this.exponent.equals(largePowerMonomial.exponent) && this.exponent2.equals(largePowerMonomial.exponent2);}
+            case RadicalTerm radicalTerm -> {return new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, this).equals(radicalTerm);}
+            default -> throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        }
+    }
     @Override
-    public long compareMags(ScalarAtom other){
-        if(other instanceof LargeInteger || other instanceof LargeFraction){
+    public LargePowerMonomial abs(){return new LargePowerMonomial(base, exponent);}
+    @Override
+    public int compareMags(ScalarAtom other){
+        if(other instanceof LargeInteger LI){
             LargeInteger pow = exponent.denominator.lcm(exponent2.denominator);
-            LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.one)).base;
-            LargeFraction O = ((LargeFraction)other.divide(LargeInteger.one)).power(pow);
+            LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.ONE)).base;
+            LargeFraction O = LI.power(pow);
             return T.compareMags(O);
-        }else if(other instanceof LargePowerMonomial L){
-            LargeInteger pow = exponent.denominator.lcm(exponent2.denominator, L.exponent.denominator, L.exponent2.denominator);
-            LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.one)).base;
-            LargeFraction O = L.power(new LargeFraction(pow, LargeInteger.one)).base;
+        }else if(other instanceof LargeFraction F){
+            LargeInteger pow = exponent.denominator.lcm(exponent2.denominator);
+            LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.ONE)).base;
+            LargeFraction O = F.power(pow);
+            return T.compareMags(O);
+        }else if(other instanceof LargePowerMonomial LPM){
+            LargeInteger pow = exponent.denominator.lcm(exponent2.denominator, LPM.exponent.denominator, LPM.exponent2.denominator);
+            LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.ONE)).base;
+            LargeFraction O = LPM.power(new LargeFraction(pow, LargeInteger.ONE)).base;
             return T.compareMags(O);
         }else if(other instanceof RadicalTerm R){
-            if(R.coefficient.equals(LargeFraction.zero)) return this.compareMags(R.rationalPart);
-            else if(R.rationalPart.equalsTo(LargeFraction.zero)){
+            if(R.coefficient.equals(LargeFraction.ZERO)) return this.compareMags(R.rationalPart);
+            else if(R.rationalPart.equals(LargeFraction.ZERO)){
                 LargeInteger pow = exponent.denominator.lcm(exponent2.denominator, R.exponent.exponent.denominator, R.exponent.exponent2.denominator);
-                LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.one)).base;
-                LargeFraction O = R.exponent.power(new LargeFraction(pow, LargeInteger.one)).base;
+                LargeFraction T = this.power(new LargeFraction(pow, LargeInteger.ONE)).base;
+                LargeFraction O = R.exponent.power(new LargeFraction(pow, LargeInteger.ONE)).base;
                 O = (LargeFraction) O.multiply(R.coefficient.power(pow));
                 return T.compareMags(O);
             }
-            LargeFraction F1 = new LargeFraction(this.floor(), LargeInteger.one);
-            LargeFraction C1 = new LargeFraction(this.ceil(), LargeInteger.one);
-            LargeFraction F2 = new LargeFraction(R.floor(), LargeInteger.one);
-            LargeFraction C2 = new LargeFraction(R.ceil(), LargeInteger.one);
+            LargeFraction F1 = new LargeFraction(this.floor(), LargeInteger.ONE);
+            LargeFraction C1 = new LargeFraction(this.ceil(), LargeInteger.ONE);
+            LargeFraction F2 = new LargeFraction(R.floor(), LargeInteger.ONE);
+            LargeFraction C2 = new LargeFraction(R.ceil(), LargeInteger.ONE);
             if(F1.greaterThan(C2)) return 1;
             else if(F2.greaterThan(C1)) return -1;
 
         }
-        return this.magnitude().compareTo(other.magnitude());
+        return this.abs().compareTo(other.abs());
     }
     @Override
-    public long compareTo(ScalarAtom other) {
+    public int compareTo(ScalarAtom other) {
         if(this.isNotReal() || other.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
-        if(other instanceof LargeFraction || other instanceof LargeInteger){
-            LargePowerMonomial copy = new LargePowerMonomial(base, exponent);
-            LargePowerMonomial copy2 = new LargePowerMonomial((LargeFraction) other.divide(LargeInteger.one), LargeFraction.one);
-            LargeFraction pow = copy.exponent.denominator.power(LargeInteger.one);
-            copy = copy.power(pow);
-            copy2 = copy2.power(pow);
-            return copy.base.compareTo(copy2.base);
-        }
-        if(other instanceof LargePowerMonomial){
-            LargePowerMonomial copy = new LargePowerMonomial(this.base, this.exponent);
-            LargePowerMonomial copy2 = new LargePowerMonomial(((LargePowerMonomial) other).base, ((LargePowerMonomial) other).exponent);
-            LargeInteger lc = this.exponent.denominator.lcm(((LargePowerMonomial) other).exponent.denominator);
-            copy = copy.power((LargeFraction) lc.divide(LargeInteger.one));
-            copy2 = copy2.power((LargeFraction) lc.divide(LargeInteger.one));
-            long C = new LargePowerMonomial(copy.base, copy.exponent).base.compareMags(new LargePowerMonomial(copy2.base, copy2.exponent).base);
-            if(C == 1L){
-                if(this.sign().equalsTo(LargeInteger.one)) return 1L;
-                return -1L;
-            }else if(C == -1L){
-                if(other.sign().equalsTo(LargeInteger.one)) return -1L;
-                return 1L;
+        switch (other) {
+            case LargeFraction largeFraction -> {
+                LargePowerMonomial copy = new LargePowerMonomial(base, exponent);
+                LargePowerMonomial copy2 = new LargePowerMonomial(largeFraction, LargeFraction.ONE);
+                LargeFraction pow = copy.exponent.denominator.power(LargeInteger.ONE);
+                copy = copy.power(pow);
+                copy2 = copy2.power(pow);
+                return copy.base.compareTo(copy2.base);
+            }case LargeInteger largeInteger -> {
+                LargePowerMonomial copy = new LargePowerMonomial(base, exponent);
+                LargePowerMonomial copy2 = new LargePowerMonomial(new LargeFraction(largeInteger, LargeInteger.ONE), LargeFraction.ONE);
+                LargeFraction pow = copy.exponent.denominator.power(LargeInteger.ONE);
+                copy = copy.power(pow);
+                copy2 = copy2.power(pow);
+                return copy.base.compareTo(copy2.base);
+            }case LargePowerMonomial largePowerMonomial -> {
+                LargePowerMonomial copy = new LargePowerMonomial(this.base, this.exponent);
+                LargePowerMonomial copy2 = new LargePowerMonomial(largePowerMonomial.base, largePowerMonomial.exponent);
+                LargeInteger lc = this.exponent.denominator.lcm(largePowerMonomial.exponent.denominator);
+                copy = copy.power((LargeFraction) lc.divide(LargeInteger.ONE));
+                copy2 = copy2.power((LargeFraction) lc.divide(LargeInteger.ONE));
+                int C = new LargePowerMonomial(copy.base, copy.exponent).base.compareMags(new LargePowerMonomial(copy2.base, copy2.exponent).base);
+                if (C == 1) {
+                    if (this.sign().equals(LargeInteger.ONE)) return 1;
+                    return -1;
+                } else if (C == -1) {
+                    if (other.sign().equals(LargeInteger.ONE)) return -1;
+                    return 1;
+                }
+                return C;
+            }case RadicalTerm radicalTerm -> {
+                //I present to you...ERROR BOUNDS
+                if (radicalTerm.coefficient.equals(LargeInteger.ZERO)) return this.compareTo(radicalTerm.rationalPart);
+                LargeFraction l1 = new LargeFraction(this.floor(), LargeInteger.ONE);
+                LargeFraction u1 = new LargeFraction(this.ceil(), LargeInteger.ONE);
+                LargeFraction l2 = new LargeFraction(other.floor(), LargeInteger.ONE);
+                LargeFraction u2 = new LargeFraction(other.ceil(), LargeInteger.ONE);
+                while (l1.lessThan(u2) && l2.lessThan(u1)) {
+                    LargeFraction mediant = new LargeFraction((LargeInteger) l1.numerator.add(u1.numerator), (LargeInteger) l1.denominator.add(u1.denominator));
+                    if (mediant.lessThan(this))
+                        l1 = mediant.copy();
+                    else u1 = mediant.copy();
+                    LargeFraction mediant2 = new LargeFraction((LargeInteger) l2.numerator.add(u2.numerator), (LargeInteger) l2.denominator.add(u2.denominator));
+                    if (mediant2.lessThan(other))
+                        l2 = mediant2.copy();
+                    else u2 = mediant2.copy();
+                }
+                return l1.compareTo(u2);
             }
-            return C;
-        }else if(other instanceof RadicalTerm){
-            //I present to you...ERROR BOUNDS
-            if(((RadicalTerm) other).coefficient.equalsTo(LargeInteger.zero)) return this.compareTo(((RadicalTerm) other).rationalPart);
-            LargeFraction l1 = new LargeFraction(this.floor(), LargeInteger.one);
-            LargeFraction u1 = new LargeFraction(this.ceil(), LargeInteger.one);
-            LargeFraction l2 = new LargeFraction(other.floor(), LargeInteger.one);
-            LargeFraction u2 = new LargeFraction(other.ceil(), LargeInteger.one);
-            while(l1.lessThan(u2) && l2.lessThan(u1)){
-                LargeFraction mediant = new LargeFraction((LargeInteger) l1.numerator.add(u1.numerator), (LargeInteger) l1.denominator.add(u1.denominator));
-                if(mediant.lessThan(this))
-                    l1 = mediant.copy();
-                else u1 = mediant.copy();
-                LargeFraction mediant2 = new LargeFraction((LargeInteger) l2.numerator.add(u2.numerator), (LargeInteger) l2.denominator.add(u2.denominator));
-                if(mediant2.lessThan(other))
-                    l2 = mediant2.copy();
-                else u2 = mediant2.copy();
+            default -> {
             }
-            return l1.compareTo(u2);
         }
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
     @Override
-    public LargePowerMonomial negate() {return new LargePowerMonomial(this.base, this.exponent, (LargeFraction) this.exponent2.add(LargeInteger.one));}
+    public LargePowerMonomial negate() {return new LargePowerMonomial(this.base, this.exponent, (LargeFraction) this.exponent2.add(LargeFraction.ONE));}
     @Override
-    public boolean isReal() {return exponent2.equalsTo(LargeInteger.one) || exponent2.equalsTo(LargeInteger.zero);}
+    public boolean isReal() {return exponent2.equals(LargeInteger.ONE) || exponent2.equals(LargeInteger.ZERO);}
     @Override
-    public boolean isRational(){return exponent2.denominator.equalsTo(LargeFraction.one) && exponent.equalsTo(LargeFraction.one);}
-    public boolean isNotInteger() {return exponent.notEqualsTo(LargeInteger.one) || base.denominator.notEqualsTo(LargeInteger.one) || this.isNotReal();}
+    public boolean isRational(){return exponent2.denominator.equals(LargeFraction.ONE) && exponent.equals(LargeFraction.ONE);}
+    public boolean isNotInteger() {return exponent.doesntEqual(LargeInteger.ONE) || base.denominator.doesntEqual(LargeInteger.ONE) || this.isNotReal();}
     @Override
     public boolean isAlgebraic() {return true;}
     public LargePowerMonomial complexConjugate(){return new LargePowerMonomial(base, exponent, exponent2.negate());}
     @Override
     public ScalarAtom realPart(){
-        RadicalTermSum RT = (RadicalTermSum) new LargePowerMonomial(LargeFraction.negativeOne, exponent2).add(new LargePowerMonomial(LargeFraction.negativeOne, exponent2.negate())).divide(LargeInteger.two);
+        RadicalTermSum RT = (RadicalTermSum) new LargePowerMonomial(LargeFraction.NEGATIVE_ONE, exponent2).add(new LargePowerMonomial(LargeFraction.NEGATIVE_ONE, exponent2.negate())).divide(LargeInteger.TWO);
         return RT.multiply(new LargePowerMonomial(base, exponent));
     }
     @Override
-    public ScalarAtom imagPart(){return this.subtract(this.realPart()).divide(i);}
+    public ScalarAtom imagPart(){return this.subtract(this.realPart()).divide(I);}
     @Override
     public LargeInteger floor(){
         if(this.isNotReal()) throw new IllegalStateException("Error: Cannot floor a non-real atom");
         else if(this.isRational())
             return base.floor();
-        boolean negativeResult = exponent2.equalsTo(LargeInteger.one);
-        LargeFraction begun = base.numerator.magnitude().power(exponent.numerator);
-        LargeFraction helper = base.denominator.magnitude().power(exponent.numerator);
+        boolean negativeResult = exponent2.equals(LargeInteger.ONE);
+        LargeFraction begun = base.numerator.abs().power(exponent.numerator);
+        LargeFraction helper = base.denominator.abs().power(exponent.numerator);
         LargeInteger d = exponent.denominator;
         LargeInteger low;
         LargeInteger high;
-        if(LargeInteger.one.power(d).multiply(helper).lesserThanOrEqualTo(begun)){
-            low = LargeInteger.one;
-            high = LargeInteger.two;
+        if(LargeInteger.ONE.power(d).multiply(helper).lesserThanOrEqualTo(begun)){
+            low = LargeInteger.ONE;
+            high = LargeInteger.TWO;
             while(high.power(d).multiply(helper).lesserThanOrEqualTo(begun)){
                 low = high;
-                high = (LargeInteger) high.multiply(LargeInteger.two);
+                high = (LargeInteger) high.multiply(LargeInteger.TWO);
             }
-            while(high.subtract(low).greaterThan(LargeInteger.one)){
-                LargeInteger mid = ((LargeInteger) low.add(high)).longDivision(LargeInteger.two);
+            while(high.subtract(low).greaterThan(LargeInteger.ONE)){
+                LargeInteger mid = ((LargeInteger) low.add(high)).longDivision(LargeInteger.TWO);
                 if(mid.power(d).multiply(helper).lesserThanOrEqualTo(begun))
                     low = mid;
                 else
                     high = mid;
             }
         }
-        else low = LargeInteger.zero;
+        else low = LargeInteger.ZERO;
         if(!negativeResult) return low;
-        return (LargeInteger) low.add(LargeInteger.one).negate();
+        return low.add(1).negate();
     }
     @Override
     public LargeInteger ceil(){
         if(this.isRational()) return base.ceil();
-        return (LargeInteger) this.floor().add(LargeInteger.one);
+        return this.floor().add(1);
     }
     @Override
     public ScalarAtom add(ScalarAtom other) {
         if(other instanceof LargeInteger || other instanceof LargeFraction)
-            return new RadicalTerm((LargeFraction) other.divide(LargeInteger.one), LargeFraction.one, this);
+            return new RadicalTerm((LargeFraction) other.divide(LargeInteger.ONE), LargeFraction.ONE, this);
         else if(other instanceof LargePowerMonomial){
             LargeList<RadicalTerm> rt = new LargeList<>();
-            rt.add(new RadicalTerm(LargeFraction.zero, LargeFraction.one, this));
-            rt.add(new RadicalTerm(LargeFraction.zero, LargeFraction.one, (LargePowerMonomial) other));
-            return new RadicalTermSum(rt, LargeFraction.zero);
+            rt.add(new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, this));
+            rt.add(new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, (LargePowerMonomial) other));
+            return new RadicalTermSum(rt, LargeFraction.ZERO);
         }else if(other instanceof RadicalTerm){
             LargeList<RadicalTerm> rt = new LargeList<>();
-            rt.add(new RadicalTerm(LargeFraction.zero, LargeFraction.one, this));
+            rt.add(new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, this));
             rt.add((RadicalTerm) other);
-            return new RadicalTermSum(rt, LargeFraction.zero);
+            return new RadicalTermSum(rt, LargeFraction.ZERO);
         }else if(other instanceof RadicalTermSum R){
             LargeList<RadicalTerm> rt = new LargeList<>();
-            rt.add(new RadicalTerm(LargeFraction.zero, LargeFraction.one, this));
-            for(LargePowerMonomial L: R.sum)
-                rt.add(new RadicalTerm(LargeFraction.zero, R.sum.get(L), L));
+            rt.add(new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, this));
+            for(LargePowerMonomial L: R.sum.keys())
+                rt.add(new RadicalTerm(LargeFraction.ZERO, R.sum.get(L), L));
             return new RadicalTermSum(rt, R.constant);
         }
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
     @Override
     public ScalarAtom multiply(ScalarAtom other) {
-        if(other instanceof LargeInteger || other instanceof LargeFraction){
-            LargeMap<LargeInteger, LargeFraction> pr = this.factor();
-            LargeMap<LargeInteger, LargeFraction> pr2 = ((LargeFraction)other.divide(LargeInteger.one)).factor();
-            for(LargeInteger I: pr2){
-                if(pr.containsKey(I))
-                    pr.put(I, (LargeFraction) pr.get(I).add(pr2.get(I)));
-                else pr.put(I, pr2.get(I));
+        if(other.equals(LargeInteger.ONE)) return this;
+        switch (other) {
+            case LargeInteger largeInteger -> {
+                LargeMap<LargeInteger, LargeFraction> pr = this.factor();
+                LargeMap<LargeInteger, LargeFraction> pr2 = largeInteger.factor();
+                for (LargeInteger I : pr2.keys()) {
+                    if (pr.containsKey(I))
+                        pr.put(I, (LargeFraction) pr.get(I).add(pr2.get(I)));
+                    else pr.put(I, pr2.get(I));
+                }
+                return buildFromFactors(pr);
             }
-            return buildFromFactors(pr);
-        }else if(other instanceof LargePowerMonomial L){
-            LargeMap<LargeInteger, LargeFraction> pr = this.factor();
-            LargeMap<LargeInteger, LargeFraction> pr2 = L.factor();
-            for(LargeInteger I: pr2){
-                if(pr.containsKey(I))
-                    pr.put(I, (LargeFraction) pr.get(I).add(pr2.get(I)));
-                else pr.put(I, pr2.get(I));
+            case LargeFraction largeFraction -> {
+                LargeMap<LargeInteger, LargeFraction> pr = this.factor();
+                LargeMap<LargeInteger, LargeFraction> pr2 = largeFraction.factor();
+                for (LargeInteger I : pr2.keys()) {
+                    if (pr.containsKey(I))
+                        pr.put(I, (LargeFraction) pr.get(I).add(pr2.get(I)));
+                    else pr.put(I, pr2.get(I));
+                }
+                return buildFromFactors(pr);
             }
-            return buildFromFactors(pr);
-        }else if(other instanceof RadicalTerm){
-            LargeList<RadicalTerm> rt = new LargeList<>();
-            rt.add(new RadicalTerm(LargeFraction.zero, ((RadicalTerm) other).rationalPart, this));
-            rt.add(new RadicalTerm(LargeFraction.zero, ((RadicalTerm) other).coefficient, (LargePowerMonomial) ((RadicalTerm) other).exponent.multiply(this)));
-            return new RadicalTermSum(rt, LargeFraction.zero);
-        }else if(other instanceof RadicalTermSum R){
-            LargeList<RadicalTerm> rt = new LargeList<>();
-            for(LargePowerMonomial L: R.sum)
-                rt.add(new RadicalTerm(LargeFraction.zero, R.sum.get(L), (LargePowerMonomial)L.multiply(this)));
-            rt.add(new RadicalTerm(LargeFraction.zero, R.constant, this));
-            return new RadicalTermSum(rt, LargeFraction.zero);
+            case LargePowerMonomial L -> {
+                LargeMap<LargeInteger, LargeFraction> pr = this.factor();
+                LargeMap<LargeInteger, LargeFraction> pr2 = L.factor();
+                for (LargeInteger I : pr2.keys()) {
+                    if (pr.containsKey(I))
+                        pr.put(I, (LargeFraction) pr.get(I).add(pr2.get(I)));
+                    else pr.put(I, pr2.get(I));
+                }
+                return buildFromFactors(pr);
+            }
+            case RadicalTerm radicalTerm -> {
+                LargeList<RadicalTerm> rt = new LargeList<>();
+                rt.add(new RadicalTerm(LargeFraction.ZERO, radicalTerm.rationalPart, this));
+                rt.add(new RadicalTerm(LargeFraction.ZERO, radicalTerm.coefficient, (LargePowerMonomial) radicalTerm.exponent.multiply(this)));
+                return new RadicalTermSum(rt, LargeFraction.ZERO);
+            }
+            case RadicalTermSum R -> {
+                LargeList<RadicalTerm> rt = new LargeList<>();
+                for (LargePowerMonomial L : R.sum.keys())
+                    rt.add(new RadicalTerm(LargeFraction.ZERO, R.sum.get(L), (LargePowerMonomial) L.multiply(this)));
+                rt.add(new RadicalTerm(LargeFraction.ZERO, R.constant, this));
+                return new RadicalTermSum(rt, LargeFraction.ZERO);
+            }
+            default -> {
+            }
         }
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
     @Override
-    public LargePowerMonomial square(){return new LargePowerMonomial(this.base, (LargeFraction) this.exponent.multiply(LargeInteger.two), (LargeFraction) this.exponent2.multiply(LargeInteger.two));}
+    public LargePowerMonomial square(){return new LargePowerMonomial(this.base, (LargeFraction) this.exponent.multiply(LargeInteger.TWO), (LargeFraction) this.exponent2.multiply(LargeInteger.TWO));}
     @Override
-    public LargePowerMonomial cube(){return new LargePowerMonomial(this.base, (LargeFraction) this.exponent.multiply(LargeInteger.three), (LargeFraction) this.exponent2.multiply(LargeInteger.three));}
+    public LargePowerMonomial cube(){return new LargePowerMonomial(this.base, (LargeFraction) this.exponent.multiply(LargeInteger.THREE), (LargeFraction) this.exponent2.multiply(LargeInteger.THREE));}
     public LargePowerMonomial power(LargeFraction f){return new LargePowerMonomial(base, (LargeFraction) exponent.multiply(f), (LargeFraction) exponent2.multiply(f));}
-
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
-        return null;
-    }
+    public LargeDecimal approximateToDecimal(long precision){return null;}
     public LargeMap<LargeInteger, LargeFraction> factor(){
         LargeMap<LargeInteger, LargeFraction> pr = new LargeMap<>();
-        if(exponent2.notEqualsTo(LargeInteger.zero)) pr.put(LargeInteger.negativeOne, exponent2);
-        if(base.equalsTo(LargeFraction.one)){
+        if(exponent2.doesntEqual(LargeInteger.ZERO)) pr.put(LargeInteger.NEGATIVE_ONE, exponent2);
+        if(base.equals(LargeFraction.ONE)){
             if(pr.isEmpty())
-                pr.put(LargeInteger.one, LargeFraction.one);
+                pr.put(LargeInteger.ONE, LargeFraction.ONE);
             return pr;
         }
         LargeMap<LargeInteger, LargeFraction> pt = base.factor();
-        for(LargeInteger I: pt)
+        for(LargeInteger I: pt.keys())
             pr.put(I, (LargeFraction) pt.get(I).multiply(exponent));
         return pr;
     }
     public static LargePowerMonomial buildFromFactors(LargeMap<LargeInteger, LargeFraction> pr){
-        LargeFraction base = LargeFraction.one;
-        LargeFraction exponent2 = LargeFraction.zero;
-        if(pr.size().equalsTo(LargeInteger.zero)) return new LargePowerMonomial(base, LargeFraction.one);
-        else if(pr.size().equalsTo(LargeInteger.one)) return new LargePowerMonomial(new LargeFraction(pr.keyAtIndex(LargeInteger.zero), LargeInteger.one), pr.get(pr.keyAtIndex(LargeInteger.zero)));
-        LargeFraction G = LargeFraction.one;
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(pr.size()); i = i.add(1)){
+        LargeFraction base = LargeFraction.ONE;
+        LargeFraction exponent2 = LargeFraction.ZERO;
+        if(pr.size().equals(LargeInteger.ZERO)) return new LargePowerMonomial(base, LargeFraction.ONE);
+        else if(pr.size().equals(LargeInteger.ONE)) return new LargePowerMonomial(new LargeFraction(pr.keyAtIndex(LargeInteger.ZERO), LargeInteger.ONE), pr.get(pr.keyAtIndex(LargeInteger.ZERO)));
+        LargeFraction G = LargeFraction.ONE;
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(pr.size()); i = i.add(1)){
             LargeInteger I = pr.keyAtIndex(i);
-            if(I.equalsTo(LargeInteger.negativeOne)){
+            if(I.equals(LargeInteger.NEGATIVE_ONE)){
                 exponent2 = (LargeFraction) exponent2.add(pr.get(I));
                 pr.remove(I);
                 i = i.subtract(1);
@@ -465,18 +448,18 @@ public class LargePowerMonomial extends ScalarAtom{
             }
             G = G.gcd(pr.get(I));
         }
-        for(LargeInteger I: pr){
+        for(LargeInteger I: pr.keys()){
             LargeInteger expTemp = ((LargeFraction) pr.get(I).divide(G)).numerator;
             LargeInteger basTemp = I.copy();
-            while(expTemp.notEqualsTo(LargeInteger.zero)){
+            while(expTemp.doesntEqual(LargeInteger.ZERO)){
                 if(expTemp.isOdd()){
-                    if(expTemp.lessThan(LargeInteger.zero))
+                    if(expTemp.lessThan(LargeInteger.ZERO))
                         base = (LargeFraction) base.divide(basTemp);
                     else base = (LargeFraction) base.multiply(basTemp);
-                    if(expTemp.magnitude().equalsTo(LargeInteger.one)) break;
+                    if(expTemp.abs().equals(LargeInteger.ONE)) break;
                 }
                 basTemp = basTemp.square();
-                expTemp = expTemp.longDivision(LargeInteger.two);
+                expTemp = expTemp.longDivision(LargeInteger.TWO);
             }
         }
         return new LargePowerMonomial(base, G, exponent2);

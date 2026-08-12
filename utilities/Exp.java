@@ -4,15 +4,15 @@ public class Exp extends ScalarAtom {
     ScalarAtom coefficient;
     ScalarAtom power;
     public Exp(ScalarAtom addend, ScalarAtom coefficient, ScalarAtom power){
-        if(power.equalsTo(LargeInteger.zero)){
+        if(power.equals(LargeInteger.ZERO)){
             this.addend = addend.add(coefficient);
-            this.coefficient = LargeInteger.zero;
-            this.power = LargeInteger.zero;
+            this.coefficient = LargeInteger.ZERO;
+            this.power = LargeInteger.ZERO;
             return;
         }else if(power instanceof Logarithm){
             this.addend = addend.add(coefficient.multiply(((Logarithm) power).argument));
-            this.coefficient = LargeInteger.zero;
-            this.power = LargeInteger.zero;
+            this.coefficient = LargeInteger.ZERO;
+            this.power = LargeInteger.ZERO;
             return;
         }
         this.addend = addend;
@@ -24,8 +24,8 @@ public class Exp extends ScalarAtom {
     @Override
     public String toString() {
         StringBuilder str = new  StringBuilder();
-        if(addend.notEqualsTo(LargeInteger.zero)) str.append(addend);
-        if(coefficient.equalsTo(LargeInteger.zero)){
+        if(addend.doesntEqual(LargeInteger.ZERO)) str.append(addend);
+        if(coefficient.equals(LargeInteger.ZERO)){
             if(str.isEmpty()) str.append("0");
             return str.toString();
         }
@@ -34,7 +34,12 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public boolean equalsTo(Atom other) {
+    public String toLatex() {return "";}
+    public int hashCode(){
+        return 0;
+    }
+    @Override
+    public boolean equals(Atom other) {
         return false;
     }
     @Override
@@ -48,17 +53,17 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public ScalarAtom magnitude() {
+    public ScalarAtom abs() {
         return null;
     }
 
     @Override
-    public long compareMags(ScalarAtom other) {
+    public int compareMags(ScalarAtom other) {
         return 0;
     }
 
     @Override
-    public long compareTo(ScalarAtom other) {
+    public int compareTo(ScalarAtom other) {
         return 0;
     }
 
@@ -78,7 +83,7 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public boolean isAlgebraic(){return coefficient.equalsTo(LargeInteger.zero) && addend.isAlgebraic();}
+    public boolean isAlgebraic(){return coefficient.equals(LargeInteger.ZERO) && addend.isAlgebraic();}
 
     @Override
     public ScalarAtom realPart() {
@@ -107,7 +112,7 @@ public class Exp extends ScalarAtom {
     @Override
     public ScalarAtom power(LargeFraction f) {return new Exp(this.addend.power(f), this.coefficient.power(f), this.power.multiply(f));}
     @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+    public LargeDecimal approximateToDecimal(long precision) {
         return null;
     }
 }

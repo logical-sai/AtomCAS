@@ -1,33 +1,30 @@
 package com.AtomCAS;
 import com.AtomCAS.utilities.*;
 
-import java.math.BigInteger;
-import java.util.Random;
-
 public class DevPlayground {
     private static void testReciprocal(String input) {
         ScalarAtom x = Parser.parse(input);
         System.out.println("1/(" + x + ") = " + x.reciprocal());
     }
-    static volatile Object sink;
-    public static void main(String[] args){
-/*
-        let us do demoIntegers();
-        demoFractions();
-        demoRadicals();
-        demoRadicalReciprocals();
-        demoVectorsMatrices();
-        demoParser();
-        demoBaseConversion();
-*/
-        System.out.println(new LargeInteger("3141592653589793238462643383279502884197169399375105820974944592").multiply(new LargeInteger("2718281828459045235360287471352662497757247093699959574966967627")));
+    static void main() {
+//        long start = System.currentTimeMillis();
+//        demoIntegers();
+//        demoFractions();
+//        demoRadicals();
+//        demoRadicalReciprocals();
+//        demoVectorsMatrices();
+//        demoParser();
+//        demoBaseConversion();
+//        long end = System.currentTimeMillis();
+//        System.out.println("Elapsed time: " + (end - start)/1e3 + " seconds");
+        System.out.println(new LargeInteger("198976997779123653549985318327706220674142699192362129").quadraticSieveWithoutConstraints());
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
 
-        LargeInteger a = new LargeInteger(1234567890L);
-        LargeInteger b = new LargeInteger(9876543210L);
-        LargeInteger c = new LargeInteger(1000L);
+        LargeInteger a = LargeInteger.valueOf(1234567890L);
+        LargeInteger b = LargeInteger.valueOf(9876543210L);
+        LargeInteger c = LargeInteger.valueOf(1000L);
 
         System.out.println("a = " + a);
         System.out.println("b = " + b);
@@ -39,17 +36,17 @@ public class DevPlayground {
         System.out.println("b^3 = " + b.cube());
         System.out.println("c^3 = " + c.cube());
         System.out.println("gcd(a, b) = " + a.gcd(b));
-        System.out.println("lcm(a, b) = " + a.lcm(a, b));
+        System.out.println("lcm(a, b) = " + a.lcm(b));
         System.out.println("factor(-a*b+c) = " + ((LargeInteger)a.negate().multiply(b).add(c)).factor());
-        System.out.println("c! = " + c.factorial());
+        System.out.println("totient(a+b+c) = " + ((LargeInteger)a.add(b).add(c)).totient());
         System.out.println();
     }
 
     private static void demoFractions() {
         System.out.println("=== LargeFraction Demo ===");
 
-        LargeFraction f = new LargeFraction(new LargeInteger(6), new LargeInteger(8));
-        LargeFraction g = new LargeFraction(new LargeInteger(5), new LargeInteger(120));
+        LargeFraction f = new LargeFraction(LargeInteger.valueOf(6), LargeInteger.valueOf(8));
+        LargeFraction g = new LargeFraction(LargeInteger.valueOf(5), LargeInteger.valueOf(120));
 
         System.out.println("6/8 simplifies to " + f);
         System.out.println("0.041{6} = " + g);
@@ -71,8 +68,8 @@ public class DevPlayground {
         System.out.println();
     }
     private static void demoRadicalReciprocals(){
-        System.out.println("=== More advanced radical / power Demo ===");
-        System.out.println("This section in particular intends to show exact simplification of radical expressions, without decimal approximation.");
+        System.out.println("=== Advanced reciprocal Demo ===");
+        System.out.println("This section in particular intends to show exact simplification of reciprocals of several expressions");
         // Rational-only
         testReciprocal("2");
         testReciprocal("-3/7");
@@ -111,7 +108,7 @@ public class DevPlayground {
         testReciprocal("8^(1/3) + 2^(1/3)");
         testReciprocal("16^(1/4) - 2^(1/2)");
         testReciprocal("27^(1/6) + 3^(1/3)");
-        testReciprocal("-2^(9/100) + 2");
+        testReciprocal("-2^(13/100) + 2");
 
         // Powers / fractional exponents
         testReciprocal("2^(1/3)+1");
@@ -172,16 +169,16 @@ public class DevPlayground {
 
     private static void demoBaseConversion() {
         System.out.println("=== Base Conversion Demo ===");
-        System.out.println("23/61 in base 10 = " + new Base(new LargeFraction(new LargeInteger(23), new LargeInteger(61)), new LargeInteger(10)));
-        System.out.println("17495/17496 in base 3 = " + new Base((LargeFraction) Parser.parse("17495/17496"), new LargeInteger(3)));
-        System.out.println("15/97 in base 2 = " + new Base(new LargeFraction(new LargeInteger(15), new LargeInteger(97)), new LargeInteger(2)));
-        System.out.println("1/131 in base 16 = " + new Base(new LargeFraction(new LargeInteger(1), new LargeInteger(131)), new LargeInteger(16)));
-        System.out.println("51/37 in base 26 = " + new Base(new LargeFraction(new LargeInteger(51), new LargeInteger(37)), new LargeInteger(26)));
-        System.out.println("19/64 in base 53 = " + new Base(new LargeFraction(new LargeInteger(19), new LargeInteger(64)), new LargeInteger(53)));
-        System.out.println("-213781471834746879182637586423 in base 7 = " + new Base(new LargeFraction("-213781471834746879182637586423"), new LargeInteger(7)));
-        System.out.println("117/107 in base 89 = " + new Base(new LargeFraction(new LargeInteger(117), new LargeInteger(107)), new LargeInteger(89)));
-        System.out.println("759/432 in base 19 = " + new Base(new LargeFraction(new LargeInteger(759), new LargeInteger(432)), new LargeInteger(19)));
-        System.out.println("61/19 in base 41 = " + new Base(new LargeFraction(new LargeInteger(61), new LargeInteger(19)), new LargeInteger(41)));
-        System.out.println("71/109 in base 38 = " + new Base(new LargeFraction(new LargeInteger(71), new LargeInteger(109)), new LargeInteger(38)));
+        System.out.println("23/61 in base 10 = " + new Base(new LargeFraction(LargeInteger.valueOf(23), LargeInteger.valueOf(61)), 10));
+        System.out.println("17495/17496 in base 3 = " + new Base((LargeFraction) Parser.parse("17495/17496"), 3));
+        System.out.println("15/97 in base 2 = " + new Base(new LargeFraction(LargeInteger.valueOf(15), LargeInteger.valueOf(97)), 2));
+        System.out.println("1/131 in base 16 = " + new Base(new LargeFraction(LargeInteger.valueOf(1), LargeInteger.valueOf(131)), 16));
+        System.out.println("51/37 in base 26 = " + new Base(new LargeFraction(LargeInteger.valueOf(51), LargeInteger.valueOf(37)), 26));
+        System.out.println("19/64 in base 53 = " + new Base(new LargeFraction(LargeInteger.valueOf(19), LargeInteger.valueOf(64)), 53));
+        System.out.println("-213781471834746879182637586423 in base 7 = " + new Base(new LargeFraction("-213781471834746879182637586423"), 7));
+        System.out.println("117/107 in base 89 = " + new Base(new LargeFraction(LargeInteger.valueOf(117), LargeInteger.valueOf(107)), 89));
+        System.out.println("759/432 in base 19 = " + new Base(new LargeFraction(LargeInteger.valueOf(759), LargeInteger.valueOf(432)), 19));
+        System.out.println("61/19 in base 41 = " + new Base(new LargeFraction(LargeInteger.valueOf(61), LargeInteger.valueOf(19)), 41));
+        System.out.println("71/109 in base 38 = " + new Base(new LargeFraction(LargeInteger.valueOf(71), LargeInteger.valueOf(109)), 38));
     }
 }

@@ -1,8 +1,5 @@
 package com.AtomCAS.utilities;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
-public class LargeMap<K, V> implements Iterable<K>{
+public class LargeMap<K, V>{
     private final LargeList<K> keys;
     private final LargeList<V> values;
     public LargeMap(){
@@ -12,33 +9,34 @@ public class LargeMap<K, V> implements Iterable<K>{
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for(int i = 0; i < keys.intSize(); i++){
-            sb.append(keys.get(i)).append(" -> ").append(values.get(i));
-            if(i < keys.intSize()-1) sb.append(", ");
-        }
         if (!keys.intSized()) {
-            sb.append(", ");
-            for (LargeInteger i = new LargeInteger(2147483648L); i.lessThan(size()); i = i.add(1)) {
+            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(size()); i = i.add(1)) {
                 sb.append(keys.get(i)).append(" -> ").append(values.get(i));
-                if (i.notEqualsTo(size().subtract(1))) sb.append(", ");
+                if (i.doesntEqual(keys.size().subtract(1))) sb.append(", ");
+            }
+        }else{
+            for(int k = 0; k < keys.intSize(); k++){
+                sb.append(keys.get(k)).append(" -> ").append(values.get(k));
+                if(k != keys.intSize()-1) sb.append(", ");
             }
         }
         sb.append("}");
         return sb.toString();
     }
-    public LargeList<K> getKeys(){return keys;}
-    public LargeList<V> getValues(){return values;}
+    public int hashCode(){return 0;}
+    public LargeList<K> keys(){return keys;}
+    public LargeList<V> values(){return values;}
     public K keyAtIndex(LargeInteger index){return keys.get(index);}
     public LargeInteger size(){return keys.size();}
     private void checkInvariant() {
-        if (!keys.size().equalsTo(values.size()))
+        if (!keys.size().equals(values.size()))
             throw new IllegalStateException("LargeMap corrupted: key/value size mismatch");
     }
     public void put(K key, V value) {
         if (key == null || value == null)
             throw new IllegalArgumentException("Null keys/values not allowed");
         LargeInteger index = indexOfKey(key);
-        if(index.lessThan(LargeInteger.zero)){
+        if(index.lessThan(LargeInteger.ZERO)){
             keys.add(key);
             values.add(value);
         }else
@@ -54,65 +52,33 @@ public class LargeMap<K, V> implements Iterable<K>{
     }
     public void remove(K key) {
         LargeInteger index = indexOfKey(key);
-        if (index.equalsTo(LargeInteger.negativeOne)) return;
+        if (index.equals(LargeInteger.NEGATIVE_ONE)) return;
         keys.remove(index);
         values.remove(index);
         checkInvariant();
     }
-    public boolean containsKey(K key) {return indexOfKey(key).notEqualsTo(LargeInteger.negativeOne);}
+    public boolean containsKey(K key) {return indexOfKey(key).doesntEqual(LargeInteger.NEGATIVE_ONE);}
     public LargeInteger indexOfKey(K key) {
-        for (LargeInteger i = LargeInteger.zero; i.lessThan(keys.size()); i = i.add(1))
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(keys.size()); i = i.add(1))
             if (keys.get(i).equals(key))
                 return i;
-            else if(keys.get(i) instanceof ScalarAtom && key instanceof ScalarAtom){
-                if (((ScalarAtom)keys.get(i)).equalsTo((Atom) key))
-                    return i;
-            }
-        return LargeInteger.negativeOne;
+        return LargeInteger.NEGATIVE_ONE;
     }
-    public boolean isEmpty() {return keys.size().equalsTo(LargeInteger.zero);}
+    public boolean isEmpty() {return keys.size().equals(LargeInteger.ZERO);}
     public V get(K key) {
         LargeInteger index = indexOfKey(key);
-        if (index.equalsTo(LargeInteger.negativeOne))
+        if (index.equals(LargeInteger.NEGATIVE_ONE))
             throw new IllegalArgumentException("Key not found");
         return values.get(index);
     }
     public V getOrDefault(K key, V defaultValue) {
         LargeInteger index = indexOfKey(key);
-        if (index.equalsTo(LargeInteger.negativeOne))
+        if (index.equals(LargeInteger.NEGATIVE_ONE))
             return defaultValue;
         return values.get(index);
     }
     public void swap(K key1, K key2){
         keys.swap(indexOfKey(key1), indexOfKey(key2));
         values.swap(indexOfKey(key2), indexOfKey(key1));
-    }
-    @Override
-    public Iterator<K> iterator() {
-        if (!keys.intSized())
-            return new Iterator<>() {
-                private LargeInteger index = LargeInteger.zero;
-                @Override
-                public boolean hasNext() {return index.lessThan(values.size());}
-                @Override
-                public K next() {
-                    if (!hasNext()) throw new NoSuchElementException();
-                    K value = keys.get(index);
-                    index = (LargeInteger) index.add(LargeInteger.one);
-                    return value;
-                }
-            };
-        return new Iterator<>() {
-            private int index = 0;
-            @Override
-            public boolean hasNext() {return index < values.intSize();}
-            @Override
-            public K next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                K value = keys.get(index);
-                index++;
-                return value;
-            }
-        };
     }
 }

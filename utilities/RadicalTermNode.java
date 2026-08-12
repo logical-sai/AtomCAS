@@ -7,15 +7,15 @@ public class RadicalTermNode extends ScalarAtom{
         LargeFraction R = rationalPart.copy();
         LargeFraction C = coefficient.copy();
         LargePowerNode K = base.copy();
-        if(K.equalsTo(LargeInteger.one)){
+        if(K.equals(LargeInteger.ONE)){
             this.rationalPart = (LargeFraction) R.add(C);
-            this.coefficient = LargeFraction.zero;
-            this.exponent = new LargePowerNode(LargeFraction.zero, LargeFraction.one, LargeFraction.one);
+            this.coefficient = LargeFraction.ZERO;
+            this.exponent = new LargePowerNode(LargeFraction.ZERO, LargeFraction.ONE, LargeFraction.ONE);
             return;
-        }else if(K.equalsTo(LargeInteger.zero) || C.equalsTo(LargeInteger.zero)){
+        }else if(K.equals(LargeInteger.ZERO) || C.equals(LargeInteger.ZERO)){
             this.rationalPart = R;
-            this.coefficient = LargeFraction.zero;
-            this.exponent = new LargePowerNode(K.base, LargeFraction.one, LargeInteger.one);
+            this.coefficient = LargeFraction.ZERO;
+            this.exponent = new LargePowerNode(K.base, LargeFraction.ONE, LargeInteger.ONE);
             return;
         }
         this.rationalPart = R.copy();
@@ -25,57 +25,55 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        if(rationalPart.notEqualsTo(LargeInteger.zero))
+        if(rationalPart.doesntEqual(LargeInteger.ZERO))
             str.append(rationalPart);
-        if(coefficient.equalsTo(LargeInteger.zero)){
+        if(coefficient.equals(LargeInteger.ZERO)){
             if(str.isEmpty()) str.append(rationalPart);
             return str.toString();
-        }else if(coefficient.greaterThan(LargeInteger.zero)){
-            if(rationalPart.notEqualsTo(LargeInteger.zero)) str.append(" + ");
-            if(coefficient.notEqualsTo(LargeInteger.one)) str.append(coefficient);
-        }else if(coefficient.lessThan(LargeInteger.zero)){
-            if(rationalPart.notEqualsTo(LargeInteger.zero)) str.append(" - ");
-            if(coefficient.notEqualsTo(LargeInteger.one)) str.append(coefficient.magnitude());
+        }else if(coefficient.greaterThan(LargeInteger.ZERO)){
+            if(rationalPart.doesntEqual(LargeInteger.ZERO)) str.append(" + ");
+            if(coefficient.doesntEqual(LargeInteger.ONE)) str.append(coefficient);
+        }else if(coefficient.lessThan(LargeInteger.ZERO)){
+            if(rationalPart.doesntEqual(LargeInteger.ZERO)) str.append(" - ");
+            if(coefficient.doesntEqual(LargeInteger.ONE)) str.append(coefficient.abs());
         }
-        if(coefficient.notEqualsTo(LargeInteger.one))
+        if(coefficient.doesntEqual(LargeInteger.ONE))
             str.append("*");
         str.append(exponent);
         return str.toString();
     }
+
+    @Override
+    public String toLatex() {return "";}
+    public int hashCode(){
+        int hash = 0;
+        hash = 31 * hash + rationalPart.hashCode();
+        hash = 31 * hash + coefficient.hashCode();
+        hash = 31 * hash + exponent.hashCode();
+        return hash;
+    }
     @Override
     public RadicalTermNode copy() {return new RadicalTermNode(rationalPart, coefficient, exponent);}
     @Override
-    public boolean isRational(){return coefficient.equalsTo(LargeInteger.zero);}
+    public boolean isRational(){return coefficient.equals(LargeInteger.ZERO);}
     @Override
     public boolean isReal() {return !isNotReal();}
     @Override
     public boolean isAlgebraic() {return exponent.isAlgebraic();}
     @Override
-    public ScalarAtom realPart(){
-        return this.sign().realPart().multiply(this.magnitude());
-    }
+    public ScalarAtom realPart(){return this.sign().realPart().multiply(this.abs());}
     @Override
-    public ScalarAtom imagPart(){
-        return this.sign().imagPart().multiply(this.magnitude());
-    }
+    public ScalarAtom imagPart(){return this.sign().imagPart().multiply(this.abs());}
     @Override
-    public ScalarAtom magnitude() {
-        throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");
-    }
+    public ScalarAtom abs() {throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");}
     @Override
-    public LargeInteger floor() {
-        throw new UnsupportedOperationException("Error: Operation with this type not supported yet");
-    }
+    public LargeInteger floor() {throw new UnsupportedOperationException("Error: Operation with this type not supported yet");}
     @Override
-    public LargeInteger ceil() {
-        throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");
-    }
+    public LargeInteger ceil() {throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");}
     @Override
-    public long compareMags(ScalarAtom other) {
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
-    }
+    public int compareMags(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
     @Override
-    public long compareTo(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public int compareTo(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
     @Override
     public ScalarAtom negate() {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
     @Override
@@ -87,11 +85,11 @@ public class RadicalTermNode extends ScalarAtom{
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
     @Override
-    public ScalarAtom reciprocal(){return new LargePowerNode(this, LargeFraction.negativeOne, LargeFraction.zero);}
+    public ScalarAtom reciprocal(){return new LargePowerNode(this, LargeFraction.NEGATIVE_ONE, LargeFraction.ZERO);}
     @Override
-    public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.zero);}
+    public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.ZERO);}
     @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
+    public LargeDecimal approximateToDecimal(long precision) {return null;}
     @Override
-    public boolean equalsTo(Atom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public boolean equals(Atom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
 }

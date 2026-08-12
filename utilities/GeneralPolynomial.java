@@ -3,17 +3,17 @@ public class GeneralPolynomial{
     LargeList<ScalarAtom> coefficients;
     public GeneralPolynomial(){
         coefficients = new LargeList<>();
-        coefficients.add(LargeInteger.zero);
+        coefficients.add(LargeInteger.ZERO);
     }
     public GeneralPolynomial(LargeList<ScalarAtom> coefficients){
         //trim leading zeros
-        while(coefficients.getFirst().equalsTo(LargeInteger.zero) && coefficients.size().greaterThan(LargeInteger.one))
+        while(coefficients.getFirst().equals(LargeInteger.ZERO) && coefficients.size().greaterThan(LargeInteger.ONE))
             coefficients.removeFirst();
         this.coefficients = new LargeList<>();
         for(ScalarAtom coefficient : coefficients){
             if(coefficient.isAlgebraic())
                 this.coefficients.add((ScalarAtom) coefficient.copy());
-            else throw new IllegalArgumentException("Error: At least one coefficient is not algebraic");
+            else throw new IllegalArgumentException("Error: At least ONE coefficient is not algebraic");
         }
     }
     public static GeneralPolynomial fromLargePolynomial(LargePolynomial p){
@@ -26,7 +26,7 @@ public class GeneralPolynomial{
     public static GeneralPolynomial monomial(ScalarAtom coeff, LargeInteger deg){
         LargeList<ScalarAtom> coefficients = new LargeList<>();
         coefficients.add(coeff);
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(deg); i = i.add(1)) coefficients.add(LargeFraction.zero);
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(deg); i = i.add(1)) coefficients.add(LargeFraction.ZERO);
         return new GeneralPolynomial(coefficients);
     }
     @Override
@@ -36,14 +36,14 @@ public class GeneralPolynomial{
         StringBuilder str = new StringBuilder();
         LargeInteger deg = degree();
 
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(coefficients.size()); i = i.add(1)){
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1)){
             ScalarAtom c = coefficients.get(i);
-            if(c.equalsTo(LargeInteger.zero)) continue;
+            if(c.equals(LargeInteger.ZERO)) continue;
             LargeInteger power = (LargeInteger) deg.subtract(i);
             if(!str.isEmpty()) str.append(" + ");
-            if(power.equalsTo(LargeInteger.zero))
+            if(power.equals(LargeInteger.ZERO))
                 str.append(c);
-            else if(power.equalsTo(LargeInteger.one)){
+            else if(power.equals(LargeInteger.ONE)){
                 str.append(c).append("*x");
             }else
                 str.append(c).append("*x^").append(power);
@@ -53,20 +53,20 @@ public class GeneralPolynomial{
     }
     public boolean isZero(){
         for(ScalarAtom f: coefficients){
-            if(f.notEqualsTo(LargeInteger.zero))
+            if(f.doesntEqual(LargeInteger.ZERO))
                 return false;
         }
         return true;
     }
     public static GeneralPolynomial one(){
         GeneralPolynomial P = new GeneralPolynomial();
-        P = P.add(LargeInteger.one);
+        P = P.add(LargeInteger.ONE);
         return P;
     }
-    public static GeneralPolynomial x(){return new GeneralPolynomial().add(LargeInteger.one).increaseDegree(LargeInteger.one);}
+    public static GeneralPolynomial x(){return new GeneralPolynomial().add(LargeInteger.ONE).increaseDegree(LargeInteger.ONE);}
     public static GeneralPolynomial xMinus(ScalarAtom n){
         LargeList<ScalarAtom> list = new LargeList<>();
-        list.add(LargeFraction.one);
+        list.add(LargeFraction.ONE);
         list.add(n.negate());
         return new GeneralPolynomial(list);
     }
@@ -77,27 +77,27 @@ public class GeneralPolynomial{
         return P;
     }
     public boolean equalsTo(LargePolynomial p){
-        if(degree().notEqualsTo(p.degree()))
+        if(degree().doesntEqual(p.degree()))
             return false;
-        for(LargeInteger i = LargeInteger.zero; i.lesserThanOrEqualTo(degree()); i = i.add(1)){
-            if(coefficients.get(i).notEqualsTo(p.coefficients.get(i)))
+        for(LargeInteger i = LargeInteger.ZERO; i.lesserThanOrEqualTo(degree()); i = i.add(1)){
+            if(coefficients.get(i).doesntEqual(p.coefficients.get(i)))
                 return false;
         }
         return true;
     }
-    public LargeInteger degree(){return (LargeInteger) coefficients.size().subtract(LargeInteger.one);}
+    public LargeInteger degree(){return (LargeInteger) coefficients.size().subtract(LargeInteger.ONE);}
     public GeneralPolynomial increaseDegree(LargeInteger i){
-        if(i.lessThan(LargeInteger.zero)) throw new IllegalArgumentException("Error: Input means decreasing the degree");
+        if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Error: Input means decreasing the degree");
         if(this.isZero()) return new GeneralPolynomial();
         LargeList<ScalarAtom> cands = new LargeList<>();
         for(ScalarAtom I: coefficients) cands.add(I);
-        for(LargeInteger j = LargeInteger.zero; j.lessThan(i); j = j.add(1)) cands.add(LargeFraction.zero);
+        for(LargeInteger j = LargeInteger.ZERO; j.lessThan(i); j = j.add(1)) cands.add(LargeFraction.ZERO);
         return new GeneralPolynomial(cands);
     }
     public GeneralPolynomial composeNegX() {
         LargeList<ScalarAtom> result = new LargeList<>();
         LargeInteger deg = this.degree();
-        for (LargeInteger i = LargeInteger.zero; i.lessThan(coefficients.size()); i = i.add(1)) {
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1)) {
             LargeInteger power = (LargeInteger) deg.subtract(i);
             ScalarAtom c = coefficients.get(i);
             if (power.isOdd())
@@ -117,7 +117,7 @@ public class GeneralPolynomial{
         LargeList<ScalarAtom> cands = new LargeList<>();
         if(this.coefficients.size().greaterThan(other.coefficients.size())){
             LargeInteger diff = (LargeInteger) this.coefficients.size().subtract(other.coefficients.size());
-            for(LargeInteger i = LargeInteger.zero; i.lessThan(this.coefficients.size()); i = i.add(1)){
+            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
                     cands.add(this.coefficients.get(i).add(other.coefficients.get((LargeInteger) i.subtract(diff))));
                 else cands.add(this.coefficients.get(i));
@@ -125,14 +125,14 @@ public class GeneralPolynomial{
             return new GeneralPolynomial(cands);
         }else if(other.coefficients.size().greaterThan(this.coefficients.size())){
             LargeInteger diff = (LargeInteger) other.coefficients.size().subtract(this.coefficients.size());
-            for(LargeInteger i = LargeInteger.zero; i.lessThan(other.coefficients.size()); i = i.add(1)){
+            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(other.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
                     cands.add(other.coefficients.get(i).add(this.coefficients.get((LargeInteger) i.subtract(diff))));
                 else cands.add(other.coefficients.get(i));
             }
             return new GeneralPolynomial(cands);
         }
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(this.coefficients.size()); i = i.add(1))
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1))
             cands.add(this.coefficients.get(i).add(other.coefficients.get(i)));
         return new GeneralPolynomial(cands);
     }
@@ -146,7 +146,7 @@ public class GeneralPolynomial{
         LargeList<ScalarAtom> cands = new LargeList<>();
         if(this.coefficients.size().greaterThan(other.coefficients.size())){
             LargeInteger diff = (LargeInteger) this.coefficients.size().subtract(other.coefficients.size());
-            for(LargeInteger i = LargeInteger.zero; i.lessThan(this.coefficients.size()); i = i.add(1)){
+            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
                     cands.add(this.coefficients.get(i).subtract(other.coefficients.get((LargeInteger) i.subtract(diff))));
                 else cands.add(this.coefficients.get(i));
@@ -154,19 +154,19 @@ public class GeneralPolynomial{
             return new GeneralPolynomial(cands);
         }else if(other.coefficients.size().greaterThan(this.coefficients.size())){
             LargeInteger diff = (LargeInteger) other.coefficients.size().subtract(this.coefficients.size());
-            for(LargeInteger i = LargeInteger.zero; i.lessThan(other.coefficients.size()); i = i.add(1)){
+            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(other.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
                     cands.add(other.coefficients.get(i).subtract(this.coefficients.get((LargeInteger) i.subtract(diff))));
                 else cands.add(other.coefficients.get(i).negate());
             }
             return new GeneralPolynomial(cands);
         }
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(this.coefficients.size()); i = i.add(1))
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1))
             cands.add(this.coefficients.get(i).subtract(other.coefficients.get(i)));
         return new GeneralPolynomial(cands);
     }
     public GeneralPolynomial multiply(ScalarAtom other){
-        if(other.equalsTo(LargeInteger.zero) || isZero()) return new GeneralPolynomial();
+        if(other.equals(LargeInteger.ZERO) || isZero()) return new GeneralPolynomial();
         LargeList<ScalarAtom> cands = new LargeList<>();
         for(ScalarAtom I: coefficients)
             cands.add(I.multiply(other));
@@ -174,7 +174,7 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial multiply(GeneralPolynomial other){
         LargeList<GeneralPolynomial> polys = new LargeList<>();
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(this.coefficients.size()); i = i.add(1))
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1))
             polys.add(other.multiply(coefficients.get(i)).increaseDegree((LargeInteger) this.degree().subtract(i)));
         GeneralPolynomial result = new GeneralPolynomial();
         for(GeneralPolynomial P: polys) result = result.add(P);
@@ -182,21 +182,21 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial square(){return this.multiply(this);}
     public GeneralPolynomial monomialPower(LargeInteger I){
-        if(I.lessThan(LargeInteger.zero)) throw new ArithmeticException("Error: Rational functions not implemented yet");
-        if(I.equalsTo(LargeInteger.zero)){
-            return new GeneralPolynomial().add(LargeInteger.one);
+        if(I.lessThan(LargeInteger.ZERO)) throw new ArithmeticException("Error: Rational functions not implemented yet");
+        if(I.equals(LargeInteger.ZERO)){
+            return new GeneralPolynomial().add(LargeInteger.ONE);
         }
         GeneralPolynomial P = new GeneralPolynomial();
-        P = P.add(LargeFraction.one);
+        P = P.add(LargeFraction.ONE);
         LargeInteger expTemp = I.copy();
         GeneralPolynomial basTemp = new GeneralPolynomial(this.coefficients);
         while(true){
             if(expTemp.isOdd()){
                 P = P.multiply(basTemp);
-                if(expTemp.equalsTo(LargeInteger.one)) break;
+                if(expTemp.equals(LargeInteger.ONE)) break;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.longDivision(LargeInteger.two);
+            expTemp = expTemp.longDivision(LargeInteger.TWO);
         }
         return P;
     }
@@ -218,7 +218,7 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial compose(GeneralPolynomial inner){
         GeneralPolynomial result = new GeneralPolynomial();
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(coefficients.size()); i = i.add(1))
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1))
             result = result.multiply(inner).add(coefficients.get(i));
         return result;
     }

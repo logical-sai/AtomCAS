@@ -17,14 +17,20 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public boolean equalsTo(Atom other) {
+    public String toLatex() {
+        return "";
+    }
+
+    @Override
+    public boolean equals(Atom other) {
         return false;
     }
 
     @Override
-    public boolean notEqualsTo(Atom other) {
-        return false;
+    public int hashCode() {
+        return 0;
     }
+
     @Override
     public LargeInteger floor() {
         return null;
@@ -36,12 +42,12 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public long compareMags(ScalarAtom other) {
+    public int compareMags(ScalarAtom other) {
         return 0;
     }
 
     @Override
-    public long compareTo(ScalarAtom other) {
+    public int compareTo(ScalarAtom other) {
         return 0;
     }
 
@@ -51,7 +57,7 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public ScalarAtom magnitude() {
+    public ScalarAtom abs() {
         return null;
     }
 
@@ -98,9 +104,7 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
-        return null;
-    }
+    public LargeDecimal approximateToDecimal(long precision) {return null;}
 }
 class RationalInterval{
     LargeFraction lower;

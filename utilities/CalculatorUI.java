@@ -1,14 +1,16 @@
 package com.AtomCAS.utilities;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class CalculatorUI {
     private final JFrame frame;
     private final JTextArea inputLayer;
-    private JTextArea outputLayer = new JTextArea();
+    private final JTextArea outputLayer = new JTextArea();
 
     private final JTree traceTree = new JTree();
     private final JTextArea traceDetails = new JTextArea();
@@ -83,6 +85,7 @@ public class CalculatorUI {
     private class ButtonClickListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             try {
+                outputLayer.removeAll();
                 String command = ((JButton)e.getSource()).getText();
                 if (command.matches("[0123456789.+\\-*/^()\\[\\]{}√%‰!]") || command.equals("mod"))
                     inputLayer.setText(inputLayer.getText() + command);
@@ -114,8 +117,8 @@ public class CalculatorUI {
                     }
                 }else if (command.equals("≈")) {
                     try {
-                        ScalarAtom result = Parser.parse(inputLayer.getText()).approximateToDecimal(new LargeInteger(16));
-                        inputLayer.setText(result.toString());
+                        ScalarAtom result = Parser.parse(inputLayer.getText()).approximateToDecimal(16);
+                        outputLayer.setText(result.toString());
                     } catch (Exception ex) {inputLayer.setText(ex.getMessage());}
                 }else if(command.equals("del")){
                     if(inputLayer.getText().length() > 1)

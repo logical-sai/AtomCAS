@@ -1,10 +1,12 @@
 package com.AtomCAS.utilities;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 public class LargeList<T> implements Iterable<T>{
     private static final int CHUNK_SIZE = 1000;
 
-    private LargeInteger size = LargeInteger.zero;
+    private LargeInteger size = LargeInteger.ZERO;
     private int sizeInt = 0;
     private boolean intSized = true;
 
@@ -16,32 +18,33 @@ public class LargeList<T> implements Iterable<T>{
             for (int i = 0; i < sizeInt; i++)
                 lt.add(get(i));
         else
-            for (LargeInteger i = LargeInteger.zero; i.lessThan(size); i = i.add(1))
+            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(size); i = i.add(1))
                 lt.add(get(i));
         return lt;
     }
     public String toString() {
+        if(sizeInt == 0) return "{}";
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for (int i = 0; i < sizeInt; i++) {
+        for (int i = 0; i < 100; i++) {
             sb.append(this.get(i));
             if (i < sizeInt-1) sb.append(", ");
+            else break;
         }
-        if(!intSized()){
-            sb.append(", ");
-            for(LargeInteger i = new LargeInteger(2147483648L); i.lessThan(size); i=i.add(1)){
-                sb.append(this.get(i));
-                if(i.lessThan(size.subtract(1))) sb.append(", ");
-            }
+        if(sizeInt > 100){
+            sb.append("+");
+            sb.append(size.subtract(100)).append(" more");
         }
         sb.append("}");
         return sb.toString();
     }
+    public int hashCode() {
+        return 0;
+    }
     public void add(T value) {
         if (intSized())
             setRaw(sizeInt, value);
-        else
-            setRaw(size, value);
+        else setRaw(size, value);
         size = size.add(1);
         if(intSized()){
             sizeInt++;
@@ -57,12 +60,12 @@ public class LargeList<T> implements Iterable<T>{
             set(0, value);
             return;
         }
-        for (LargeInteger i = size.subtract(1); i.greaterThan(LargeInteger.zero); i = i.subtract(1))
+        for (LargeInteger i = size.subtract(1); i.greaterThan(LargeInteger.ZERO); i = i.subtract(1))
             set(i, get(i.subtract(1)));
-        set(LargeInteger.zero, value);
+        set(LargeInteger.ZERO, value);
     }
     public void set(LargeInteger index, T value){
-        if (index.lessThan(LargeInteger.zero) || index.greaterThanOrEqualTo(size))
+        if (index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         setRaw(index, value);
     }
@@ -84,7 +87,7 @@ public class LargeList<T> implements Iterable<T>{
         node[digits[height]] = value;
     }
     private void setRaw(int index, T value) {
-        ensureCapacity(new LargeInteger(index));
+        ensureCapacity(LargeInteger.valueOf(index));
         int[] digits = base1000Digits(index);
         Object[] node = root;
         int leadingZeros = height + 1 - digits.length;
@@ -113,14 +116,14 @@ public class LargeList<T> implements Iterable<T>{
         }
     }
     private LargeInteger capacity() {
-        LargeInteger result = LargeInteger.one;
+        LargeInteger result = LargeInteger.ONE;
         for (int i = 0; i < height + 1; i++)
-            result = (LargeInteger) result.multiply(new LargeInteger(CHUNK_SIZE));
+            result = result.multiply(CHUNK_SIZE);
         return result;
     }
     @SuppressWarnings("unchecked")
     public T get(LargeInteger index) {
-        if (index.lessThan(LargeInteger.zero) || index.greaterThanOrEqualTo(size))
+        if (index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Error: Index " + index + " out of bounds for range [0, " + size + ")");
         if(intSized()) return get(Integer.parseInt(index.toString()));
         int[] path = base1000Digits(index);
@@ -166,16 +169,16 @@ public class LargeList<T> implements Iterable<T>{
     }
     public void addAll(LargeList<T> other){for(T I: other) this.add(I);}
     public void remove(LargeInteger index){
-        if(index.lessThan(LargeInteger.zero) || index.greaterThanOrEqualTo(size))
+        if(index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Error:  Index " + index + " out of bounds for range [0, " + size + ")");
-        for(LargeInteger i = index; i.lessThan(this.size().subtract(LargeInteger.one)); i = i.add(1))
-            this.set(i, this.get((LargeInteger) i.add(LargeInteger.one)));
-        this.set((LargeInteger) this.size().subtract(LargeInteger.one), null);
-        size = (LargeInteger) size.subtract(LargeInteger.one);
+        for(LargeInteger i = index; i.lessThan(this.size().subtract(LargeInteger.ONE)); i = i.add(1))
+            this.set(i, this.get(i.add(1)));
+        this.set((LargeInteger) this.size().subtract(LargeInteger.ONE), null);
+        size = (LargeInteger) size.subtract(LargeInteger.ONE);
         if(intSized())
             sizeInt--;
         else
-            if(size.equalsTo(new LargeInteger(2147483647))){
+            if(size.equals(LargeInteger.valueOf(2147483647))){
                 sizeInt = 2147483647;
                 intSized = true;
             }
@@ -188,49 +191,38 @@ public class LargeList<T> implements Iterable<T>{
                 this.set(i, this.get(i + 1));
             set(this.sizeInt - 1, null);
         }else{
-            for(LargeInteger i = new LargeInteger(index); i.lessThan(size.subtract(1)); i = i.add(1))
+            for(LargeInteger i = LargeInteger.valueOf(index); i.lessThan(size.subtract(1)); i = i.add(1))
                 this.set(i, this.get(i.add(1)));
-            this.set((LargeInteger) this.size().subtract(LargeInteger.one), null);
+            this.set((LargeInteger) this.size().subtract(LargeInteger.ONE), null);
         }
-        size = (LargeInteger) size.subtract(LargeInteger.one);
+        size = (LargeInteger) size.subtract(LargeInteger.ONE);
         if(intSized())
             sizeInt--;
         else
-        if(size.equalsTo(new LargeInteger(2147483647))){
+        if(size.equals(LargeInteger.valueOf(2147483647))){
             sizeInt = 2147483647;
             intSized = true;
         }
     }
     public void removeFirst(){remove(0);}
-    public void removeLast(){remove((LargeInteger) size.subtract(LargeInteger.one));}
+    public void removeLast(){remove((LargeInteger) size.subtract(LargeInteger.ONE));}
     public void clear(){
-        size = LargeInteger.zero;
+        size = LargeInteger.ZERO;
         sizeInt = 0;
         intSized = true;
         height = 0;
         root = new Object[CHUNK_SIZE];
     }
-    public String pathOf(LargeInteger index) {
-        int[] path = base1000Digits(index);
-        StringBuilder sb = new StringBuilder("LargeList");
-        for (int slot : path)
-            sb.append("[").append(slot).append("]");
-        return sb.toString();
-    }
-    private int slotAt(int[] digits, int level) {
-        int leadingZeros = height + 1 - digits.length;
-        return level < leadingZeros ? 0 : digits[level - leadingZeros];
-    }
     private int[] base1000Digits(LargeInteger index) {
-        if (index.equalsTo(LargeInteger.zero))
+        if (index.equals(LargeInteger.ZERO))
             return new int[]{0};
         int[] temp = new int[height + 1];
         LargeInteger copy = index;
         int count = 0;
-        LargeInteger base = new LargeInteger(CHUNK_SIZE);
-        while (copy.greaterThan(LargeInteger.zero)) {
-            temp[count++] = Integer.parseInt(copy.mod(base).toString());
-            copy = copy.longDivision(base);
+        long base = 1000;
+        while (copy.greaterThan(LargeInteger.ZERO)) {
+            temp[count++] = Math.toIntExact(copy.mod(base));
+            copy = copy.longDivision(LargeInteger.THOUSAND);
         }
         int[] result = new int[count];
         for (int i = 0; i < count; i++)
@@ -253,7 +245,7 @@ public class LargeList<T> implements Iterable<T>{
         }
         return digits;
     }
-    public boolean equalsTo(LargeList<T> other){
+    public boolean equals(LargeList<T> other){
         if (this.intSized() && other.intSized()) {
             if (this.sizeInt != other.sizeInt) return false;
             for (int i = 0; i < sizeInt; i++)
@@ -261,12 +253,32 @@ public class LargeList<T> implements Iterable<T>{
                     return false;
             return true;
         }
-        if(other.size().notEqualsTo(size))
+        if(other.size().doesntEqual(size))
             return false;
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(size); i = i.add(1))
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size); i = i.add(1))
             if(!this.get(i).equals(other.get(i)))
                 return false;
         return true;
+    }
+    public ArrayList<T> toArrayList(){
+        if(!intSized()) return null;
+        ArrayList<T> list = new ArrayList<>();
+        for(T item: this)
+            list.add(item);
+        return list;
+    }
+    public Object[] toArray() {
+        if (!intSized()) return null;
+        return Arrays.copyOf(root, sizeInt);
+    }
+    public void reverse(){
+        if(intSized()){
+            for(int i = 0; i < this.sizeInt/2; i++)
+                swap(i, this.sizeInt-i-1);
+        }else{
+            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size.longDivision(LargeInteger.TWO)); i = i.add(1))
+                swap(i, (LargeInteger) size().subtract(i));
+        }
     }
     @Override
     public Iterator<T> iterator() {
@@ -283,7 +295,7 @@ public class LargeList<T> implements Iterable<T>{
             };
         }
         return new Iterator<>() {
-            private LargeInteger index = LargeInteger.zero;
+            private LargeInteger index = LargeInteger.ZERO;
             @Override
             public boolean hasNext() {return index.lessThan(size);}
             @Override

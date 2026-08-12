@@ -1,8 +1,8 @@
 package com.AtomCAS.utilities;
 public class LargeDecimal extends ScalarAtom{
     LargeInteger mantissa;
-    LargeInteger scale;
-    public LargeDecimal(LargeInteger mantissa, LargeInteger scale){
+    long scale;
+    public LargeDecimal(LargeInteger mantissa, long scale){
         this.mantissa = mantissa;
         this.scale = scale;
     }
@@ -10,52 +10,51 @@ public class LargeDecimal extends ScalarAtom{
     public Atom copy() {return new LargeDecimal(mantissa, scale);}
     @Override
     public String toString() {
-        if (mantissa.equalsTo(LargeInteger.zero))
+        if (mantissa.equals(LargeInteger.ZERO))
             return "0";
-        boolean negative = mantissa.sign().equalsTo(LargeInteger.negativeOne);
-        String digits = mantissa.magnitude().toString();
+        boolean negative = mantissa.sign().equals(LargeInteger.NEGATIVE_ONE);
+        String digits = mantissa.abs().toString();
         StringBuilder sb = new StringBuilder();
         if (negative) sb.append("-");
         // scale == 0: ordinary integer
-        if (scale.equalsTo(LargeInteger.zero)) {
+        if (scale == 0) {
             sb.append(digits);
             return sb.toString();
         }
         // scale < 0: append zeros to the right
-        if (scale.lessThan(LargeInteger.zero)) {
+        if (scale < 0) {
             sb.append(digits);
-            LargeInteger zeros = scale.negate();
-            for (LargeInteger i = LargeInteger.zero; i.lessThan(zeros); i = i.add(1))
+            long zeros = -scale;
+            for (long i = 0; i <= zeros; i++)
                 sb.append("0");
             return sb.toString();
         }
 
         // scale > 0: decimal point goes scale digits from the right
-        LargeInteger digitCount = new LargeInteger(digits.length());
+        int digitCount = digits.length();
 
-        if (scale.lessThan(digitCount)) {
-            int pointIndex = Integer.parseInt(digitCount.subtract(scale).toString());
+        if (scale < digitCount) {
+            int pointIndex = Math.toIntExact(digitCount - scale);
             sb.append(digits, 0, pointIndex);
             sb.append(".");
             sb.append(digits.substring(pointIndex));
         } else {
             sb.append("0.");
-            LargeInteger leadingZeros = (LargeInteger) scale.subtract(digitCount);
-            for (LargeInteger i = LargeInteger.zero; i.lessThan(leadingZeros); i = i.add(1))
+            long leadingZeros = scale - digitCount;
+            for (long i = 0; i <= leadingZeros; i++)
                 sb.append("0");
             sb.append(digits);
         }
-
         return sb.toString();
     }
-
-    @Override
-    public boolean equalsTo(Atom other) {
-        return false;
+    public int hashCode(){
+        int hash = 0;
+        hash = 31 * hash + mantissa.hashCode();
+        return hash;
     }
-
+    public String toLatex(){return "";}
     @Override
-    public boolean notEqualsTo(Atom other) {
+    public boolean equals(Atom other) {
         return false;
     }
     @Override
@@ -68,12 +67,12 @@ public class LargeDecimal extends ScalarAtom{
     }
 
     @Override
-    public long compareMags(ScalarAtom other) {
+    public int compareMags(ScalarAtom other) {
         return 0;
     }
 
     @Override
-    public long compareTo(ScalarAtom other) {
+    public int compareTo(ScalarAtom other) {
         return 0;
     }
 
@@ -83,7 +82,7 @@ public class LargeDecimal extends ScalarAtom{
     }
 
     @Override
-    public ScalarAtom magnitude() {
+    public ScalarAtom abs() {
         return null;
     }
 
@@ -94,11 +93,6 @@ public class LargeDecimal extends ScalarAtom{
 
     @Override
     public boolean isReal() {
-        return false;
-    }
-
-    @Override
-    public boolean isNotReal() {
         return false;
     }
 
@@ -148,7 +142,7 @@ public class LargeDecimal extends ScalarAtom{
     }
 
     @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
+    public LargeDecimal approximateToDecimal(long precision) {
         return this;
     }
 }

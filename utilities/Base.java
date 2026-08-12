@@ -1,120 +1,121 @@
 package com.AtomCAS.utilities;
 public class Base{
-    LargeList<LargeInteger> intPart;
-    LargeList<LargeInteger> terminatingPart;
-    LargeList<LargeInteger> repeatingPart;
+    LargeList<Long> intPart;
+    LargeList<Long> terminatingPart;
+    LargeList<Long> repeatingPart;
     boolean sign;
-    LargeInteger base;
-    public Base(LargeFraction N, LargeInteger b) {
-        sign = N.lessThan(LargeInteger.zero);
-        LargeFraction M = N.magnitude();
-        if (b.lesserThanOrEqualTo(LargeInteger.one)) throw new IllegalArgumentException("Error: Invalid base");
-        LargeInteger copy = M.intPart();
+    long base;
+    public Base(LargeFraction N, long B){
+        sign = N.lessThan(LargeFraction.ZERO);
+        if(B <= 1) throw new IllegalArgumentException("Error: Invalid base");
+        base = B;
+        LargeInteger bigBase = LargeInteger.valueOf(B);
+        LargeInteger copy = N.abs().intPart();
         //integer part
         intPart = new LargeList<>();
-        do {
-            intPart.addFirst((LargeInteger) copy.mod(b));
-            copy = copy.longDivision(b);
-        } while (copy.greaterThan(LargeInteger.zero));
+        while(copy.greaterThan(LargeInteger.ZERO)){
+            intPart.add(copy.mod(B));
+            copy = copy.longDivision(bigBase);
+        }
+        intPart.reverse();
+        LargeFraction copy2 = N.abs().fracPart();
+        if(copy2.equals(LargeFraction.ZERO)){
+            terminatingPart = new LargeList<>();
+            repeatingPart = new LargeList<>();
+            return;
+        }
         //terminating part
+        long terminatingDigits = 0;
+        while (copy2.denominator.gcd(bigBase).doesntEqual(LargeInteger.ONE)) {
+            copy2 = copy2.multiply(B);
+            terminatingDigits++;
+        }
         terminatingPart = new LargeList<>();
-        LargeFraction copy2 = M.fracPart().magnitude();
-        LargeInteger iterCount = LargeInteger.zero;
-        while(copy2.denominator.gcd(b).notEqualsTo(LargeInteger.one) && copy2.notEqualsTo(LargeInteger.zero)){
-            copy2 = (LargeFraction) copy2.multiply(b);
-            iterCount = iterCount.add(1);
+        copy = copy2.intPart();
+        for (long i = 0; i < terminatingDigits; i++) {
+            terminatingPart.add(copy.mod(B));
+            copy = copy.longDivision(bigBase);
         }
-        LargeInteger ter = copy2.intPart();
-        copy2 = copy2.fracPart();
-        for(LargeInteger i = LargeInteger.zero; i.lessThan(iterCount); i = i.add(1)){
-            terminatingPart.addFirst((LargeInteger) ter.mod(b));
-            ter = ter.longDivision(b);
-        }
+        terminatingPart.reverse();
         //repeating part
+        copy2 = copy2.fracPart();
         repeatingPart = new LargeList<>();
-        LargeInteger rem = copy2.numerator;
-        if(rem.notEqualsTo(LargeInteger.zero)){
-            do{
-                repeatingPart.add(((LargeInteger) rem.multiply(b)).longDivision(copy2.denominator));
-                rem = (LargeInteger) rem.multiply(b).mod(copy2.denominator);
-            }while(rem.notEqualsTo(copy2.numerator));
+        if(copy2.equals(LargeFraction.ZERO)) return;
+        LargeInteger start = copy2.numerator;
+        LargeInteger R = start;
+        do{
+            LargeInteger[] DR = R.multiply(B).divideAndRemainder(copy2.denominator);
+            repeatingPart.add(DR[0].mod(B));
+            R = DR[1];
+        }while(R.doesntEqual(start));
+    }
+    private String digitToString(long digit) {
+        if (base < 10) return Long.toString(digit);
+        if (base <= 62) {
+            if (digit < 10) return Long.toString(digit);
+            String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+            return Character.toString(chars.charAt((int) digit - 10));
         }
-        base = b;
+        return Long.toString(digit);
     }
     public String toString(){
         StringBuilder sb = new StringBuilder();
-        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         if (sign) sb.append('-');
         //integer part
-        for (LargeInteger i = LargeInteger.zero; i.lessThan(intPart.size()); i= (LargeInteger) i.add(LargeInteger.one)){
-            LargeInteger bit = intPart.get(i);
-            if(base.lessThan(LargeInteger.ten)) sb.append(bit);
-            else if(base.greaterThanOrEqualTo(LargeInteger.ten) && base.lesserThanOrEqualTo(new LargeInteger(chars.length()+10)))
-                if(bit.greaterThanOrEqualTo(LargeInteger.ten)) sb.append(chars.charAt(Integer.parseInt(bit.toString())-10));
-                else sb.append(bit);
-            else{
-                sb.append(bit);
-                if(i.lessThan(intPart.size().subtract(LargeInteger.one))) sb.append(",");
-            }
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(intPart.size()); i = i.add(1)) {
+            sb.append(digitToString(intPart.get(i)));
+            if (base > 62 && i.lessThan(intPart.size().subtract(1)))
+                sb.append(',');
         }
-        if(intPart.size().equalsTo(LargeInteger.zero)) sb.append("0");
+        if(intPart.size().equals(LargeInteger.ZERO)) sb.append('0');
         //terminating part
-        if(terminatingPart.size().greaterThan(LargeInteger.zero) || repeatingPart.size().greaterThan(LargeInteger.zero)) sb.append(".");
-        for (LargeInteger i = LargeInteger.zero; i.lessThan(terminatingPart.size()); i= (LargeInteger) i.add(LargeInteger.one)){
-            LargeInteger bit = terminatingPart.get(i);
-            if(base.lessThan(LargeInteger.ten)) sb.append(bit);
-            else if(base.greaterThanOrEqualTo(LargeInteger.ten) && base.lesserThanOrEqualTo(new LargeInteger(chars.length()+10)))
-                if(bit.greaterThanOrEqualTo(LargeInteger.ten)) sb.append(chars.charAt(Integer.parseInt(bit.toString())-10));
-                else sb.append(bit);
-            else{
-                sb.append(bit);
-                if(i.lessThan(terminatingPart.size().subtract(LargeInteger.one)) || repeatingPart.size().greaterThan(LargeInteger.zero)) sb.append(",");
-            }
+        if(terminatingPart.size().greaterThan(LargeInteger.ZERO)
+                || repeatingPart.size().greaterThan(LargeInteger.ZERO)) sb.append(".");
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(terminatingPart.size()); i= i.add(1)){
+            if (base > 62 && i.greaterThan(LargeInteger.ZERO))
+                sb.append(",");
+            sb.append(digitToString(terminatingPart.get(i)));
         }
         //repeating part
-        if(repeatingPart.size().greaterThan(LargeInteger.zero)){
+        if (repeatingPart.size().greaterThan(LargeInteger.ZERO)) {
             sb.append("{");
-            for (LargeInteger i = LargeInteger.zero; i.lessThan(repeatingPart.size()); i= (LargeInteger) i.add(LargeInteger.one)){
-                LargeInteger bit = repeatingPart.get(i);
-                if(base.lessThan(LargeInteger.ten)) sb.append(bit);
-                else if(base.greaterThanOrEqualTo(LargeInteger.ten) && base.lesserThanOrEqualTo(new LargeInteger(chars.length()+10)))
-                    if(bit.greaterThanOrEqualTo(LargeInteger.ten)) sb.append(chars.charAt(Integer.parseInt(bit.toString())-10));
-                    else sb.append(bit);
-                else{
-                    sb.append(bit);
-                    if(i.lessThan(repeatingPart.size().subtract(LargeInteger.one))) sb.append(",");
-                }
+            LargeInteger shown = repeatingPart.size().lesserThanOrEqualTo(LargeInteger.THOUSAND) ? repeatingPart.size() : LargeInteger.THOUSAND;
+            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(shown); i = i.add(1)) {
+                if (base > 62 && i.greaterThan(LargeInteger.ZERO))
+                    sb.append(",");
+                sb.append(digitToString(repeatingPart.get(i)));
             }
+            if (repeatingPart.size().greaterThan(LargeInteger.THOUSAND))
+                sb.append("...(period ").append(repeatingPart.size()).append(")");
             sb.append("}");
         }
-        if(base.notEqualsTo(LargeInteger.ten)) sb.append(":").append(base);
+        if(base != 10) sb.append(":").append(base);
         return sb.toString();
     }
-    public Base convertTo(LargeInteger b){
-        if(b.lesserThanOrEqualTo(LargeInteger.one))
-            throw new IllegalArgumentException("Error: Invalid base");
-        LargeFraction result = LargeFraction.zero;
+    public Base convertToBase(long b){
+        if(b <= 1) throw new IllegalArgumentException("Error: Invalid base");
+        LargeFraction result = LargeFraction.ZERO;
         //integer part
-        for (LargeInteger digit : intPart)
-            result = (LargeFraction) result.multiply(base).add(digit);
+        for (long digit : intPart)
+            result = result.multiply(base).add(digit);
         // terminating fractional part
-        LargeInteger termValue = LargeInteger.zero;
-        for (LargeInteger digit : terminatingPart)
-            termValue = (LargeInteger) termValue.multiply(base).add(digit);
-        LargeInteger basePowT = LargeInteger.one;
-        for (LargeInteger i = LargeInteger.zero; i.lessThan(terminatingPart.size()); i = (LargeInteger) i.add(LargeInteger.one))
-            basePowT = (LargeInteger) basePowT.multiply(base);
+        LargeInteger termValue = LargeInteger.ZERO;
+        for (long digit : terminatingPart)
+            termValue = termValue.multiply(base).add(digit);
+        LargeInteger basePowT = LargeInteger.ONE;
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(terminatingPart.size()); i = i.add(1))
+            basePowT = basePowT.multiply(base);
         result = (LargeFraction) result.add(new LargeFraction(termValue, basePowT));
         // repeating fractional part
-        if (repeatingPart.size().greaterThan(LargeInteger.zero)) {
-            LargeInteger repeatValue = LargeInteger.zero;
-            for (LargeInteger digit : repeatingPart)
-                repeatValue = (LargeInteger) repeatValue.multiply(base).add(digit);
-            LargeInteger basePowR = LargeInteger.one;
-            for (LargeInteger i = LargeInteger.zero; i.lessThan(repeatingPart.size()); i = (LargeInteger) i.add(LargeInteger.one))
-                basePowR = (LargeInteger) basePowR.multiply(base);
-            LargeInteger repeatDenom = (LargeInteger) basePowT.multiply(basePowR.subtract(LargeInteger.one));
-            result = (LargeFraction) result.add(new LargeFraction(repeatValue, repeatDenom));
+        if (repeatingPart.size().greaterThan(LargeInteger.ZERO)) {
+            LargeInteger repeatValue = LargeInteger.ZERO;
+            for (long digit : repeatingPart)
+                repeatValue = repeatValue.multiply(base).add(digit);
+            LargeInteger basePowR = LargeInteger.ONE;
+            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(repeatingPart.size()); i = i.add(1))
+                basePowR = basePowR.multiply(base);
+            LargeInteger repeatDenominator = (LargeInteger) basePowT.multiply(basePowR.subtract(1));
+            result = (LargeFraction) result.add(new LargeFraction(repeatValue, repeatDenominator));
         }
         if (sign)
             result = result.negate();

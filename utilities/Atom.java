@@ -1,7 +1,7 @@
 package com.AtomCAS.utilities;
 /**
 WELCOME TO: AtomCAS
-Built on one philosophy: No rounding, ever. Also when performing an operation, if the result leaves a certain family, promote to the next layer that
+Built on ONE philosophy: No rounding, ever. Also when performing an operation, if the result leaves a certain family, promote to the next layer that
 can still represent the result. At least, if that is possible.
 
 Hello, visitor. It appears you come here to investigate this class. Classic old thing
@@ -10,7 +10,7 @@ despite its tone, serves only to list possible outputs that can come out of cert
 If you refuse to follow any of these then enjoy your "perfect" all-nighter.
 RULES TO FOLLOW
 
-SCALARS & SCALARS
+<li>SCALARS & SCALARS
 LargeInteger + LargeInteger = LargeInteger;
 LargeInteger - LargeInteger = LargeInteger;
 LargeInteger * LargeInteger = LargeInteger;
@@ -24,12 +24,11 @@ LargeFraction * LargeFraction = LargeFraction;
 LargeFraction / LargeFraction = LargeFraction;
 LargeFraction ^ LargeFraction = LargePowerMonomial or LargeFraction; (RadicalTerms are a thing.
 Oh, you forgot they were? Your middle school math teacher must be extremely proud of you.)
-
-SCALARS AND TENSORS
+<li>SCALARS AND TENSORS
 Scalar × Vector → Vector; (commutative property of multiplication.)
 Scalar × Matrix → Matrix; (commutative property of multiplication AGAIN.)
 
-TENSORS AND TENSORS
+<li>TENSORS AND TENSORS
 Vector + Vector -> Vector; (look at that. Quite the satisfaction.)
 Matrix + Matrix -> Matrix; (it happened again. The math gods are playing nice.)
 Matrix × Vector → Vector; (it feels wrong, I know. But it comes from dot products. Don't worry
@@ -43,12 +42,19 @@ Layer × Layer → maybe composition, maybe forbidden; (do not question these. N
 WE DON'T TALK ABOUT THESE
 Vector + Scalar → probably forbidden; (Do not question these guys back here. It's for your own good.)
 Vector + Matrix -> forbiden... (You sure you wanna go with this?)
-Exponentiation on Tensors → probably forbidden unless special cases
+Exponentiation on Tensors → yeah no
  **/
-public abstract class Atom{
+public abstract class Atom {
     public abstract Atom copy();
     public abstract String toString();
-    public String toLatex(){return toString();}
-    public abstract boolean equalsTo(Atom other);
-    public boolean notEqualsTo(Atom other){return !equalsTo(other);}
+    public abstract String toLatex();
+    @Override
+    public boolean equals(Object other){
+        if(other instanceof Atom A) return equals(A);
+        return hashCode() == other.hashCode();
+    }
+    public abstract boolean equals(Atom other);
+    public boolean doesntEqual(Atom other){return !equals(other);}
+    @Override
+    public abstract int hashCode();
 }
