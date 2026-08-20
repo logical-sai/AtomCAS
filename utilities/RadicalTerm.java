@@ -80,17 +80,6 @@ public class RadicalTerm extends ScalarAtom{
         return "";
     }
     @Override
-    public int hashCode() {
-        if (coefficient.equals(LargeFraction.ZERO))
-            return rationalPart.hashCode();
-        // General RadicalTerm structural hash
-        int hash = 0;
-        hash = hash * 31 + coefficient.hashCode();
-        hash = hash * 31 + rationalPart.hashCode();
-        hash = hash * 31 + exponent.hashCode();
-        return hash;
-    }
-    @Override
     public boolean equals(Atom other) {
         if(!(other instanceof ScalarAtom)) return false;
         else if(other instanceof LargeInteger || other instanceof LargeFraction) return this.rationalPart.equals(other) && this.coefficient.equals(LargeFraction.ZERO);
@@ -261,7 +250,7 @@ public class RadicalTerm extends ScalarAtom{
     @Override
     public LargePowerNode power(LargeFraction f){return new LargePowerNode(this, f, LargeFraction.ONE);}
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {return null;}
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
     public ScalarAtom reciprocal(){
         if(this.coefficient.equals(LargeInteger.ZERO))

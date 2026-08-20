@@ -87,7 +87,7 @@ public class RadicalExpression extends ScalarAtom{
     }
 
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return null;
     }
 
@@ -109,10 +109,5 @@ public class RadicalExpression extends ScalarAtom{
     @Override
     public boolean equals(Atom other) {
         return false;
-    }
-
-    @Override
-    public int hashCode() {
-        return 0;
     }
 }

@@ -155,13 +155,6 @@ public class LargePowerNode extends ScalarAtom{
 
     @Override
     public String toLatex() {return "";}
-    public int hashCode() {
-        int hash = 0;
-        hash = 31 * hash + base.hashCode();
-        hash = 31 * hash + exponent.hashCode();
-        hash = 31 * hash + signFactor.hashCode();
-        return hash;
-    }
     @Override
     public boolean equals(Atom other) {
         if(!(other instanceof ScalarAtom)) return false;
@@ -252,7 +245,7 @@ public class LargePowerNode extends ScalarAtom{
     public LargePowerNode power(LargeFraction other){return new LargePowerNode(base, (LargeFraction) exponent.multiply(other), signFactor.power(other));}
 
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {return null;}
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
     public ScalarAtom square() {return this.multiply(this);}
     @Override

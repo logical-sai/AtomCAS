@@ -37,5 +37,5 @@ public abstract class ScalarAtom extends Atom{
     public ScalarAtom percent(){return multiply(SI.centi);}
     public ScalarAtom permille(){return multiply(SI.milli);}
     public abstract ScalarAtom power(LargeFraction f);
-    public abstract LargeDecimal approximateToDecimal(long precision);
+    public abstract LargeDecimal approximateToDecimal(LargeInteger precision);
 }

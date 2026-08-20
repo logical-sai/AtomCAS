@@ -53,7 +53,14 @@ public class LargePolynomial{
         }
         return str.toString();
     }
-    public int hashCode(){return 0;}
+    @Override
+    public int hashCode() {
+        throw new UnsupportedOperationException("LargePolynomial does not support hashing");
+//        int h = POLYNOMIAL_TAG;
+//        for (LargeFraction coefficient : coefficients)
+//            h = CASHash.mix(h, coefficient.hashCode());
+//        return CASHash.finish(h);
+    }
     public boolean isZero(){
         for(LargeFraction f: coefficients)
             if(f.doesntEqual(LargeInteger.ZERO))
@@ -79,7 +86,7 @@ public class LargePolynomial{
             if (c.doesntEqual(LargeInteger.ZERO)) return c;
         return LargeFraction.ZERO;
     }
-    public boolean equalsTo(LargePolynomial p){
+    public boolean equals(LargePolynomial p){
         if(degree().doesntEqual(p.degree()))
             return false;
         for(LargeInteger i = LargeInteger.ZERO; i.lesserThanOrEqualTo(degree()); i = i.add(1)){
@@ -466,7 +473,7 @@ public class LargePolynomial{
             }case LargePowerNode n -> {
                 LargePolynomial PS = minimalPolynomial(n.signFactor);
                 LargePolynomial PM = minimalPolynomial(n.base).composeXPower(n.exponent.denominator);
-                if(PS.equalsTo(xMinus(LargeFraction.ONE))) return PM;
+                if(PS.equals(xMinus(LargeFraction.ONE))) return PM;
                 return null;
             }
             default -> throw new UnsupportedOperationException("Error: Annihilating polynomial does not support this type yet");
@@ -547,9 +554,9 @@ public class LargePolynomial{
         LargePolynomial GC = P.gcd(P.derivative());
         LargePolynomial factor = GC.longDivision(GC.primitivePart());
         LargePolynomial factor2 = P.longDivision(GC).longDivision(P.longDivision(GC).primitivePart());
-        if(!GC.equalsTo(ONE())){
+        if(!GC.equals(ONE())){
             LargePolynomial product = factor.multiply(factor2);
-            if(!product.equalsTo(ONE())) factors.add(product);
+            if(!product.equals(ONE())) factors.add(product);
             work.add(GC.primitivePart());
             work.add(P.longDivision(GC.primitivePart()));
         }else work.add(P);
@@ -602,7 +609,7 @@ public class LargePolynomial{
                 continue;
             ModPolynomial MP = ModPolynomial.fromLargePolynomial(P, p);
             // skip inseparable/bad reductions
-            if (MP.gcd(MP.derivative()).notEqualsTo(ModPolynomial.one(p)))
+            if (MP.gcd(MP.derivative()).doesntEqual(ModPolynomial.one(p)))
                 continue;
 
             if (MP.isIrreducible())
@@ -616,7 +623,7 @@ public class LargePolynomial{
             ModPolynomial MP = ModPolynomial.fromLargePolynomial(this, I);
             //ensure MP is squareFree
             ModPolynomial GP = MP.gcd(MP.derivative());
-            if(GP.notEqualsTo(ModPolynomial.one(I))) continue;
+            if(GP.doesntEqual(ModPolynomial.one(I))) continue;
             //test all numbers up to I
             ModPolynomial product = ModPolynomial.one(I);
             for(LargeInteger k = LargeInteger.ZERO; k.lessThan(I); k = k.add(1)){
@@ -628,7 +635,7 @@ public class LargePolynomial{
                     product = product.multiply(new ModPolynomial(lt, I));
                 }
             }
-            if(product.notEqualsTo(ModPolynomial.one(I))){
+            if(product.doesntEqual(ModPolynomial.one(I))){
                 LargeList<LargeFraction> lt = new LargeList<>();
                 for(LargeInteger C: product.coefficients) lt.add(new LargeFraction(C, LargeInteger.ONE));
                 return new LargePolynomial(lt);
@@ -689,7 +696,7 @@ class ModPolynomial {
     }
     public LargeInteger degree() {return coefficients.size().subtract(1);}
     public boolean isZero() {return coefficients.size().equals(LargeInteger.ONE) && coefficients.getFirst().equals(LargeInteger.ZERO);}
-    public boolean equalsTo(ModPolynomial other) {
+    public boolean equals(ModPolynomial other) {
         if (this.p.doesntEqual(other.p)) return false;
         if (this.coefficients.size().doesntEqual(other.coefficients.size())) return false;
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i=i.add(1))
@@ -697,7 +704,7 @@ class ModPolynomial {
                 return false;
         return true;
     }
-    public boolean notEqualsTo(ModPolynomial other) {return !equalsTo(other);}
+    public boolean doesntEqual(ModPolynomial other) {return !equals(other);}
     public LargeInteger lead() {return coefficients.getFirst();}
     public static ModPolynomial one(LargeInteger p) {
         LargeList<LargeInteger> coefficients = new LargeList<>();

@@ -44,7 +44,7 @@ public class Base{
         LargeInteger start = copy2.numerator;
         LargeInteger R = start;
         do{
-            LargeInteger[] DR = R.multiply(B).divideAndRemainder(copy2.denominator);
+            LargeInteger[] DR = R.multiply(B).quotientAndRemainder(copy2.denominator);
             repeatingPart.add(DR[0].mod(B));
             R = DR[1];
         }while(R.doesntEqual(start));
@@ -53,11 +53,13 @@ public class Base{
         if (base < 10) return Long.toString(digit);
         if (base <= 62) {
             if (digit < 10) return Long.toString(digit);
-            String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-            return Character.toString(chars.charAt((int) digit - 10));
+            return Character.toString(chars[(int) digit - 10]);
         }
         return Long.toString(digit);
     }
+    private static final char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',  'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
+    'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
     public String toString(){
         StringBuilder sb = new StringBuilder();
         if (sign) sb.append('-');

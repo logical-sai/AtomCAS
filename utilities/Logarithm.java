@@ -39,16 +39,13 @@ public class Logarithm extends ScalarAtom {
     @Override
     public ScalarAtom power(LargeFraction f) {return null;}
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return null;
     }
     @Override
     public String toString() {return "";}
     @Override
     public String toLatex() {return "";}
-    public int hashCode(){
-        return 0;
-    }
     @Override
     public boolean equals(Atom other) {return false;}
 }

@@ -5,7 +5,6 @@ public class ScalarList{
     public ScalarList(LargeList<ScalarAtom> list) {this.list = list.copy();}
     public ScalarAtom get(int i) {return list.get(i);}
     public ScalarAtom get(LargeInteger i){return list.get(i);}
-    public int intSize() {return list.intSize();}
     public LargeInteger size(){return list.size();}
     private void requireReal(String operation) {
         for (ScalarAtom atom : list) {

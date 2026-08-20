@@ -153,19 +153,6 @@ public class LargePowerMonomial extends ScalarAtom{
             str.append("^{").append(exponent.toLatex()).append("}");
         return str.toString();
     }
-    // Conceptual LargePowerMonomial implementation
-    @Override
-    public int hashCode() {
-        if (isRational()) {
-            LargeFraction value = base.multiply(exponent2.equals(ONE) ? -1 : 1);
-            return value.hashCode();
-        }
-        int hash = 0;
-        hash = 31 * hash + base.hashCode();
-        hash = 31 * hash + exponent.hashCode();
-        hash = 31 * hash + exponent2.hashCode();
-        return hash;
-    }
     @Override
     public boolean equals(Atom other) {
         if(!(other instanceof ScalarAtom)) return false;
@@ -418,7 +405,7 @@ public class LargePowerMonomial extends ScalarAtom{
     @Override
     public LargePowerMonomial cube(){return new LargePowerMonomial(this.base, (LargeFraction) this.exponent.multiply(LargeInteger.THREE), (LargeFraction) this.exponent2.multiply(LargeInteger.THREE));}
     public LargePowerMonomial power(LargeFraction f){return new LargePowerMonomial(base, (LargeFraction) exponent.multiply(f), (LargeFraction) exponent2.multiply(f));}
-    public LargeDecimal approximateToDecimal(long precision){return null;}
+    public LargeDecimal approximateToDecimal(LargeInteger precision){return null;}
     public LargeMap<LargeInteger, LargeFraction> factor(){
         LargeMap<LargeInteger, LargeFraction> pr = new LargeMap<>();
         if(exponent2.doesntEqual(LargeInteger.ZERO)) pr.put(LargeInteger.NEGATIVE_ONE, exponent2);

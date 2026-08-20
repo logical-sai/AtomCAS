@@ -45,13 +45,6 @@ public class RadicalTermNode extends ScalarAtom{
 
     @Override
     public String toLatex() {return "";}
-    public int hashCode(){
-        int hash = 0;
-        hash = 31 * hash + rationalPart.hashCode();
-        hash = 31 * hash + coefficient.hashCode();
-        hash = 31 * hash + exponent.hashCode();
-        return hash;
-    }
     @Override
     public RadicalTermNode copy() {return new RadicalTermNode(rationalPart, coefficient, exponent);}
     @Override
@@ -89,7 +82,7 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.ZERO);}
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {return null;}
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
     public boolean equals(Atom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
 }

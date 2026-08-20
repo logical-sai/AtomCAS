@@ -50,9 +50,6 @@ public class LargeVector extends TensorAtom {
         sb.append((char) 0x3009);
         return sb.toString();
     }
-    public int hashCode(){
-        return 0;
-    }
     @Override
     public String toLatex() {
         return "";

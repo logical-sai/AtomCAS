@@ -23,7 +23,18 @@ public class LargeMap<K, V>{
         sb.append("}");
         return sb.toString();
     }
-    public int hashCode(){return 0;}
+    @Override
+    public int hashCode() {
+        throw new UnsupportedOperationException("LargeMap<K,V> hashCode not implemented yet");
+//        int h = 0;
+//        for (K key : keys) {
+//            int kh = key.hashCode();
+//            int vh = get(key).hashCode();
+//            int entryHash = CASHash.finish(CASHash.mix(ENTRY_TAG, kh) ^ vh);
+//            h += entryHash;
+//        }
+//        return CASHash.finish(h);
+    }
     public LargeList<K> keys(){return keys;}
     public LargeList<V> values(){return values;}
     public K keyAtIndex(LargeInteger index){return keys.get(index);}

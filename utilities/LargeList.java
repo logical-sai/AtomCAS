@@ -38,8 +38,12 @@ public class LargeList<T> implements Iterable<T>{
         sb.append("}");
         return sb.toString();
     }
+    @Override
     public int hashCode() {
-        return 0;
+        int h = 1;
+        for (T x : this)
+            h = CASHash.mix(h, x == null ? 0 : x.hashCode());
+        return CASHash.finish(h);
     }
     public void add(T value) {
         if (intSized())
@@ -213,6 +217,7 @@ public class LargeList<T> implements Iterable<T>{
         height = 0;
         root = new Object[CHUNK_SIZE];
     }
+    public boolean isEmpty(){return sizeInt==0;}
     private int[] base1000Digits(LargeInteger index) {
         if (index.equals(LargeInteger.ZERO))
             return new int[]{0};

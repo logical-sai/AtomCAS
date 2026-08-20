@@ -1,13 +1,92 @@
 package com.AtomCAS;
 import com.AtomCAS.utilities.*;
+import java.math.BigInteger;
+import java.util.Arrays;
 
 public class DevPlayground {
     private static void testReciprocal(String input) {
         ScalarAtom x = Parser.parse(input);
         System.out.println("1/(" + x + ") = " + x.reciprocal());
     }
+    static volatile Object sink = new Object();
+    static void benchmarkSquare(){
+        int[] karatsubaThresholds = {32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096};
+        int[] toomThresholds = {128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 8192, 16384, 32768, 65536, 131072, Integer.MAX_VALUE};
+        int[] chunkSizes = {32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288,
+                16384, 24576, 32768, 49152, 65536};
+        for (int chunkSize : chunkSizes) {
+            System.out.println("Chunk size tried: " + chunkSize);
+            for(int karatsubaThreshold : karatsubaThresholds)
+                System.out.printf("%10d", karatsubaThreshold);
+            System.out.println();
+            long[] A = LargeInteger.randomChunks(chunkSize).limbs;
+            int trials = 131072/chunkSize;
+            for (int toom : toomThresholds) {
+                if(toom > 2*chunkSize) continue;
+                System.out.printf("%-8d", toom);
+                for (int karatsuba : karatsubaThresholds) {
+                    if (karatsuba >= toom) continue;
+                    for(int i = 0; i < trials; i++)
+                        LargeInteger.squareMagnitudeWithThresholds(A, karatsuba, toom);
+                    long start = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        LargeInteger.squareMagnitudeWithThresholds(A, karatsuba, toom);
+                    long end = System.nanoTime();
+                    long duration = end - start;
+                    System.out.printf("%-10.3f",  duration/1e9);
+                }
+                System.out.println();
+            }
+            System.out.println();
+        }
+    }
+    static void testMultiply(){
+        int BI_Wins = 0;
+        int LI_Wins = 0;
+        double[] ratios = new double[3001];
+        for (int k = 1; k < 15001; k += 5) {
+            int trials = 15001-k;
+            LargeInteger A = LargeInteger.randomChunks(k);
+            LargeInteger B = LargeInteger.randomChunks(k);
+            BigInteger BA = A.toBigInteger();
+            BigInteger BB = B.toBigInteger();
+
+            LargeInteger LResult = A.square();
+            BigInteger BResult = BA.multiply(BA);
+
+            if (!LResult.toBigInteger().equals(BResult))
+                throw new AssertionError("Product is wrong");
+            // Warmup
+            for (int i = 0; i < trials; i++) {
+                sink = A.multiply(B);
+                sink = BA.multiply(BB);
+            }
+            // Measure LI
+            long t0 = System.nanoTime();
+            for (int i = 0; i < trials; i++)
+                sink = A.multiply(A);
+            long t1 = System.nanoTime();
+            // Measure BI
+            for (int i = 0; i < trials; i++)
+                sink = BA.multiply(BB);
+            long t2 = System.nanoTime();
+            System.out.println("Chunks tried: " + k);
+            System.out.println("Avg. LargeInteger time: " + (t1 - t0) / (1e9 * trials) + " seconds/trial");
+            System.out.println("Avg. BigInteger time: " + (t2 - t1) / (1e9 * trials) + " seconds/trial");
+            double ratio = (t1 - t0) * 1.0 / (t2 - t1);
+            if(ratio < 1.0) LI_Wins++;
+            else BI_Wins++;
+            System.out.println("Ratio: " + ratio);
+            System.out.println();
+            ratios[k/5] = ratio;
+        }
+        System.out.println("Times LargeInteger won: " + LI_Wins);
+        System.out.println("Times BigInteger won: " + BI_Wins);
+        Arrays.sort(ratios);
+        System.out.println("Median ratio: " + ratios[ratios.length/2]);
+    }
     static void main() {
-//        long start = System.currentTimeMillis();
+//        long start = System.nanoTime();
 //        demoIntegers();
 //        demoFractions();
 //        demoRadicals();
@@ -15,9 +94,32 @@ public class DevPlayground {
 //        demoVectorsMatrices();
 //        demoParser();
 //        demoBaseConversion();
-//        long end = System.currentTimeMillis();
-//        System.out.println("Elapsed time: " + (end - start)/1e3 + " seconds");
-        System.out.println(new LargeInteger("198976997779123653549985318327706220674142699192362129").quadraticSieveWithoutConstraints());
+//        long end = System.nanoTime();
+//        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
+        LargeInteger A = LargeInteger.randomChunks(1025);
+        LargeInteger B = LargeInteger.randomChunks(125);
+        BigInteger BA = A.toBigInteger();
+        BigInteger BB = B.toBigInteger();
+        LargeInteger LResult = A.longDivision(B);
+        BigInteger BResult = BA.divide(BB);
+        if(!LResult.toBigInteger().equals(BResult))
+            throw new AssertionError("Quotient is wrong");
+        int trials = 1000;
+        //Warmup
+        for (int i = 0; i < trials; i++) {
+            sink = A.longDivision(B);
+            sink = BA.divide(BB);
+        }
+        long t0 = System.nanoTime();
+        for (int i = 0; i < trials; i++)
+            sink = A.longDivision(B);
+        long t1 = System.nanoTime();
+        for (int i = 0; i < trials; i++)
+            sink = BA.divide(BB);
+        long t2 = System.nanoTime();
+        System.out.println("LI time: " + (t1-t0)/(1e9*trials) + " seconds/trial");
+        System.out.println("BI time: " + (t2-t1)/(1e9*trials) + " seconds/trial");
+        System.out.println("Ratio: " + (t1 - t0)*1.0/(t2 - t1));
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
@@ -108,15 +210,15 @@ public class DevPlayground {
         testReciprocal("8^(1/3) + 2^(1/3)");
         testReciprocal("16^(1/4) - 2^(1/2)");
         testReciprocal("27^(1/6) + 3^(1/3)");
-        testReciprocal("-2^(13/100) + 2");
+        testReciprocal("-5^(99/100) + 5");
 
         // Powers / fractional exponents
         testReciprocal("2^(1/3)+1");
         testReciprocal("3^(1/2)+5^(1/2)");
         testReciprocal("5-7*10^(1/7)");
-        testReciprocal("12 - 12*12^(1/12)");
-        testReciprocal("2/47 + 97*83^(1/13)");
-        testReciprocal("7/443 + 53*(89)^(1/17)");
+        testReciprocal("60 - 60*60^(1/60)");
+        testReciprocal("2/47 + 97*83^(12/13)");
+        testReciprocal("7/443 + 53*(89)^(16/17)");
 
         // Complex-principal-root cases
         testReciprocal("√-1");
@@ -158,11 +260,8 @@ public class DevPlayground {
                 "(1+√7)^8"
         };
         for (String input : inputs) {
-            try {
-                System.out.println(input + " -> " + Parser.parse(input));
-            } catch (Exception e) {
-                System.out.println(input + " -> ERROR: " + e.getMessage());
-            }
+            try {System.out.println(input + " -> " + Parser.parse(input));}
+            catch (Exception e) {System.out.println(input + " -> ERROR: " + e.getMessage());}
         }
         System.out.println();
     }
@@ -176,7 +275,9 @@ public class DevPlayground {
         System.out.println("51/37 in base 26 = " + new Base(new LargeFraction(LargeInteger.valueOf(51), LargeInteger.valueOf(37)), 26));
         System.out.println("19/64 in base 53 = " + new Base(new LargeFraction(LargeInteger.valueOf(19), LargeInteger.valueOf(64)), 53));
         System.out.println("-213781471834746879182637586423 in base 7 = " + new Base(new LargeFraction("-213781471834746879182637586423"), 7));
-        System.out.println("117/107 in base 89 = " + new Base(new LargeFraction(LargeInteger.valueOf(117), LargeInteger.valueOf(107)), 89));
+        Base B = new Base(new LargeFraction(LargeInteger.valueOf(117), LargeInteger.valueOf(107)), 89);
+        System.out.println("117/107 in base 89 = " + B);
+        System.out.println("117/107 in base 43 = " + B.convertToBase(43));
         System.out.println("759/432 in base 19 = " + new Base(new LargeFraction(LargeInteger.valueOf(759), LargeInteger.valueOf(432)), 19));
         System.out.println("61/19 in base 41 = " + new Base(new LargeFraction(LargeInteger.valueOf(61), LargeInteger.valueOf(19)), 41));
         System.out.println("71/109 in base 38 = " + new Base(new LargeFraction(LargeInteger.valueOf(71), LargeInteger.valueOf(109)), 38));

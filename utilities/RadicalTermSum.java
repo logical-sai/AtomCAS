@@ -166,9 +166,6 @@ public class RadicalTermSum extends ScalarAtom{
 
     @Override
     public String toLatex() {return "";}
-    public int hashCode(){
-        return 0;
-    }
     @Override
     public RadicalTermSum copy() {return new RadicalTermSum(sum, constant);}
     @Override
@@ -364,7 +361,7 @@ public class RadicalTermSum extends ScalarAtom{
     public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.ONE);}
 
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {return null;}
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     private static void addBasisIfMissing(LargeList<LargePowerMonomial> basis, LargePowerMonomial x){
         for (LargePowerMonomial b : basis)
             if (b.equals(x)) return;

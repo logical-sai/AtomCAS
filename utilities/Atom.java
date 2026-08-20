@@ -49,12 +49,13 @@ public abstract class Atom {
     public abstract String toString();
     public abstract String toLatex();
     @Override
-    public boolean equals(Object other){
-        if(other instanceof Atom A) return equals(A);
+    public final boolean equals(Object other) {
+        if (other instanceof Atom A)
+            return equals(A);
         return hashCode() == other.hashCode();
     }
     public abstract boolean equals(Atom other);
     public boolean doesntEqual(Atom other){return !equals(other);}
     @Override
-    public abstract int hashCode();
+    public int hashCode(){return CASHash.hash(this);}
 }

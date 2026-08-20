@@ -1,58 +1,39 @@
 package com.AtomCAS.utilities;
 public class LargeDecimal extends ScalarAtom{
-    LargeInteger mantissa;
-    long scale;
-    public LargeDecimal(LargeInteger mantissa, long scale){
-        this.mantissa = mantissa;
-        this.scale = scale;
+    boolean sign;
+    LargeList<Long> intPart; //little-endian; base 2^64
+    LargeList<Long> decPart; //big-endian; base 10^18
+    public LargeDecimal(LargeList<Long> intPart, LargeList<Long> decPart, boolean sign) {
+        this.intPart = intPart;
+        this.decPart = decPart;
+        this.sign = isNonZeroList(intPart) && isNonZeroList(decPart) && sign;
+    }
+    private static boolean isNonZeroList(LargeList<Long> list) {
+        while(list.size().greaterThan(LargeInteger.ONE) && list.getLast() == 0) list.removeLast();
+        if(list.intSized()) return list.intSize() != 1 || list.getFirst() != 0;
+        return true;
     }
     @Override
-    public Atom copy() {return new LargeDecimal(mantissa, scale);}
+    public Atom copy() {return new LargeDecimal(intPart, decPart, sign);}
     @Override
     public String toString() {
-        if (mantissa.equals(LargeInteger.ZERO))
-            return "0";
-        boolean negative = mantissa.sign().equals(LargeInteger.NEGATIVE_ONE);
-        String digits = mantissa.abs().toString();
         StringBuilder sb = new StringBuilder();
-        if (negative) sb.append("-");
-        // scale == 0: ordinary integer
-        if (scale == 0) {
-            sb.append(digits);
-            return sb.toString();
-        }
-        // scale < 0: append zeros to the right
-        if (scale < 0) {
-            sb.append(digits);
-            long zeros = -scale;
-            for (long i = 0; i <= zeros; i++)
-                sb.append("0");
-            return sb.toString();
-        }
-
-        // scale > 0: decimal point goes scale digits from the right
-        int digitCount = digits.length();
-
-        if (scale < digitCount) {
-            int pointIndex = Math.toIntExact(digitCount - scale);
-            sb.append(digits, 0, pointIndex);
-            sb.append(".");
-            sb.append(digits.substring(pointIndex));
-        } else {
-            sb.append("0.");
-            long leadingZeros = scale - digitCount;
-            for (long i = 0; i <= leadingZeros; i++)
-                sb.append("0");
-            sb.append(digits);
+        if (sign) sb.append('-');
+        appendIntegerDecimal(sb, intPart);
+        if (!decPart.size().doesntEqual(LargeInteger.ZERO)) {
+            sb.append('.');
+            for (Long chunk : decPart){
+                String s = Long.toString(chunk);
+                sb.repeat("0", 18 - s.length());
+                sb.append(s);
+            }
         }
         return sb.toString();
     }
-    public int hashCode(){
-        int hash = 0;
-        hash = 31 * hash + mantissa.hashCode();
-        return hash;
+    private static void appendIntegerDecimal(StringBuilder sb, LargeList<Long> intPart) {
+
     }
-    public String toLatex(){return "";}
+    public String toLatex(){return toString();}
     @Override
     public boolean equals(Atom other) {
         return false;
@@ -83,7 +64,8 @@ public class LargeDecimal extends ScalarAtom{
 
     @Override
     public ScalarAtom abs() {
-        return null;
+        if(!sign) return this;
+        return new LargeDecimal(intPart, decPart, false);
     }
 
     @Override
@@ -142,7 +124,7 @@ public class LargeDecimal extends ScalarAtom{
     }
 
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return this;
     }
 }

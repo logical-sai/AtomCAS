@@ -100,12 +100,7 @@ public class LargeMatrix extends TensorAtom {
         return sb.toString();
     }
     @Override
-    public int hashCode(){return 0;}
-    @Override
-    public String toLatex() {
-        return "";
-    }
-
+    public String toLatex() {return "";}
     @Override
     public LargeMatrix copy() {return new LargeMatrix(this.list, this.factor);}
     public LargeInteger rows(){return list.size();}

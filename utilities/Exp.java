@@ -35,9 +35,6 @@ public class Exp extends ScalarAtom {
 
     @Override
     public String toLatex() {return "";}
-    public int hashCode(){
-        return 0;
-    }
     @Override
     public boolean equals(Atom other) {
         return false;
@@ -112,7 +109,7 @@ public class Exp extends ScalarAtom {
     @Override
     public ScalarAtom power(LargeFraction f) {return new Exp(this.addend.power(f), this.coefficient.power(f), this.power.multiply(f));}
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return null;
     }
 }

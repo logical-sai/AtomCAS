@@ -117,7 +117,7 @@ public class CalculatorUI {
                     }
                 }else if (command.equals("≈")) {
                     try {
-                        ScalarAtom result = Parser.parse(inputLayer.getText()).approximateToDecimal(16);
+                        ScalarAtom result = Parser.parse(inputLayer.getText()).approximateToDecimal(LargeInteger.valueOf(16));
                         outputLayer.setText(result.toString());
                     } catch (Exception ex) {inputLayer.setText(ex.getMessage());}
                 }else if(command.equals("del")){

@@ -27,11 +27,6 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public int hashCode() {
-        return 0;
-    }
-
-    @Override
     public LargeInteger floor() {
         return null;
     }
@@ -104,7 +99,7 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public LargeDecimal approximateToDecimal(long precision) {return null;}
+    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
 }
 class RationalInterval{
     LargeFraction lower;
