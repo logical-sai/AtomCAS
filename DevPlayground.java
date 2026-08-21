@@ -96,26 +96,26 @@ public class DevPlayground {
 //        demoBaseConversion();
 //        long end = System.nanoTime();
 //        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
-        LargeInteger A = LargeInteger.randomChunks(1025);
-        LargeInteger B = LargeInteger.randomChunks(125);
+        LargeInteger A = LargeInteger.randomChunks(14208);
+        LargeInteger B = LargeInteger.randomChunks(7104);
         BigInteger BA = A.toBigInteger();
         BigInteger BB = B.toBigInteger();
-        LargeInteger LResult = A.longDivision(B);
-        BigInteger BResult = BA.divide(BB);
-        if(!LResult.toBigInteger().equals(BResult))
+        LargeInteger[] LResult = A.quotientAndRemainder(B);
+        BigInteger[] BResult = BA.divideAndRemainder(BB);
+        if (!LResult[0].toBigInteger().equals(BResult[0]))
             throw new AssertionError("Quotient is wrong");
-        int trials = 1000;
+        int trials = 100;
         //Warmup
         for (int i = 0; i < trials; i++) {
-            sink = A.longDivision(B);
-            sink = BA.divide(BB);
+            sink = A.quotientAndRemainder(B);
+            sink = BA.divideAndRemainder(BB);
         }
         long t0 = System.nanoTime();
         for (int i = 0; i < trials; i++)
-            sink = A.longDivision(B);
+            sink = A.quotientAndRemainder(B);
         long t1 = System.nanoTime();
         for (int i = 0; i < trials; i++)
-            sink = BA.divide(BB);
+            sink = BA.divideAndRemainder(BB);
         long t2 = System.nanoTime();
         System.out.println("LI time: " + (t1-t0)/(1e9*trials) + " seconds/trial");
         System.out.println("BI time: " + (t2-t1)/(1e9*trials) + " seconds/trial");

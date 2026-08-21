@@ -23,15 +23,9 @@ public class LargeInteger extends ScalarAtom {
      * Internal magnitude constants + zero and one checkers
      */
     private static final long[] ZERO_MAG = {0L};
-    static boolean isZeroArray(long[] a){
-        a = trimLeadingZeros(a);
-        return a.length == 1 && a[0] == 0;
-    }
+    static boolean isZeroArray(long[] a){return a.length == 1 && a[0] == 0;}
     private static final long[] ONE_MAG = {1L};
-    static boolean isOneArray(long[] x) {
-        x = trimLeadingZeros(x);
-        return x.length == 1 && x[0] == 1;
-    }
+    static boolean isOneArray(long[] x) {return x.length == 1 && x[0] == 1;}
     private static final long[] TWO_MAG = {2L};
     private static final long[] THREE_MAG = {3L};
     private static final long[] FOUR_MAG = {4L};
@@ -349,7 +343,6 @@ public class LargeInteger extends ScalarAtom {
                 do candidate[i] = SECURE_RNG.nextLong();
                 while (Long.compareUnsigned(candidate[i], upperBound) > 0);
             }
-            candidate = trimLeadingZeros(candidate);
         }while (compareArray(candidate, range) >= 0);
         return addMagnitudes(startInclusive, candidate);
     }
@@ -376,19 +369,15 @@ public class LargeInteger extends ScalarAtom {
     private static int compareArrayUntrimmed(long[] a, long[] b) {
         int alen = a.length;
         while (alen > 1 && a[alen - 1] == 0L) alen--;
-
-        int blen = b.length;
-        while (blen > 1 && b[blen - 1] == 0L) blen--;
-
-        if (alen != blen)
-            return Integer.compare(alen, blen);
-
+        int bLen = b.length;
+        while (bLen > 1 && b[bLen - 1] == 0L) bLen--;
+        if (alen != bLen)
+            return Integer.compare(alen, bLen);
         for (int i = alen - 1; i >= 0; i--) {
             int cmp = Long.compareUnsigned(a[i], b[i]);
             if (cmp != 0)
                 return cmp;
         }
-
         return 0;
     }
     static boolean equalsArray(long[] a, long[] b) {
@@ -482,12 +471,6 @@ public class LargeInteger extends ScalarAtom {
             int c = Long.compareUnsigned(high, other.high);
             if (c != 0) return c;
             return Long.compareUnsigned(low, other.low);
-        }
-        LongPair subtract(LongPair other) {
-            long newLow = low - other.low;
-            long borrow = Long.compareUnsigned(low, other.low) < 0 ? 1L : 0L;
-            long newHigh = high - other.high - borrow;
-            return new LongPair(newHigh, newLow);
         }
         DivRemLongPair divideByLong(long divisor) {
             if (divisor == 0L)
@@ -599,13 +582,11 @@ public class LargeInteger extends ScalarAtom {
         }
         SignedMag multiply(SignedMag other) {return new SignedMag(multiplyMagnitudes(mag, other.mag), negative ^ other.negative);}
         SignedMag multiplyMagnitude(long[] other) {return new SignedMag(multiplyMagnitudes(mag, other), negative);}
-        SignedMag multiplyWithThresholds(SignedMag other, int KT, int T3T) {return new SignedMag(multiplyMagnitudesWithThresholds(mag, other.mag, KT, T3T), negative ^ other.negative);}
         SignedMag multiplySignedLong(long other) {return new SignedMag(multiplySmallMag(mag, Math.abs(other)), negative ^ (other < 0));}
         long[] toPositiveMagnitudeChecked() {
             if (negative) throw new ArithmeticException("Error: Some interpolation produced negative final values");
             return mag;
         }
-        void divideBy3Exact() {divideMagExactInPlace(mag, 3);}
         SignedMag shiftRightOneBit(){return new SignedMag(LargeInteger.shiftRightBits(mag, 1), negative);}
         long[] modMag(long[] n) {
             long[] r = modMagnitudes(mag, n);
@@ -633,13 +614,11 @@ public class LargeInteger extends ScalarAtom {
     private static long[] addSmallMag(long[] addend, long adder) {
         addend = trimLeadingZeros(addend);
         long[] out = new long[addend.length + 1];
-        LongPair LP = LongPair.add64(addend[0], adder);
-        out[0] = LP.low;
-        long carry = LP.high;
+        out[0] = addend[0] + adder;
+        long carry = Long.compareUnsigned(out[0], addend[0]) < 0 ? 1 : 0;
         for (int i = 1; i < addend.length; i++) {
-            LongPair L = LongPair.add64(addend[i], carry);
-            out[i] = L.low;
-            carry = L.high;
+            out[i] = addend[i] + carry;
+            carry = out[i] < addend[i] ? 1 : 0L;
         }
         out[addend.length] = carry;
         return trimLeadingZeros(out);
@@ -651,27 +630,18 @@ public class LargeInteger extends ScalarAtom {
             return addSmallMag(b, a[0]);
         if (b.length == 1)
             return addSmallMag(a, b[0]);
-        int min = Math.min(a.length, b.length);
         int max = Math.max(a.length, b.length);
-        long[] larger = a.length >= b.length ? a : b;
         long[] res = new long[max + 1];
         long carry = 0L;
-        for (int i = 0; i < min; i++) {
-            long s = a[i] + b[i];
-            long c1 = Long.compareUnsigned(s, a[i]) < 0 ? 1L : 0L;
-
+        for (int i = 0; i < max; i++) {
+            long a_i = i < a.length ? a[i] : 0L;
+            long b_i = i < b.length ? b[i] : 0L;
+            long s = a_i + b_i;
+            long c1 = Long.compareUnsigned(s, a_i) < 0 ? 1L : 0L;
             long r = s + carry;
             long c2 = Long.compareUnsigned(r, s) < 0 ? 1L : 0L;
-
             res[i] = r;
             carry = c1 | c2;
-        }
-        for (int i = min; i < max; i++) {
-            long x = larger[i];
-            long r = x + carry;
-
-            res[i] = r;
-            carry = Long.compareUnsigned(r, x) < 0 ? 1L : 0L;
         }
         res[max] = carry;
         return trimLeadingZeros(res);
@@ -797,7 +767,6 @@ public class LargeInteger extends ScalarAtom {
             return new RadicalTermNode(new LargeFraction(this, ONE), LargeFraction.ONE, LPN);
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
-
     public ScalarAtom add(ScalarAtom... atoms) {
         ScalarAtom result = this;
         for (ScalarAtom atom : atoms) result = result.add(atom);
@@ -826,38 +795,34 @@ public class LargeInteger extends ScalarAtom {
     }
     public LargeInteger subtract(long other) {return add(-other);}
     private static long[] shiftLeftLimbs(long[] x, int limbs) {
-        x = trimLeadingZeros(x);
         if (isZeroArray(x)) return ZERO_MAG;
         if (limbs <= 0) return x;
         long[] out = new long[x.length + limbs];
         // pad zeros at the beginning
         System.arraycopy(x, 0, out, limbs, x.length);
-        return out;
+        return trimLeadingZeros(out);
     }
     private static long[] shiftLeftBits(long[] n, long shift) {
-        n = trimLeadingZeros(n);
         if (isZeroArray(n)) return ZERO_MAG;
         if (shift < 0) return shiftRightBits(n, -shift);
-        n = trimLeadingZeros(n);
-        if (isZeroArray(n) || shift == 0) return n.clone();
+        if (shift == 0) return n;
         int limbShift = (int) shift >>> 6;
         int bitShift = (int) shift & 63;
         long[] out = new long[n.length + limbShift + 1];
-        if (bitShift == 0)
+        if (bitShift == 0){
             System.arraycopy(n, 0, out, limbShift, n.length);
-        else {
-            long carry = 0;
-            for (int i = 0; i < n.length; i++) {
-                long cur = n[i];
-                out[i + limbShift] = (cur << bitShift) | carry;
-                carry = cur >>> (64 - bitShift);
-            }
-            out[n.length + limbShift] = carry;
+            return trimLeadingZeros(out);
         }
+        long carry = 0;
+        for (int i = 0; i < n.length; i++) {
+            long cur = n[i];
+            out[i + limbShift] = (cur << bitShift) | carry;
+            carry = cur >>> (64 - bitShift);
+        }
+        out[n.length + limbShift] = carry;
         return trimLeadingZeros(out);
     }
     private static long[] shiftRightLimbs(long[] x, int limbs) {
-        x = trimLeadingZeros(x);
         if (isZeroArray(x) || limbs >= x.length) return ZERO_MAG;
         if (limbs < 0) return shiftLeftLimbs(x, -limbs);
         long[] out = new long[x.length - limbs];
@@ -865,9 +830,7 @@ public class LargeInteger extends ScalarAtom {
         return trimLeadingZeros(out);
     }
     private static long[] shiftRightBits(long[] x, long bits) {
-        x = trimLeadingZeros(x);
-        if (isZeroArray(x))
-            return ZERO_MAG;
+        if (isZeroArray(x)) return ZERO_MAG;
         if (bits < 0) return shiftLeftBits(x, -bits);
         if (bits >= 64) return shiftRightBits(shiftRightLimbs(x, (int) (bits / 64)), bits & 63);
         if (bits == 0) return x;
@@ -891,14 +854,12 @@ public class LargeInteger extends ScalarAtom {
     private static void subtractShiftedLeftBitsInPlace(long[] a, long[] b, int shift) {
         if (shift <= 0 || shift >= 64)
             throw new IllegalArgumentException();
-
         long borrow = 0L;
         long spill = 0L;
         int i = 0;
         // Subtract ordinary shifted limbs.
         for (; i < b.length; i++) {
             long x = b[i];
-
             long bi = (x << shift) | spill;
             spill = x >>> (64 - shift);
 
@@ -949,19 +910,8 @@ public class LargeInteger extends ScalarAtom {
     }
     public boolean testBit(long bit){return testBit(limbs, bit);}
     private static long[] slice(long[] a, int from, int to) {
-        int len = Math.max(0, to - from);
-        if (len == 0) return ZERO_MAG;
-        else if (to > a.length) {
-            if (from > a.length)
-                return ZERO_MAG;
-            long[] out = new long[a.length - from];
-            if (a.length - from >= 0)
-                System.arraycopy(a, from, out, 0, a.length - from);
-            return trimLeadingZeros(out);
-        }
-        long[] out = new long[len];
-        if (to - from >= 0) System.arraycopy(a, from, out, 0, to - from);
-        return trimLeadingZeros(out);
+        a = trimLeadingZeros(a);
+        return sliceFixed(a, from, to-from);
     }
     private static long[] multiplySmallMag(long[] a, long m) {
         if (isZeroArray(a) || m == 0L) return ZERO_MAG;
@@ -1002,9 +952,11 @@ public class LargeInteger extends ScalarAtom {
     private static final int TOOM_COOK_3_THRESHOLD = 1024;
     static long[] multiplyMagnitudes(long[] a, long[] b){return multiplyMagnitudesWithThresholds(a, b, KARATSUBA_THRESHOLD, TOOM_COOK_3_THRESHOLD);}
     static long[] multiplyMagnitudesWithThresholds(long[] a, long[] b, int KT, int T3T) {
+        a = trimLeadingZeros(a);
+        b = trimLeadingZeros(b);
         if (isZeroArray(a) || isZeroArray(b))
             return ZERO_MAG;
-        int cmp = compareArray(a, b);
+        int cmp = compareArrayUntrimmed(a, b);
         if (cmp < 0) {
             long[] t = a;
             a = b;
@@ -1048,16 +1000,16 @@ public class LargeInteger extends ScalarAtom {
              * Karatsuba runs in time complexity O(n^(log_2(3)) ≈ O(n^1.585)
              */
             int pivot = (max+1)/2;
-            long[] lower1 = slice(a, 0, pivot);
-            long[] upper1 = slice(a, pivot, max);
-            long[] lower2 = slice(b, 0, pivot);
-            long[] upper2 = slice(b, pivot, min);
+            long[] lower1 = sliceFixed(a, 0, pivot);
+            long[] upper1 = sliceFixed(a, pivot, pivot);
+            long[] lower2 = sliceFixed(b, 0, pivot);
+            long[] upper2 = sliceFixed(b, pivot, pivot);
             long[] z0 = multiplyMagnitudesWithThresholds(lower1, lower2, KT, T3T);
             long[] z2 = multiplyMagnitudesWithThresholds(upper1, upper2, KT, T3T);
             long[] z1 = multiplyMagnitudesWithThresholds(addMagnitudes(lower1, upper1), addMagnitudes(lower2, upper2), KT, T3T);
             subtractMagnitudeInPlace(z1, z0);
             subtractMagnitudeInPlace(z1, z2);
-            long[] out = new long[a.length+b.length];
+            long[] out = new long[max+min+1];
             addMagnitudeInPlace(out, z0, 0);
             addMagnitudeInPlace(out, z1, pivot);
             addMagnitudeInPlace(out, z2, pivot*2);
@@ -1066,12 +1018,12 @@ public class LargeInteger extends ScalarAtom {
         //Toom-Cook 3 algorithm. a SignedMag helper will be needed because negative intermediate values can occur
         int pivot = (max + 2) / 3;
         //define constants from both the polynomials
-        long[] a0 = slice(a, 0, pivot);
-        long[] a1 = slice(a, pivot, 2 * pivot);
-        long[] a2 = slice(a, 2 * pivot, max);
-        long[] b0 = slice(b, 0, pivot);
-        long[] b1 = slice(b, pivot, 2 * pivot);
-        long[] b2 = slice(b, 2 * pivot, min);
+        long[] a0 = sliceFixed(a, 0, pivot);
+        long[] a1 = sliceFixed(a, pivot, pivot);
+        long[] a2 = sliceFixed(a, 2 * pivot, pivot);
+        long[] b0 = sliceFixed(b, 0, pivot);
+        long[] b1 = sliceFixed(b, pivot, pivot);
+        long[] b2 = sliceFixed(b, 2 * pivot, pivot);
         //evaluate each point
         long[] p1 = addThreeMagnitudes(a0, a1, a2);
         SignedMag pm1 = SignedMag.positive(addMagnitudes(a0, a2)).add(SignedMag.negative(a1));
@@ -1082,7 +1034,7 @@ public class LargeInteger extends ScalarAtom {
         //multiply
         long[] v0 = multiplyMagnitudesWithThresholds(a0, b0, KT, T3T);
         long[] v1 = multiplyMagnitudesWithThresholds(p1, q1, KT, T3T);
-        SignedMag vm1 = pm1.multiplyWithThresholds(qm1, KT, T3T);
+        SignedMag vm1 = new SignedMag(multiplyMagnitudesWithThresholds(pm1.mag, qm1.mag, KT, T3T), pm1.negative ^ qm1.negative);
         long[] v2 = multiplyMagnitudesWithThresholds(p2, q2, KT, T3T);
         long[] vInf = multiplyMagnitudesWithThresholds(a2, b2, KT, T3T);
         //interpolate
@@ -1090,13 +1042,13 @@ public class LargeInteger extends ScalarAtom {
         SignedMag s = SignedMag.positive(v1).add(vm1.negate()).shiftRightOneBit();
         SignedMag T = SignedMag.positive(v2).add(SignedMag.negative(addMagnitudes(shiftLeftBits(vInf, 4), v0))).shiftRightOneBit();
         SignedMag r3 = T.add(s.negate()).add(SignedMag.negative(shiftLeftBits(r2.mag, 1)));
-        r3.divideBy3Exact();
+        divideMagExactInPlace(r3.mag, 3);
         SignedMag r1 = s.add(r3.negate());
         //final coefficients
         long[] R1 = r1.toPositiveMagnitudeChecked();
         long[] R2 = r2.toPositiveMagnitudeChecked();
         long[] R3 = r3.toPositiveMagnitudeChecked();
-        long[] product = new long[a.length + b.length];
+        long[] product = new long[max + min + 1];
         addMagnitudeInPlace(product, v0,   0);
         addMagnitudeInPlace(product, R1,   pivot);
         addMagnitudeInPlace(product, R2,   2 * pivot);
@@ -1145,17 +1097,12 @@ public class LargeInteger extends ScalarAtom {
     }
     private static void subtractMagnitudeInPlace(long[] a, long[] b) {
         if (compareArrayUntrimmed(a, b) < 0)
-            throw new IllegalArgumentException(
-                    "subtractMagnitudeInPlace requires a >= b");
-
-        int blen = b.length;
-        while (blen > 0 && b[blen - 1] == 0L)
-            blen--;
-
+            throw new IllegalArgumentException("subtractMagnitudeInPlace requires a >= b");
+        int bLen = b.length;
+        while (bLen > 0 && b[bLen - 1] == 0L) bLen--;
         long borrow = 0L;
         int i = 0;
-
-        for (; i < blen; i++) {
+        for (; i < bLen; i++) {
             long ai = a[i];
             long bi = b[i];
 
@@ -1182,8 +1129,9 @@ public class LargeInteger extends ScalarAtom {
         if (isZeroArray(a)) return a;
         int n = a.length;
         if (n == 1) {
-            long low = a[0]*a[0];
-            long high = Math.unsignedMultiplyHigh(a[0], a[0]);
+            long a0 = a[0];
+            long low = a0*a0;
+            long high = Math.unsignedMultiplyHigh(a0, a0);
             if(high == 0) return new long[]{low};
             return new long[]{low, high};
         }
@@ -1258,7 +1206,6 @@ public class LargeInteger extends ScalarAtom {
         long[] a0 = slice(a, 0, m);
         long[] a1 = slice(a, m, m * 2);
         long[] a2 = slice(a, m * 2, n);
-
         //evaluate points
         long[] p1 = addThreeMagnitudes(a2, a1, a0);
         long[] pm1 = addMagnitudes(a2, a0);
@@ -1266,31 +1213,29 @@ public class LargeInteger extends ScalarAtom {
             subtractMagnitudeInPlace(pm1, a1);
         else pm1 = subtractMagnitudes(a1, pm1);
         long[] p2 = addThreeMagnitudes(shiftLeftBits(a2, 2), shiftLeftBits(a1, 1), a0);
-
         //square each point
         long[] v0 = squareMagnitudeWithThresholds(a0, KT, T3T);
         long[] v1 = squareMagnitudeWithThresholds(p1,  KT, T3T);
         long[] vm1 = squareMagnitudeWithThresholds(pm1, KT, T3T);
         long[] v2 = squareMagnitudeWithThresholds(p2, KT, T3T);
         long[] vInf = squareMagnitudeWithThresholds(a2, KT, T3T);
-
         //interpolate
         long[] s = subtractMagnitudes(v1, vm1);
         shiftRightOneBitInPlace(s);
-// v1 -> r2
+        // v1 -> r2
         subtractMagnitudeInPlace(v1, s);
         subtractMagnitudeInPlace(v1, v0);
         subtractMagnitudeInPlace(v1, vInf);
-// v2 -> t
+        // v2 -> t
         subtractMagnitudeInPlace(v2, v0);
         subtractShiftedLeftBitsInPlace(v2, vInf, 4);
         shiftRightOneBitInPlace(v2);
 
-// t -> r3
+        // t -> r3
         subtractMagnitudeInPlace(v2, s);
         subtractShiftedLeftBitsInPlace(v2, v1, 1);
         divideMagExactInPlace(v2, 3);
-// s -> r1
+        // s -> r1
         subtractMagnitudeInPlace(s, v2);
         long[] out = new long[n * 2];
         addMagnitudeInPlace(out, v0,   0);
@@ -1385,31 +1330,16 @@ public class LargeInteger extends ScalarAtom {
     public LargeInteger triangular() {return (LargeInteger) (isEven() ? longDivision(TWO).multiply(add(1)) : multiply(add(1).longDivision(TWO)));}
     public LargeInteger tetrahedral() {return add(2).nCr(THREE);}
     public static LargeInteger figurate(LargeInteger l, LargeInteger k) {return ((LargeInteger) k.subtract(1).add(l)).nCr(k);}
-//    private static OtherDivRemLongPair divideTwoByTwo(long a1, long a2, long b1, long b2) {
-//
-//    }
-//    private static LongPair[] divideThreeByTwo(long a1, long a2, long a3, long b1, long b2) {
-//        if (Long.compareUnsigned(a1, b1) < 0){
-//            OtherDivRemLongPair pair = divideThreeByTwoOneLimbQuotient(a1, a2, a3, b1, b2);
-//            return new LongPair[]{new LongPair(0L, pair.quotient), pair.remainder};
-//        }
-//        OtherDivRemLongPair first = divideTwoByTwo(a1, a2, b1, b2);
-//        OtherDivRemLongPair second = divideThreeByTwoOneLimbQuotient(first.remainder.high, first.remainder.low, a3, b1, b2);
-//        return new LongPair[]{new LongPair(first.quotient, second.quotient), second.remainder};
-//    }
     private static final long U32_MASK = 0xFFFF_FFFFL;
     private static final long U32_BASE = 1L << 32;
     private record DivRem3By2(int quotient, int remHigh, int remLow) {}
 
     private static DivRem3By2 divideThreeByTwo(int a1, int a2, int a3, int b1, int b2) {
-
         long A1 = Integer.toUnsignedLong(a1);
         long A2 = Integer.toUnsignedLong(a2);
         long A3 = Integer.toUnsignedLong(a3);
-
         long B1 = Integer.toUnsignedLong(b1);
         long B2 = Integer.toUnsignedLong(b2);
-
         if (B1 == 0)
             throw new ArithmeticException("Division by zero");
 
@@ -1481,39 +1411,14 @@ public class LargeInteger extends ScalarAtom {
             throw new ArithmeticException("Internal three-by-two division error");
         return new DivRem3By2((int) q, (int) r1, (int) r0);
     }
-//    private static OtherDivRemLongPair divideThreeByTwoOneLimbQuotient(long a1, long a2, long a3, long b1, long b2){
-//        DivRemLongPair dr = new LongPair(a1, a2).divideByLong(b1);
-//        long q = dr.quotient.low;
-//        long c = dr.remainder;
-//        LongPair product = LongPair.multiply64(q, b2);
-//        boolean cOverflow = false;
-//        while (!cOverflow && new LongPair(c, a3).lessThan(product)) {
-//            q--;
-//            long oldC = c;
-//            c += b1;
-//            cOverflow = Long.compareUnsigned(c, oldC) < 0;
-//            product = LongPair.multiply64(q, b2);
-//        }
-//        // c*B + a3
-//        LongPair sub = new LongPair(c, a3);
-//        while (sub.lessThan(product)) {
-//            q--;
-//            // cB+a3 -> (c+b1)B+a3
-//            sub = new LongPair(sub.high + b1, sub.low);
-//            // q*b2 -> (q-1)*b2
-//            product = product.subtract(new LongPair(0, b2));
-//        }
-//        LongPair r = sub.subtract(product);
-//        return new OtherDivRemLongPair(q, r);
-//    }
-//  private record OtherDivRemLongPair(long quotient, LongPair remainder){}
-    private static DivRem divideByLong(long[] a, long d) {
-        if (d == 0L) throw new ArithmeticException("divide by zero");
+    private static DivRem divideByLong(long[] a, long divisor) {
+        if (divisor == 0)
+            throw new ArithmeticException("Division by zero");
         a = trimLeadingZeros(a);
         long[] q = new long[a.length];
         long rem = 0L;
         for (int i = a.length - 1; i >= 0; i--) {
-            DivRemLongPair dr = new LongPair(rem, a[i]).divideByLong(d);
+            DivRemLongPair dr = new LongPair(rem, a[i]).divideByLong(divisor);
             if (dr.quotient.high != 0L)
                 throw new ArithmeticException("quotient overflow");
             q[i] = dr.quotient.low;
@@ -1524,7 +1429,6 @@ public class LargeInteger extends ScalarAtom {
     private static void divideMagExactInPlace(long[] a, long divisor) {
         if (divisor == 0L)
             throw new ArithmeticException("divide by zero");
-
         // Treat divisor as unsigned.
         // divisor = 2^shift * odd
         int shift = Long.numberOfTrailingZeros(divisor);
@@ -1545,66 +1449,72 @@ public class LargeInteger extends ScalarAtom {
             if (divisor == 1L) return;
         }
         // divisor is now odd.
-        long inverse = inverseOdd64(divisor);
+        // Starting with x=d is actually already correct modulo 8,
+        // because every odd d satisfies d*d ≡ 1 (mod 8).
+        long inverse = divisor;
+        // Newton/Hensel iteration:
+        // x <- x(2 - d*x)
+        // Correct bits roughly double each iteration:
+        // 3 -> 6 -> 12 -> 24 -> 48 -> 96
+        for(int k = 0; k < 5; k++)
+            inverse *= 2L - divisor * inverse;
         long carry = 0L;
         for (int i = 0; i < a.length; i++) {
             long x = a[i];
             // divisor*q + carry ≡ x (mod 2^64)
             long q = (x - carry) * inverse;
-
             long low = q * divisor;
             long high = Math.unsignedMultiplyHigh(q, divisor);
-
             long sum = low + carry;
-            if (Long.compareUnsigned(sum, low) < 0)
-                high++;
-
+            if (Long.compareUnsigned(sum, low) < 0) high++;
             a[i] = q;
             carry = high;
         }
-
         if (carry != 0L)
             throw new ArithmeticException("not exactly divisible");
     }
-
-    private static long inverseOdd64(long d) {
-        // d is odd.
-        //
-        // Starting with x=d is actually already correct modulo 8,
-        // because every odd d satisfies d*d ≡ 1 (mod 8).
-        long x = d;
-        // Newton/Hensel iteration:
-        // x <- x(2 - d*x)
-        //
-        // Correct bits roughly double each iteration:
-        // 3 -> 6 -> 12 -> 24 -> 48 -> 96
-        x *= 2L - d * x;
-        x *= 2L - d * x;
-        x *= 2L - d * x;
-        x *= 2L - d * x;
-        x *= 2L - d * x;
-        return x;
-    }
     private record DivRem(long[] quotient, long remainder) {}
-    private static long[][] divideMagnitudes(long[] dividend, long[] divisor) {
-        if(isZeroArray(dividend))
-            return new long[][]{ZERO_MAG, ZERO_MAG};
-        else if (isZeroArray(divisor))
-            throw new ArithmeticException("Error: Cannot divide by 0");
-        else if(isOneArray(divisor))
-            return new long[][]{dividend, ZERO_MAG};
+    private static long[][] divideMagnitudes(long[] dividend, long[] divisor){
+        dividend = trimLeadingZeros(dividend);
+        divisor  = trimLeadingZeros(divisor);
+        if (isZeroArray(divisor))
+            throw new ArithmeticException("Division by zero");
         int cmp = compareArray(dividend, divisor);
-        if (cmp < 0) return new long[][]{ZERO_MAG, dividend};
-        if (cmp == 0) return new long[][]{ONE_MAG, ZERO_MAG};
-        if (divisor.length == 1) {
+        if (cmp < 0)
+            return new long[][]{ZERO_MAG, dividend};
+        if (cmp == 0)
+            return new long[][]{ONE_MAG, ZERO_MAG};
+        if(divisor.length == 1){
             DivRem DR = divideByLong(dividend, divisor[0]);
             return new long[][]{DR.quotient, new long[]{DR.remainder}};
+        }
+        long[][] results;
+        if (divisor.length <= BURNIKEL_ZIEGLER_THRESHOLD || (long)divisor.length*(long)BURNIKEL_ZIEGLER_RATIO < dividend.length || dividend.length-divisor.length < BURNIKEL_ZIEGLER_OFFSET)
+            results = divideMagnitudesKnuth(dividend, divisor);
+        else results = divideMagnitudesBurnikelZiegler(dividend, divisor);
+        return results;
+    }
+    private static long[][] divideMagnitudesKnuth(long[] dividend, long[] divisor){
+        dividend = trimLeadingZeros(dividend);
+        divisor  = trimLeadingZeros(divisor);
+        if (isZeroArray(divisor))
+            throw new ArithmeticException("Division by zero");
+        int cmp = compareArray(dividend, divisor);
+        if (cmp < 0)
+            return new long[][]{ZERO_MAG, dividend};
+        if (cmp == 0)
+            return new long[][]{ONE_MAG, ZERO_MAG};
+        if (divisor.length == 1) {
+            DivRem dr = divideByLong(dividend, divisor[0]);
+            return new long[][]{dr.quotient, new long[]{dr.remainder}};
         }
         int n = divisor.length;
         int m = dividend.length - n;
         int shift = Long.numberOfLeadingZeros(divisor[n - 1]);
         long[] v = shiftLeftBits(divisor, shift);
         long[] u0 = shiftLeftBits(dividend, shift);
+        if (v.length != n)
+            throw new AssertionError("Knuth normalization changed divisor width: " + n + " -> " + v.length);
         // Knuth needs one extra top limb.
         long[] u = new long[u0.length + 1];
         System.arraycopy(u0, 0, u, 0, u0.length);
@@ -1618,7 +1528,6 @@ public class LargeInteger extends ScalarAtom {
             int topCmp = Long.compareUnsigned(ujn, v[n - 1]);
             if (topCmp > 0)
                 throw new AssertionError("Knuth invariant broken: u[j+n] > v[n-1], j=" + j);
-            long qhatInitial;
             // estimate
             if (Long.compareUnsigned(ujn, v[n - 1]) == 0) {
                 qhat = -1L;
@@ -1629,31 +1538,22 @@ public class LargeInteger extends ScalarAtom {
                 DivRemLongPair dr = new LongPair(ujn, ujn1).divideByLong(v[n - 1]);
                 if (dr.quotient().high != 0L)
                     throw new ArithmeticException("qhat overflow");
-                qhat = dr.quotient().low;
-                rHat = dr.remainder();
+                qhat = dr.quotient.low;
+                rHat = dr.remainder;
             }
-            qhatInitial = qhat;
             // second-limb correction
-            int corrections = 0;
             while (!rHatOverflow) {
                 LongPair left = LongPair.multiply64(qhat, v[n - 2]);
                 LongPair right = new LongPair(rHat, u[j + n - 2]);
                 if (left.compareTo(right) <= 0) break;
                 qhat--;
-                corrections++;
                 LongPair newR = LongPair.add64(rHat, v[n - 1]);
                 rHat = newR.low;
                 rHatOverflow = newR.high != 0L;
             }
-            long qhatAfterCorrection = qhat;
-            long expectedQ = new LargeInteger(
-                    Arrays.copyOfRange(u, j, j + n + 1), false)
-                    .toBigInteger().divide(new LargeInteger(v, false)
-                            .toBigInteger()).longValue();
             boolean negative = subtractMulLimbAt(u, v, qhat, j);
             if (negative) {
                 qhat--;
-                corrections++;
                 long carry = 0L;
                 for (int i = 0; i < v.length; i++) {
                     LongPair s = LongPair.add64(u[j + i], v[i]).addLow(carry);
@@ -1664,30 +1564,231 @@ public class LargeInteger extends ScalarAtom {
                 LongPair s = LongPair.add64(u[k], carry);
                 u[k] = s.low;
             }
-            if (qhat != expectedQ)
-                throw new AssertionError(
-                        "j=" + j +
-                                "\nexpected          = " + Long.toUnsignedString(expectedQ) +
-                                "\ninitial qhat      = " + Long.toUnsignedString(qhatInitial) +
-                                "\nafter correction  = " + Long.toUnsignedString(qhatAfterCorrection) +
-                                "\ncorrections       = " + corrections +
-                                "\nsubtract negative = " + negative +
-                                "\nfinal qhat        = " + Long.toUnsignedString(qhat)
-                );
-
             q[j] = qhat;
         }
         long[] r = new long[n];
         System.arraycopy(u, 0, r, 0, n);
         r = shiftRightBits(r, shift);
         q = trimLeadingZeros(q);
-        r = trimLeadingZeros(r);
         return new long[][]{q, r};
+    }
+    private static final int BURNIKEL_ZIEGLER_THRESHOLD = 128;
+    private static final int BURNIKEL_ZIEGLER_RATIO = 2;
+    private static final int BURNIKEL_ZIEGLER_OFFSET = 80;
+    /**
+     * Burnikel-Ziegler division of arbitrary-size positive magnitudes.
+     * Returns {quotient, remainder}.
+     * The divisor is normalized to exactly n limbs, where n is chosen so that
+     * repeated halving eventually reaches <= BURNIKEL_ZIEGLER_THRESHOLD.
+     * The normalized dividend is then consumed n limbs at a time, using
+     * divide2nBy1n() as the block divider.
+     */
+    private static long[][] divideMagnitudesBurnikelZiegler(long[] dividend, long[] divisor) {
+        /*
+          Choose structural block length n.
+          We want:
+              n / 2^k <= BZ_THRESHOLD
+          after recursive halving.
+          granularity is therefore a power of two.
+         */
+        int groups = (int) (((long) divisor.length + BURNIKEL_ZIEGLER_THRESHOLD - 1) / BURNIKEL_ZIEGLER_THRESHOLD);
+        int granularity = 1;
+        while (granularity < groups) granularity <<= 1;
+        int n = (int) ((((long) divisor.length + granularity - 1) / granularity) * granularity);
+        /*
+         * Normalize divisor to exactly n limbs with its highest bit set.
+         *
+         * beta = 2^64
+         *
+         * sigma = 64*n - bitLength(B)
+         *
+         * Multiplying both operands by 2^sigma leaves the quotient unchanged:
+         *
+         *     (A << sigma) / (B << sigma) = A / B
+         *
+         * while the remainder is shifted by sigma.
+         */
+        long sigma = ((long) n << 6) - bitLength(divisor);
+        long[] B = shiftLeftBits(divisor, sigma);
+        long[] A = shiftLeftBits(dividend, sigma);
+        /*
+         * B should now have exactly n significant limbs.
+         */
+        if (B.length != n)
+            throw new AssertionError("BZ normalization produced " + B.length + " divisor limbs; expected " + n);
+        /*
+         * Number of n-limb blocks in A.
+         */
+        int blockCount = (int) (((long) A.length + n - 1) / n);
+        /*
+         * Quotient has at most blockCount n-limb blocks.
+         * Leading zero blocks are trimmed at the end.
+         */
+        long[] quotient = new long[Math.multiplyExact(blockCount, n)];
+        long[] remainder = ZERO_MAG;
+        /*
+         * Block long division, from most-significant block to least-significant.
+         *
+         * At every iteration:
+         *
+         *     current = remainder * beta^n + nextBlock
+         *
+         * Since remainder < B < beta^n:
+         *
+         *     current < beta^(2n)
+         *
+         * so this is exactly a 2n-by-n division.
+         */
+        for (int block = blockCount - 1; block >= 0; block--) {
+            long[] next = sliceFixed(A, block * n, n);
+
+            long[] current = new long[2 * n];
+            System.arraycopy(next, 0, current, 0, n);
+            System.arraycopy(remainder, 0, current, n, Math.min(remainder.length, n));
+            long[][] qr;
+            if (compareArray(current, B) < 0)
+                qr = new long[][]{ZERO_MAG, trimLeadingZeros(current)};
+            else qr = divide2nBy1n(current, B);
+            long[] qBlock = qr[0];
+            long[] newR = qr[1];
+            // Fundamental block invariant:
+            // current == qBlock * B + newR
+            long[] rebuild = addMagnitudes(multiplyMagnitudes(qBlock, B), newR);
+            if (!equalsArray(rebuild, current))
+                throw new AssertionError("BZ block reconstruction failed, block=" + block + ", qLen=" + qBlock.length + ", rLen=" + newR.length);
+            if (compareArray(newR, B) >= 0)
+                throw new AssertionError("BZ remainder >= divisor at block=" + block);
+            if (qBlock.length > n)
+                throw new AssertionError("BZ quotient block overflow at block=" + block + ", qLen=" + qBlock.length + ", n=" + n);
+            remainder = newR;
+            System.arraycopy(qBlock, 0, quotient, block * n, qBlock.length);
+        }
+        /*
+         * We divided:
+         *
+         *     (dividend << sigma) / (divisor << sigma)
+         *
+         * so the quotient is already correct, but:
+         *
+         *     normalizedRemainder = originalRemainder << sigma
+         */
+        remainder = shiftRightBits(remainder, sigma);
+        return new long[][]{trimLeadingZeros(quotient), trimLeadingZeros(remainder)};
+    }
+    private static long[] sliceFixed(long[] a, int from, int length) {
+        if (from < 0 || length < 0)
+            throw new IllegalArgumentException("Negative slice");
+        long[] out = new long[length];
+
+        if (from >= a.length)
+            return out;
+
+        int amount = Math.min(length, a.length - from);
+        System.arraycopy(a, from, out, 0, amount);
+
+        return out;
+    }
+    private static long[][] divide2nBy1n(long[] A, long[] B) {
+        int cmp = compareArray(A, B);
+        if (cmp < 0)
+            return new long[][]{ZERO_MAG, trimLeadingZeros(A)};
+        if (cmp == 0)
+            return new long[][]{ONE_MAG, ZERO_MAG};
+        int n = B.length;
+        if (n <= BURNIKEL_ZIEGLER_THRESHOLD || (n & 1) != 0)
+            return divideMagnitudesKnuth(A, B);
+        int m = n >>> 1;
+        // A = A3 β^(3m) + A2 β^(2m) + A1 β^m + A0
+        long[] A0 = sliceFixed(A, 0,     m);
+        long[] A1 = sliceFixed(A, m,     m);
+        long[] A2 = sliceFixed(A, 2 * m, m);
+        long[] A3 = sliceFixed(A, 3 * m, m);
+        /*
+         * First: [A3 A2 A1] / B
+         * Little endian storage: [A1, A2, A3]
+         */
+        long[] upper = new long[3 * m];
+        System.arraycopy(A1, 0, upper, 0,     m);
+        System.arraycopy(A2, 0, upper, m,     m);
+        System.arraycopy(A3, 0, upper, 2 * m, m);
+        long[][] qr1 = divide3nBy2n(upper, B);
+        long[] Q1 = qr1[0];
+        long[] R1 = qr1[1];
+        /*
+          Second:
+               [R1 A0] / B
+          R1 may occupy up to 2m = n limbs, so this is
+          another 3m / 2m division.
+         */
+        long[] lower = new long[3 * m];
+        System.arraycopy(A0, 0, lower, 0, m);
+        System.arraycopy(R1, 0, lower, m, Math.min(R1.length, 2 * m));
+        long[][] qr0 = divide3nBy2n(lower, B);
+        long[] Q0 = qr0[0];
+        long[] R  = qr0[1];
+        /*
+         * Q = Q1 β^m + Q0
+         */
+        long[] Q = new long[2 * m];
+        System.arraycopy(Q0, 0, Q, 0, Math.min(Q0.length, m));
+        System.arraycopy(Q1, 0, Q, m, Math.min(Q1.length, m));
+        return new long[][]{trimLeadingZeros(Q), trimLeadingZeros(R)};
+    }
+    private static long[][] divide3nBy2n(long[] dividend, long[] divisor) {
+        int cmp = compareArray(dividend, divisor);
+        if (cmp < 0)
+            return new long[][]{ZERO_MAG, trimLeadingZeros(dividend)};
+        if (cmp == 0)
+            return new long[][]{ONE_MAG, ZERO_MAG};
+        int n = divisor.length;
+        if (n <= BURNIKEL_ZIEGLER_THRESHOLD)
+            return divideMagnitudesKnuth(dividend, divisor);
+
+        int m = n >>> 1;
+
+        long[] A0 = sliceFixed(dividend, 0,     m);
+        long[] A1 = sliceFixed(dividend, m,     m);
+        long[] A2 = sliceFixed(dividend, 2 * m, m);
+
+        long[] B0 = sliceFixed(divisor, 0, m);
+        long[] B1 = sliceFixed(divisor, m, m);
+
+        long[] A12 = new long[2 * m];
+        System.arraycopy(A1, 0, A12, 0, m);
+        System.arraycopy(A2, 0, A12, m, m);
+
+        long[] q;
+        long[] r;
+        long[] d;
+
+        if (compareArray(A2, B1) < 0) {
+            long[][] qr = divide2nBy1n(A12, B1);
+            q = qr[0];
+            r = qr[1];
+            d = multiplyMagnitudes(q, B0);
+        } else {
+            q = new long[m];
+            Arrays.fill(q, -1L);
+            r = addMagnitudes(A12, B1);
+            r = subtractMagnitudes(r, shiftLeftLimbs(B1, m));
+            if (isZeroArray(B0)) d = ZERO_MAG;
+            else d = subtractMagnitudes(shiftLeftLimbs(B0, m), B0);
+        }
+        long[] rFull = addMagnitudes(shiftLeftLimbs(r, m), A0);
+        int corrections = 0;
+        while (compareArray(rFull, d) < 0) {
+            rFull = addMagnitudes(rFull, divisor);
+            q = subtractMagnitudes(q, ONE_MAG);
+            if (++corrections > 2)
+                throw new AssertionError("BZ divide3nBy2n required too many corrections");
+        }
+        rFull = subtractMagnitudes(rFull, d);
+        return new long[][]{trimLeadingZeros(q), trimLeadingZeros(rFull)};
     }
     private static long[] divideExactMag(long[] n, long[] d) {
         long[][] qr = divideMagnitudes(n, d);
         if (!isZeroArray(qr[1]))
-            throw new ArithmeticException("factor did not divide exactly");
+            throw new ArithmeticException("d did not divide exactly");
         return qr[0];
     }
     public LargeInteger[] quotientAndRemainder(LargeInteger other) {
@@ -1697,11 +1798,6 @@ public class LargeInteger extends ScalarAtom {
         return new LargeInteger[]{q, r};
     }
     public LargeInteger longDivision(LargeInteger other) {return quotientAndRemainder(other)[0];}
-    public LargeInteger floorDivision(LargeInteger other) {
-        LargeInteger[] pair = quotientAndRemainder(other);
-        if (pair[1].negative) return pair[0].subtract(1);
-        return pair[0];
-    }
     @Override
     public LargeFraction reciprocal() {return new LargeFraction(ONE, this);}
     public LargeInteger remainder(LargeInteger other) {return quotientAndRemainder(other)[1];}
@@ -1790,7 +1886,9 @@ public class LargeInteger extends ScalarAtom {
         if (compareArray(b, m) >= 0)
             b = modMagnitudes(b, m);
         long[] sum = addMagnitudes(a, b);
-        return compareArray(sum, m) >= 0 ? subtractMagnitudes(sum, m) : sum;
+        if(compareArray(sum, m) >= 0)
+            subtractMagnitudeInPlace(sum, m);
+        return sum;
     }
     private static long[] modSubtract(long[] a, long[] b, long[] m) {
         boolean aReduced = compareArray(a, m) < 0;
@@ -2290,8 +2388,7 @@ public class LargeInteger extends ScalarAtom {
             return bestWindow;
         }
         long[] powMontgomery(long[] baseMontgomery, long[] exponent) {
-            if (isZeroArray(exponent))
-                return rModM;
+            if (isZeroArray(exponent)) return rModM;
             int window = bestWindowSize(exponent);
             if (window == 1) {
                 long[] result = rModM;
@@ -2589,15 +2686,14 @@ public class LargeInteger extends ScalarAtom {
     private static boolean isProbablyPrimeMag(long[] n) {
         int cmp = compareArray(n, TWO_MAG);
         if (cmp <= 0) return cmp == 0;
-        if (isEvenMag(n)) return false;
-        return isProbablyPrimeOddMag(n);
-    }
-    private static boolean isProbablyPrimeOddMag(long[] n) {
-        if (isPerfectSquare(n)) return false;
-        for(int k: SMALL_PRIMES) {
+        if (isEvenMag(n) || isPerfectSquare(n)) return false;
+        for(int k: sieve(1000)) {
             if(modSmall(n, k) == 0)
                 return n.length == 1 && n[0] == k;
         }
+        return isProbablyPrimeSpecialMag(n);
+    }
+    private static boolean isProbablyPrimeSpecialMag(long[] n) {
         long[] nMinusOne = subtractSmallMag(n, 1);
         long s = trailingZeroBits(nMinusOne);
         long[] d = shiftRightBits(nMinusOne, s);
@@ -2616,13 +2712,33 @@ public class LargeInteger extends ScalarAtom {
         else if (bits < 768) rounds = 8;
         else if (bits < 1024) rounds = 4;
         else rounds = 2;
-        if(!passesMillerRabin(rounds, reducer, oneMont, minusOneMont, d, s, nMinusOne)) return false;
+        return passesMillerRabin(rounds, reducer, oneMont, minusOneMont, d, s, nMinusOne) && passesLucasSelfridge(n, reducer, oneMont);
+    }
+    private static boolean passesMillerRabin(int rounds, MontgomeryReducer reducer, long[] oneMont, long[] minusOneMont, long[] d, long s, long[] nMinusOne) {
+        for (int round = 0; round < rounds; round++) {
+            long[] witnessMont = reducer.toMontgomery(randomMagBetween(TWO_MAG, nMinusOne));
+            long[] x = reducer.powMontgomery(witnessMont, d);
+            if (equalsArray(x, oneMont) || equalsArray(x, minusOneMont)) continue;
+            boolean passed = false;
+            for (long r = 1; r < s; r++) {
+                x = reducer.square(x);
+                if (equalsArray(x, minusOneMont)) {
+                    passed = true;
+                    break;
+                }
+                if (equalsArray(x, oneMont)) return false;
+            }
+            if (!passed) return false;
+        }
+        return true;
+    }
+    private static boolean passesLucasSelfridge(long[] n, MontgomeryReducer reducer, long[] oneMont){
         //Lucas-Selfridge test
         long D = chooseSelfridgeD(n);
         if (D == 0L) return false;
         long[] nPlusOne = addSmallMag(n, 1);
-        s = trailingZeroBits(nPlusOne);
-        d = shiftRightBits(nPlusOne, s);
+        long s = trailingZeroBits(nPlusOne);
+        long[] d = shiftRightBits(nPlusOne, s);
         if(isOneArray(d)){
             //Lucas-Lehmer test
             long[] current = FOUR_MAG;
@@ -2636,14 +2752,12 @@ public class LargeInteger extends ScalarAtom {
         long Q = (1L - D) / 4L;
         long[] dMont = reducer.toMontgomery(signedSmallMod(D, n));
         long[] qMont = reducer.toMontgomery(signedSmallMod(Q, n));
-
         // U_0 = 0
         // V_0 = 2
         // Q^0 = 1
         long[] U = ZERO_MAG;
         long[] V = reducer.add(oneMont, oneMont);
         long[] Qk = oneMont;
-
         /*
          * Process index from its most significant bit downward.
          * Current state represents index k.
@@ -2679,27 +2793,6 @@ public class LargeInteger extends ScalarAtom {
             if (isZeroArray(V)) return true;
         }
         return false;
-    }
-    private static boolean passesMillerRabin(int rounds, MontgomeryReducer reducer, long[] oneMont, long[] minusOneMont, long[] d, long s, long[] nMinusOne) {
-        if (rounds <= 0) throw new IllegalArgumentException("Miller-Rabin requires at least 1 round");
-        for (int round = 0; round < rounds; round++) {
-            long[] witness = randomMagBetween(TWO_MAG, nMinusOne);
-            long[] witnessMont = reducer.toMontgomery(witness);
-            long[] x = reducer.powMontgomery(witnessMont, d);
-            if (equalsArray(x, oneMont) || equalsArray(x, minusOneMont)) continue;
-            boolean passed = false;
-            for (long r = 1; r < s; r++) {
-                x = reducer.square(x);
-                if (equalsArray(x, minusOneMont)) {
-                    passed = true;
-                    break;
-                }
-                if (equalsArray(x, oneMont)) return false;
-            }
-            if (!passed)
-                return false;
-        }
-        return true;
     }
     private static long[] signedSmallMod(long value, long[] n) {
         if (value == 0L) return ZERO_MAG;
@@ -2807,7 +2900,7 @@ public class LargeInteger extends ScalarAtom {
                 wheelIndex = 0;
         }
     }
-    public static LargeInteger randomPrime(int chunks) {
+    public static LargeInteger randomPrimeChunks(int chunks) {
         if (chunks <= 0)
             throw new IllegalArgumentException("chunks must be positive");
         int wheel = 30;
@@ -2826,7 +2919,7 @@ public class LargeInteger extends ScalarAtom {
             long[] limbs = new long[Math.toIntExact((bits + 63) >>> 6)];
             for (int i = 0; i < limbs.length; i++)
                 limbs[i] = SECURE_RNG.nextLong();
-            int topBit = Math.toIntExact((bits - 1) % 64);
+            int topBit = Math.toIntExact((bits - 1) & 63);
             if (topBit != 63) {
                 long mask = (1L << (topBit + 1)) - 1L;
                 limbs[limbs.length - 1] &= mask;
@@ -2960,7 +3053,6 @@ public class LargeInteger extends ScalarAtom {
     private static final class MagKey {
         long[] key;
         int hashCode;
-
         MagKey(long[] key) {
             this.key = key;
             hashCode = Arrays.hashCode(key);
@@ -3082,10 +3174,6 @@ public class LargeInteger extends ScalarAtom {
             p.put(new MagKey(ZERO_MAG), 1L);
             return p;
         }else if (isOneArray(limbs)) return p;
-        else if (isProbablyPrimeMag(limbs)) {
-            p.put(new MagKey(limbs), 1L);
-            return p;
-        }
         long[] copy = limbs.clone();
         if(compareArray(copy, new long[]{Integer.MAX_VALUE}) > 0) {
             //detect 1 + 4b^4 = (1 - 2b + 2b^2)(1 + 2b + 2b^2)
@@ -3109,7 +3197,7 @@ public class LargeInteger extends ScalarAtom {
                     }
                 }
             }
-            // detect numbers of the form x^n - 1
+            // detect x^n - 1
             PowerMinusOneForm minusForm = detectPowerMinusOne(copy);
             if (minusForm != null) {
                 LargeInteger n = valueOf(minusForm.exponent);
@@ -3127,7 +3215,7 @@ public class LargeInteger extends ScalarAtom {
                     }
                 }
             }
-            // detect numbers of the form x^n + 1
+            // detect x^n + 1
             PowerPlusOneForm plusForm = detectPowerPlusOne(copy);
             if (plusForm != null && (plusForm.exponent & 1L) == 1) {
                 LargeInteger n = valueOf(plusForm.exponent);
@@ -3146,15 +3234,14 @@ public class LargeInteger extends ScalarAtom {
                 }
             }
         }
-        while (isEvenMag(copy)) {
-            addFactor(p, new MagKey(TWO_MAG), 1);
-            copy = shiftRightBits(copy, 1);
-        }
         for (int k : SMALL_PRIMES) {
+            int exponent = 0;
             while (modSmall(copy, k) == 0) {
-                addFactor(p, new MagKey(new long[]{k}), 1);
+                exponent++;
                 divideMagExactInPlace(copy, k);
             }
+            if(exponent != 0)
+                addFactor(p, new MagKey(new long[]{k}), exponent);
             if (isOneArray(copy)) {
                 //sort factors
                 for (LargeInteger i = ZERO; i.lessThan(p.size()); i = i.add(1)) {
@@ -3164,6 +3251,10 @@ public class LargeInteger extends ScalarAtom {
                 }
                 return p;
             }
+        }
+        if (isProbablyPrimeSpecialMag(limbs)) {
+            p.put(new MagKey(limbs), 1L);
+            return p;
         }
 //        FactorCacheDatabase cache = FactorCacheDatabase.instance();
         ArrayDeque<FactorJob> work = new ArrayDeque<>();
@@ -3175,7 +3266,7 @@ public class LargeInteger extends ScalarAtom {
             final long[] n = task.n;
             if (isOneArray(n))
                 continue;
-            if (isProbablyPrimeOddMag(n)) {
+            if (isProbablyPrimeSpecialMag(n)) {
                 // Add prime to result.
                 addFactor(p, new MagKey(n), 1);
                 continue;
@@ -5014,7 +5105,7 @@ public class LargeInteger extends ScalarAtom {
         throw new ArithmeticException("Invalid Legendre result");
     }
     private static int legendreSymbol(long[] a, long[] b) {
-        if (isEvenMag(b) || !isProbablyPrimeOddMag(b))
+        if (isEvenMag(b) || !isProbablyPrimeSpecialMag(b))
             throw new IllegalArgumentException("Legendre symbol requires an odd prime modulus");
         long[] exponent = shiftRightBits(subtractSmallMag(b, 1), 1);
         long[] m = new MontgomeryReducer(b).powMod(modMagnitudes(a, b), exponent);
@@ -5457,7 +5548,7 @@ public class LargeInteger extends ScalarAtom {
                  * Avoid trying to split a residual that is itself prime.
                  * A prime residual larger than largePrimeBound cannot be accepted.
                  */
-                if (isProbablyPrimeOddMag(remaining)){
+                if (isProbablyPrimeSpecialMag(remaining)){
                     plan.observeRelationAdd(RelationAddKind.NONE);
                     continue;
                 }
@@ -5484,7 +5575,7 @@ public class LargeInteger extends ScalarAtom {
                 /*
                  * The factor finder may return a composite divisor.
                  */
-                if (!isProbablyPrimeOddMag(factor) || !isProbablyPrimeOddMag(otherFactor)){
+                if (!isProbablyPrimeSpecialMag(factor) || !isProbablyPrimeSpecialMag(otherFactor)){
                     plan.observeRelationAdd(RelationAddKind.NONE);
                     continue;
                 }

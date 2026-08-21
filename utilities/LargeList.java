@@ -1,8 +1,5 @@
 package com.AtomCAS.utilities;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 public class LargeList<T> implements Iterable<T>{
     private static final int CHUNK_SIZE = 1000;
 
@@ -287,7 +284,7 @@ public class LargeList<T> implements Iterable<T>{
     }
     @Override
     public Iterator<T> iterator() {
-        if (intSized()) {
+        if (intSized())
             return new Iterator<>() {
                 private int index = 0;
                 @Override
@@ -298,7 +295,6 @@ public class LargeList<T> implements Iterable<T>{
                     return get(index++);
                 }
             };
-        }
         return new Iterator<>() {
             private LargeInteger index = LargeInteger.ZERO;
             @Override

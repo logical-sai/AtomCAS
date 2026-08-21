@@ -127,7 +127,11 @@ public class LargeFraction extends ScalarAtom {
     @Override
     public LargeFraction copy() {return new LargeFraction(numerator, denominator);}
     @Override
-    public LargeInteger floor() {return numerator.floorDivision(denominator);}
+    public LargeInteger floor() {
+        LargeInteger[] pair = numerator.quotientAndRemainder(denominator);
+        if (pair[1].negative) return pair[0].subtract(1);
+        return pair[0];
+    }
     public LargeInteger intPart() {return numerator.longDivision(denominator);}
     public LargeFraction fracPart() {return new LargeFraction(numerator.remainder(denominator), denominator);}
     @Override
