@@ -252,12 +252,12 @@ public class LargePolynomial{
     public static LargePolynomial cyclotomic(LargeInteger n){
         if (n.equals(LargeInteger.ZERO))
             throw new IllegalArgumentException("Error: Cyclotomic index must be positive");
-        if(n.lessThan(LargeInteger.ZERO))
-            return cyclotomic(n.negate().multiply(2));
-
         if (n.equals(LargeInteger.ONE))
             return LargePolynomial.xMinus(LargeFraction.ONE);
-
+        if(n.equals(LargeInteger.TWO))
+            return LargePolynomial.xMinus(LargeFraction.NEGATIVE_ONE);
+        if(n.lessThan(LargeInteger.ZERO))
+            return cyclotomic(n.negate().multiply(2));
         if (n.isProbablyPrime()){
             LargeList<LargeFraction> L = new LargeList<>();
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i=i.add(1))
@@ -275,7 +275,8 @@ public class LargePolynomial{
         if (repeatedPrimeCase != null)
             return repeatedPrimeCase;
         LargePolynomial P = monomial(LargeFraction.ONE, n).subtract(LargeFraction.ONE);
-        LargeList<LargeInteger> N = n.divisorsProper();
+        LargeList<LargeInteger> N = n.divisors();
+        N.removeLast();
         for(LargeInteger I: N)
             P = P.longDivision(cyclotomic(I));
         return P;
@@ -497,12 +498,10 @@ public class LargePolynomial{
         LargeList<LargeInteger> top = new LargeList<>();
         for(LargeInteger i = P.coefficients.size().subtract(1); i.greaterThan(LargeInteger.ZERO); i=i.subtract(1)){
             if(P.coefficients.get(i).equals(LargeInteger.ZERO)) continue;
-            top = P.coefficients.get(i).numerator.divisorsProper();
-            top.add(P.coefficients.get(i).numerator);
+            top = P.coefficients.get(i).numerator.divisors();
             break;
         }
-        LargeList<LargeInteger> bottom = P.coefficients.getFirst().numerator.divisorsProper();
-        bottom.add(P.coefficients.getFirst().numerator);
+        LargeList<LargeInteger> bottom = P.coefficients.getFirst().numerator.divisors();
         for(LargeInteger i: top){
             for(LargeInteger j: bottom){
                 rationals.add(new LargeFraction(i, j));
