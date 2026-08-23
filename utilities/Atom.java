@@ -45,7 +45,9 @@ Vector + Matrix -> forbiden... (You sure you wanna go with this?)
 Exponentiation on Tensors → yeah no
  **/
 public abstract class Atom {
-    public abstract Atom copy();
+    @Override
+    public abstract Atom clone();
+    @Override
     public abstract String toString();
     public abstract String toLatex();
     @Override
@@ -55,7 +57,7 @@ public abstract class Atom {
         return hashCode() == other.hashCode();
     }
     public abstract boolean equals(Atom other);
-    public boolean doesntEqual(Atom other){return !equals(other);}
+    public boolean doesntEqual(Object other){return !equals(other);}
     @Override
     public int hashCode(){return CASHash.hash(this);}
 }

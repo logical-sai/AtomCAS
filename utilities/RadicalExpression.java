@@ -22,7 +22,7 @@ public class RadicalExpression extends ScalarAtom{
     }
 
     @Override
-    public int compareMags(ScalarAtom other) {
+    public int compareMagnitudes(ScalarAtom other) {
         return 0;
     }
 
@@ -92,7 +92,7 @@ public class RadicalExpression extends ScalarAtom{
     }
 
     @Override
-    public Atom copy() {
+    public Atom clone() {
         return null;
     }
 

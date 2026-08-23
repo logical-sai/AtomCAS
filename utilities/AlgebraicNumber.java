@@ -7,7 +7,7 @@ public class AlgebraicNumber extends ScalarAtom{
         rectangle = new RationalBox(s);
     }
     @Override
-    public Atom copy() {
+    public Atom clone() {
         return null;
     }
 
@@ -37,7 +37,7 @@ public class AlgebraicNumber extends ScalarAtom{
     }
 
     @Override
-    public int compareMags(ScalarAtom other) {
+    public int compareMagnitudes(ScalarAtom other) {
         return 0;
     }
 

@@ -8,9 +8,9 @@ public class LargeVector extends TensorAtom {
             this.factor = LargeFraction.ONE;
             return;
         }
-        this.factor = factor.copy();
+        this.factor = factor.clone();
         for(LargeInteger I: list)
-            this.list.add(I.copy());
+            this.list.add(I.clone());
         LargeInteger lc = list.getFirst();
         for(LargeInteger I: list) lc = lc.gcd(I);
         if(lc.equals(LargeInteger.ZERO)){
@@ -38,7 +38,7 @@ public class LargeVector extends TensorAtom {
         list = new LargeList<>();
         factor = LargeFraction.ONE;
     }
-    public LargeVector copy(){return new LargeVector(list,factor);}
+    public LargeVector clone(){return new LargeVector(list,factor);}
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -57,7 +57,7 @@ public class LargeVector extends TensorAtom {
     public LargeList<LargeInteger> rawList(){
         LargeList<LargeInteger> bf = new LargeList<>();
         for(LargeInteger I: list)
-            bf.add(I.copy());
+            bf.add(I.clone());
         return bf;
     }
     public LargeList<LargeFraction> list(){

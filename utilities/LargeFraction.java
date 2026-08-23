@@ -46,6 +46,8 @@ public class LargeFraction extends ScalarAtom {
         denominator = LargeInteger.ONE;
     }
     @Override
+    public LargeFraction clone() {return new LargeFraction(numerator, denominator);}
+    @Override
     public String toString() {
         if(LargeInteger.isOneArray(denominator.limbs))
             return numerator.toString();
@@ -70,7 +72,7 @@ public class LargeFraction extends ScalarAtom {
     @Override
     public LargeFraction abs() {return new LargeFraction(numerator.abs(), denominator);}
     @Override
-    public int compareMags(ScalarAtom other) {
+    public int compareMagnitudes(ScalarAtom other) {
         if (other instanceof LargeInteger I)
             return LargeInteger.compareArray(numerator.limbs, LargeInteger.multiplyMagnitudes(denominator.limbs, I.limbs));
         else if (other instanceof LargeFraction F)
@@ -80,7 +82,7 @@ public class LargeFraction extends ScalarAtom {
             LargeFraction o = LPM.power(new LargeFraction(LPM.exponent.denominator, LargeInteger.ONE)).base;
             return f.compareTo(o);
         }else if(other instanceof RadicalTerm RT)
-            return this.subtract(RT.rationalPart).divide(RT.coefficient).compareMags(RT.exponent);
+            return this.subtract(RT.rationalPart).divide(RT.coefficient).compareMagnitudes(RT.exponent);
         throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
     }
     public int compareTo(ScalarAtom other) {
@@ -89,7 +91,7 @@ public class LargeFraction extends ScalarAtom {
             case LargeInteger I -> {return numerator.compareTo(I.multiply(denominator));}
             case LargeFraction F -> {return numerator.multiply(F.denominator).compareTo(F.numerator.multiply(denominator));}
             case LargePowerMonomial largePowerMonomial -> {
-                int C = this.compareMags(largePowerMonomial);
+                int C = this.compareMagnitudes(largePowerMonomial);
                 if (C == 1) {
                     if (this.numerator.negative) return -1;
                     return 1;
@@ -125,8 +127,6 @@ public class LargeFraction extends ScalarAtom {
     @Override
     public ScalarAtom imagPart() {return LargeInteger.ZERO;}
     @Override
-    public LargeFraction copy() {return new LargeFraction(numerator, denominator);}
-    @Override
     public LargeInteger floor() {
         LargeInteger[] pair = numerator.quotientAndRemainder(denominator);
         if (pair[1].negative) return pair[0].subtract(1);
@@ -155,7 +155,7 @@ public class LargeFraction extends ScalarAtom {
         LargeMap<LargeInteger, LargeFraction> D = new LargeMap<>();
         for(LargeInteger I: pr.keys()){
             if(!LargeInteger.isZeroArray(pr.get(I).numerator.limbs))
-                N.put(I, pr.get(I).copy());
+                N.put(I, pr.get(I).clone());
             else D.put(I, pr.get(I).negate());
         }
         return new LargeFraction(LargeInteger.buildFromFactors(N), LargeInteger.buildFromFactors(D));
@@ -176,12 +176,12 @@ public class LargeFraction extends ScalarAtom {
     }
     public LargeFraction add(long other) {return new LargeFraction((LargeInteger) numerator.add(denominator.multiply(other)), denominator);}
     public ScalarAtom add(ScalarAtom... other) {
-        ScalarAtom result = this.copy();
+        ScalarAtom result = this.clone();
         for (ScalarAtom atom : other) result = result.add(atom);
         return result;
     }
     public ScalarAtom subtract(ScalarAtom... atoms) {
-        ScalarAtom result = this.copy();
+        ScalarAtom result = this.clone();
         for(ScalarAtom atom: atoms) result = result.subtract(atom);
         return result;
     }
@@ -197,7 +197,7 @@ public class LargeFraction extends ScalarAtom {
     }
     public LargeFraction multiply(long other) {return new LargeFraction(numerator.multiply(other), denominator);}
     public ScalarAtom multiply(LargeList<ScalarAtom> other) {
-        ScalarAtom result = this.copy();
+        ScalarAtom result = this.clone();
         for (ScalarAtom fr : other) result = result.multiply(fr);
         return result;
     }

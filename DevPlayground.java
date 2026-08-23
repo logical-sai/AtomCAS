@@ -43,8 +43,8 @@ public class DevPlayground {
     static void testMultiply(){
         int BI_Wins = 0;
         int LI_Wins = 0;
-        double[] ratios = new double[3001];
-        for (int k = 1; k < 15001; k += 5) {
+        double[] ratios = new double[15001];
+        for (int k = 1; k < 15001; k ++) {
             int trials = 15001-k;
             LargeInteger A = LargeInteger.randomChunks(k);
             LargeInteger B = LargeInteger.randomChunks(k);
@@ -96,30 +96,7 @@ public class DevPlayground {
 //        demoBaseConversion();
 //        long end = System.nanoTime();
 //        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
-        LargeInteger A = LargeInteger.randomChunks(14208);
-        LargeInteger B = LargeInteger.randomChunks(7104);
-        BigInteger BA = A.toBigInteger();
-        BigInteger BB = B.toBigInteger();
-        LargeInteger[] LResult = A.quotientAndRemainder(B);
-        BigInteger[] BResult = BA.divideAndRemainder(BB);
-        if (!LResult[0].toBigInteger().equals(BResult[0]))
-            throw new AssertionError("Quotient is wrong");
-        int trials = 100;
-        //Warmup
-        for (int i = 0; i < trials; i++) {
-            sink = A.quotientAndRemainder(B);
-            sink = BA.divideAndRemainder(BB);
-        }
-        long t0 = System.nanoTime();
-        for (int i = 0; i < trials; i++)
-            sink = A.quotientAndRemainder(B);
-        long t1 = System.nanoTime();
-        for (int i = 0; i < trials; i++)
-            sink = BA.divideAndRemainder(BB);
-        long t2 = System.nanoTime();
-        System.out.println("LI time: " + (t1-t0)/(1e9*trials) + " seconds/trial");
-        System.out.println("BI time: " + (t2-t1)/(1e9*trials) + " seconds/trial");
-        System.out.println("Ratio: " + (t1 - t0)*1.0/(t2 - t1));
+        System.out.println(new LargeInteger("796826650060231590107439259688913672165114963647112649").quadraticSieveWithoutConstraints());
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");

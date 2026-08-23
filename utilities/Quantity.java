@@ -1,7 +1,7 @@
 package com.AtomCAS.utilities;
 public class Quantity extends PhysicalAtom {
     @Override
-    public Atom copy() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public Atom clone() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
     @Override
     public String toString() {return "";}
 

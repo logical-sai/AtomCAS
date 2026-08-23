@@ -7,7 +7,7 @@ package com.AtomCAS.utilities;
 public abstract class ScalarAtom extends Atom{
     public abstract LargeInteger floor();
     public abstract LargeInteger ceil();
-    public abstract int compareMags(ScalarAtom other);
+    public abstract int compareMagnitudes(ScalarAtom other);
     public abstract int compareTo(ScalarAtom other);
     public boolean greaterThan(ScalarAtom other){return compareTo(other) > 0;}
     public boolean lessThan(ScalarAtom other){return compareTo(other) < 0;}

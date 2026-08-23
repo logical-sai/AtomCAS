@@ -1,9 +1,9 @@
 package com.AtomCAS.utilities;
 public class Logarithm extends ScalarAtom {
     public ScalarAtom argument;
-    public Logarithm(ScalarAtom a){argument = (ScalarAtom) a.copy();}
+    public Logarithm(ScalarAtom a){argument = (ScalarAtom) a.clone();}
     @Override
-    public ScalarAtom copy() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public ScalarAtom clone() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
     @Override
     public LargeInteger floor() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
     @Override
@@ -11,7 +11,7 @@ public class Logarithm extends ScalarAtom {
     @Override
     public ScalarAtom abs() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
     @Override
-    public int compareMags(ScalarAtom other) {return 0;}
+    public int compareMagnitudes(ScalarAtom other) {return 0;}
     @Override
     public int compareTo(ScalarAtom other) {return 0;}
     @Override

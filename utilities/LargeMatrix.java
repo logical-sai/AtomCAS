@@ -102,7 +102,7 @@ public class LargeMatrix extends TensorAtom {
     @Override
     public String toLatex() {return "";}
     @Override
-    public LargeMatrix copy() {return new LargeMatrix(this.list, this.factor);}
+    public LargeMatrix clone() {return new LargeMatrix(this.list, this.factor);}
     public LargeInteger rows(){return list.size();}
     public LargeInteger cols(){return list.getFirst().size();}
     private LargeInteger getRaw(LargeInteger i, LargeInteger j){return list.get(i).get(j);}
@@ -124,7 +124,7 @@ public class LargeMatrix extends TensorAtom {
     private void appendRaw(LargeList<LargeInteger> B){
         LargeList<LargeInteger> cop = new LargeList<>();
         for(LargeInteger I: B)
-            cop.add(I.copy());
+            cop.add(I.clone());
         if(rows().greaterThan(LargeInteger.ZERO) && cop.size().doesntEqual(cols())) throw new IllegalStateException("Error: Rows must be same sizes");
         list.add(cop);
     }
@@ -138,7 +138,7 @@ public class LargeMatrix extends TensorAtom {
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(B.size()); i = i.add(1))
                 B.set(i, ((LargeFraction) B.get(i).multiply(factor.divide(g))).numerator);
         }
-        factor = g.copy();
+        factor = g.clone();
         LargeList<LargeInteger> k = new LargeList<>();
         for(LargeInteger I: b.rawList())
             k.add(((LargeFraction) I.multiply(b.factor.divide(g))).numerator);
@@ -237,12 +237,12 @@ public class LargeMatrix extends TensorAtom {
             return LargeFraction.ONE;
         if(n.equals(LargeInteger.ONE))
             return (LargeFraction) this.getRaw(LargeInteger.ZERO, LargeInteger.ZERO).multiply(factor);
-        // copy raw matrix
+        // clone raw matrix
         LargeList<LargeList<LargeInteger>> m = new LargeList<>();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i = i.add(1)){
             LargeList<LargeInteger> row = new LargeList<>();
             for(LargeInteger j = LargeInteger.ZERO; j.lessThan(n); j = (LargeInteger) j.add(LargeInteger.ONE))
-                row.add(this.getRaw(i, j).copy());
+                row.add(this.getRaw(i, j).clone());
             m.add(row);
         }
         LargeInteger previousPivot = LargeInteger.ONE;
@@ -292,7 +292,7 @@ public class LargeMatrix extends TensorAtom {
         return (LargeFraction) rawDet.multiply(factor.power(n));
     }
     public LargeMatrix rowEchelonFrom(){
-        LargeMatrix M = this.copy();
+        LargeMatrix M = this.clone();
         LargeInteger pivotRow = LargeInteger.ZERO;
         for(LargeInteger pivotCol = LargeInteger.ZERO; pivotCol.lessThan(M.cols()) && pivotRow.lessThan(M.rows()); pivotCol = (LargeInteger) pivotCol.add(LargeInteger.ONE)){
             //determine the first row in which pivot is nonzero, in the current column
@@ -320,7 +320,7 @@ public class LargeMatrix extends TensorAtom {
         return M;
     }
     public LargeMatrix reducedRowEchelonForm(){
-        LargeMatrix M = this.copy();
+        LargeMatrix M = this.clone();
         LargeInteger pivotRow = LargeInteger.ZERO;
         for(LargeInteger pivotCol = LargeInteger.ZERO; pivotCol.lessThan(M.cols()) && pivotRow.lessThan(M.rows()); pivotCol = (LargeInteger) pivotCol.add(LargeInteger.ONE)){
             //determine the first row in which pivot is nonzero, in the current column

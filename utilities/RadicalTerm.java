@@ -5,7 +5,7 @@ public class RadicalTerm extends ScalarAtom{
     public final LargePowerMonomial exponent;
     public RadicalTerm(LargeFraction r, LargeFraction c, LargePowerMonomial E){
         if(c.equals(LargeFraction.ZERO) || E.equals(LargeFraction.ZERO)){
-            rationalPart = r.copy();
+            rationalPart = r.clone();
             coefficient = LargeFraction.ZERO;
             exponent = LargePowerMonomial.ZERO;
             return;
@@ -18,8 +18,8 @@ public class RadicalTerm extends ScalarAtom{
             exponent = LargePowerMonomial.ZERO;
             return;
         }
-        LargeFraction tempR = r.copy();
-        LargeFraction tempC = c.copy();
+        LargeFraction tempR = r.clone();
+        LargeFraction tempC = c.clone();
         //make real radicand an integer
         LargePowerMonomial Enum = new LargePowerMonomial((LargeFraction) E.base.numerator.divide(LargeInteger.ONE), E.exponent, E.exponent2);
         LargePowerMonomial Edem = new LargePowerMonomial((LargeFraction) E.base.denominator.divide(LargeInteger.ONE), E.exponent);
@@ -30,7 +30,7 @@ public class RadicalTerm extends ScalarAtom{
         LargeMap<LargeInteger, LargeFraction> pr = Enum.factor();
         for(LargeInteger I: pr.keys()){
             LargeInteger expTemp = pr.get(I).intPart();
-            LargeInteger basTemp = I.copy();
+            LargeInteger basTemp = I.clone();
             while(expTemp.doesntEqual(LargeInteger.ZERO)){
                 if(expTemp.isOdd()){
                     if(expTemp.lessThan(LargeInteger.ZERO))
@@ -50,12 +50,12 @@ public class RadicalTerm extends ScalarAtom{
             exponent = LargePowerMonomial.ZERO;
             return;
         }
-        rationalPart = tempR.copy();
-        coefficient = tempC.copy();
-        exponent = Enum.copy();
+        rationalPart = tempR.clone();
+        coefficient = tempC.clone();
+        exponent = Enum.clone();
     }
     @Override
-    public RadicalTerm copy(){return new RadicalTerm(rationalPart.copy(), coefficient.copy(), exponent.copy());}
+    public RadicalTerm clone(){return new RadicalTerm(rationalPart.clone(), coefficient.clone(), exponent.clone());}
     @Override
     public String toString(){
         StringBuilder str = new StringBuilder();
@@ -94,7 +94,7 @@ public class RadicalTerm extends ScalarAtom{
         if(this.isNotReal()) throw new IllegalStateException("Error: Cannot floor or apply ceiling a non-real atom");
         if (coefficient.equals(LargeInteger.ZERO))
             return rationalPart.floor();
-        LargePowerMonomial K = exponent.copy();
+        LargePowerMonomial K = exponent.clone();
         LargeFraction lower = (LargeFraction) K.floor().divide(LargeInteger.ONE);
         LargeFraction upper = (LargeFraction) K.ceil().divide(LargeInteger.ONE);
         while (true) {
@@ -132,8 +132,8 @@ public class RadicalTerm extends ScalarAtom{
     public ScalarAtom abs(){
         if(this.isReal()){
             if(this.floor().sign().equals(LargeInteger.NEGATIVE_ONE))
-                return new RadicalTerm(rationalPart.negate(), coefficient.negate(), exponent.copy());
-            return this.copy();
+                return new RadicalTerm(rationalPart.negate(), coefficient.negate(), exponent.clone());
+            return this.clone();
         }
         if(rationalPart.equals(LargeInteger.ZERO))
             return new RadicalTerm(LargeFraction.ZERO, coefficient.abs(), exponent.abs());
@@ -144,13 +144,13 @@ public class RadicalTerm extends ScalarAtom{
     }
     public RadicalTerm complexConjugate(){return new RadicalTerm(rationalPart, coefficient, exponent.complexConjugate());}
     @Override
-    public int compareMags(ScalarAtom other){
+    public int compareMagnitudes(ScalarAtom other){
         if(other instanceof LargeInteger || other instanceof LargeFraction){
-            if(coefficient.equals(LargeInteger.ZERO)) return rationalPart.compareMags(other);
+            if(coefficient.equals(LargeInteger.ZERO)) return rationalPart.compareMagnitudes(other);
             LargeFraction f = (LargeFraction) other.subtract(rationalPart).divide(coefficient);
             f = f.power(exponent.exponent.denominator.lcm(exponent.exponent2.denominator));
             LargeFraction o = exponent.power(new LargeFraction(exponent.exponent.denominator.lcm(exponent.exponent2.denominator), LargeInteger.ONE)).base;
-            return o.compareMags(f);
+            return o.compareMagnitudes(f);
         }
         return this.abs().compareTo(other.abs());
     }
@@ -237,9 +237,9 @@ public class RadicalTerm extends ScalarAtom{
         }else if(f instanceof RadicalTerm){
             LargeList<RadicalTerm> rt = new LargeList<>();
             LargeFraction cons = (LargeFraction) rationalPart.multiply(((RadicalTerm) f).rationalPart);
-            LargePowerMonomial L = ((RadicalTerm) f).exponent.copy();
+            LargePowerMonomial L = ((RadicalTerm) f).exponent.clone();
             rt.add(new RadicalTerm(LargeFraction.ZERO, (LargeFraction) this.rationalPart.multiply(((RadicalTerm) f).coefficient), L));
-            L = exponent.copy();
+            L = exponent.clone();
             rt.add(new RadicalTerm(LargeFraction.ZERO, (LargeFraction) this.coefficient.multiply(((RadicalTerm) f).rationalPart), L));
             L = (LargePowerMonomial) exponent.multiply(((RadicalTerm) f).exponent);
             rt.add(new RadicalTerm(LargeFraction.ZERO, (LargeFraction) this.coefficient.multiply(((RadicalTerm) f).coefficient), L));
@@ -259,8 +259,8 @@ public class RadicalTerm extends ScalarAtom{
             return new RadicalTerm(LargeFraction.ZERO, this.coefficient.reciprocal(), exponent.reciprocal());
         else if(this.equals(LargeInteger.ZERO)) throw new ArithmeticException("Error: Cannot divide by 0");
         // reciprocal of a + b*x, where x^n is rational
-        LargeFraction a = rationalPart.copy();
-        LargeFraction b = this.coefficient.copy();
+        LargeFraction a = rationalPart.clone();
+        LargeFraction b = this.coefficient.clone();
         LargeInteger n = exponent.exponent.denominator.lcm(exponent.exponent2.denominator);
         LargePowerMonomial qAtom = exponent.power(new LargeFraction(n, LargeInteger.ONE));
         if (!qAtom.isRational())

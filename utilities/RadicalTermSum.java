@@ -13,9 +13,9 @@ public class RadicalTermSum extends ScalarAtom{
     }
     public RadicalTermSum(LargeList<RadicalTerm> r, LargeFraction cons){
         LargeMap<LargePowerMonomial, LargeFraction> rt = new LargeMap<>();
-        LargeFraction CON = cons.copy();
+        LargeFraction CON = cons.clone();
         if(r.size().equals(LargeInteger.ZERO)){
-            constant = CON.copy();
+            constant = CON.clone();
             sum = new LargeMap<>();
             return;
         }
@@ -65,7 +65,7 @@ public class RadicalTermSum extends ScalarAtom{
         //sort radicands
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(rt.size().subtract(LargeInteger.ONE)); i = i.add(1)){
             for(LargeInteger j = i.add(1); j.lessThan(rt.size()); j = j.add(1)){
-                if(rt.keyAtIndex(j).compareMags(rt.keyAtIndex(i)) < 0)
+                if(rt.keyAtIndex(j).compareMagnitudes(rt.keyAtIndex(i)) < 0)
                     rt.swap(rt.keyAtIndex(i), rt.keyAtIndex(j));
             }
         }
@@ -74,9 +74,9 @@ public class RadicalTermSum extends ScalarAtom{
     }
     public RadicalTermSum(LargeMap<LargePowerMonomial, LargeFraction> sum, LargeFraction constant){
         LargeMap<LargePowerMonomial, LargeFraction> rt = new LargeMap<>();
-        LargeFraction CON = constant.copy();
+        LargeFraction CON = constant.clone();
         if(sum.size().equals(LargeInteger.ZERO)){
-            this.constant = CON.copy();
+            this.constant = CON.clone();
             this.sum = new LargeMap<>();
             return;
         }
@@ -131,7 +131,7 @@ public class RadicalTermSum extends ScalarAtom{
         //sort radicands
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(rt.size().subtract(1)); i = i.add(1)){
             for(LargeInteger j = i.add(1); j.lessThan(rt.size()); j = j.add(1)){
-                if(rt.keyAtIndex(j).compareMags(rt.keyAtIndex(i)) < 0)
+                if(rt.keyAtIndex(j).compareMagnitudes(rt.keyAtIndex(i)) < 0)
                     rt.swap(rt.keyAtIndex(i), rt.keyAtIndex(j));
             }
         }
@@ -167,7 +167,7 @@ public class RadicalTermSum extends ScalarAtom{
     @Override
     public String toLatex() {return "";}
     @Override
-    public RadicalTermSum copy() {return new RadicalTermSum(sum, constant);}
+    public RadicalTermSum clone() {return new RadicalTermSum(sum, constant);}
     @Override
     public boolean equals(Atom other) {
         if(!(other instanceof ScalarAtom)) return false;
@@ -265,7 +265,7 @@ public class RadicalTermSum extends ScalarAtom{
         return this.negate();
     }
     @Override
-    public int compareMags(ScalarAtom other){return this.abs().compareTo(other.abs());}
+    public int compareMagnitudes(ScalarAtom other){return this.abs().compareTo(other.abs());}
     @Override
     public int compareTo(ScalarAtom other){
         if(this.isNotReal() || other.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
@@ -345,7 +345,7 @@ public class RadicalTermSum extends ScalarAtom{
     public RadicalTermSum cube() {return (RadicalTermSum) this.square().multiply(this);}
     public RadicalTermSum power(LargeInteger exponent){
         LargeInteger expTemp = exponent.abs();
-        RadicalTermSum basTemp = this.copy();
+        RadicalTermSum basTemp = this.clone();
         RadicalTermSum res = (RadicalTermSum) new RadicalTermSum().add(LargeFraction.ONE);
         while(true){
             if(expTemp.isOdd()){

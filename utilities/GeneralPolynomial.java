@@ -12,14 +12,14 @@ public class GeneralPolynomial{
         this.coefficients = new LargeList<>();
         for(ScalarAtom coefficient : coefficients){
             if(coefficient.isAlgebraic())
-                this.coefficients.add((ScalarAtom) coefficient.copy());
+                this.coefficients.add((ScalarAtom) coefficient.clone());
             else throw new IllegalArgumentException("Error: At least ONE coefficient is not algebraic");
         }
     }
     public static GeneralPolynomial fromLargePolynomial(LargePolynomial p){
         LargeList<ScalarAtom> list = new LargeList<>();
         for(LargeFraction f : p.coefficients)
-            list.add(f.copy());
+            list.add(f.clone());
         return new GeneralPolynomial(list);
     }
     public GeneralPolynomial copy(){return new GeneralPolynomial(coefficients);}
@@ -188,7 +188,7 @@ public class GeneralPolynomial{
         }
         GeneralPolynomial P = new GeneralPolynomial();
         P = P.add(LargeFraction.ONE);
-        LargeInteger expTemp = I.copy();
+        LargeInteger expTemp = I.clone();
         GeneralPolynomial basTemp = new GeneralPolynomial(this.coefficients);
         while(true){
             if(expTemp.isOdd()){

@@ -4,7 +4,7 @@ public class LargePolynomial{
     public LargePolynomial(){coefficients = new LargeList<>(); coefficients.add(LargeFraction.ZERO);}
     public LargePolynomial(LargeList<LargeFraction> coefficients){
         this.coefficients = new LargeList<>();
-        for(LargeFraction I: coefficients) this.coefficients.add(I.copy());
+        for(LargeFraction I: coefficients) this.coefficients.add(I.clone());
         while(this.coefficients.size().greaterThan(LargeInteger.ONE) && this.coefficients.getFirst().equals(LargeInteger.ZERO))
             this.coefficients.removeFirst();
     }
@@ -208,7 +208,7 @@ public class LargePolynomial{
             return LargePolynomial.ONE();
         LargePolynomial P = new LargePolynomial();
         P = P.add(LargeFraction.ONE);
-        LargeInteger expTemp = I.copy();
+        LargeInteger expTemp = I.clone();
         LargePolynomial basTemp = new LargePolynomial(this.coefficients);
         while(true){
             if(expTemp.isOdd()){

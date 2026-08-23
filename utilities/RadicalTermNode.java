@@ -4,9 +4,9 @@ public class RadicalTermNode extends ScalarAtom{
     public final LargeFraction coefficient;
     public final LargePowerNode exponent;
     public RadicalTermNode(LargeFraction rationalPart, LargeFraction coefficient, LargePowerNode base){
-        LargeFraction R = rationalPart.copy();
-        LargeFraction C = coefficient.copy();
-        LargePowerNode K = base.copy();
+        LargeFraction R = rationalPart.clone();
+        LargeFraction C = coefficient.clone();
+        LargePowerNode K = base.clone();
         if(K.equals(LargeInteger.ONE)){
             this.rationalPart = (LargeFraction) R.add(C);
             this.coefficient = LargeFraction.ZERO;
@@ -18,9 +18,9 @@ public class RadicalTermNode extends ScalarAtom{
             this.exponent = new LargePowerNode(K.base, LargeFraction.ONE, LargeInteger.ONE);
             return;
         }
-        this.rationalPart = R.copy();
-        this.coefficient = C.copy();
-        this.exponent = K.copy();
+        this.rationalPart = R.clone();
+        this.coefficient = C.clone();
+        this.exponent = K.clone();
     }
     @Override
     public String toString() {
@@ -46,7 +46,7 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public String toLatex() {return "";}
     @Override
-    public RadicalTermNode copy() {return new RadicalTermNode(rationalPart, coefficient, exponent);}
+    public RadicalTermNode clone() {return new RadicalTermNode(rationalPart, coefficient, exponent);}
     @Override
     public boolean isRational(){return coefficient.equals(LargeInteger.ZERO);}
     @Override
@@ -64,7 +64,7 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public LargeInteger ceil() {throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");}
     @Override
-    public int compareMags(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public int compareMagnitudes(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
     @Override
     public int compareTo(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
     @Override

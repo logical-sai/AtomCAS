@@ -195,7 +195,7 @@ public class Parser{
                     else if (base.equals(LargeInteger.NEGATIVE_ONE))
                         return ((LargeInteger) exp).isOdd() ? LargeInteger.NEGATIVE_ONE : LargeInteger.ONE;
                     LargeInteger expTemp = (LargeInteger) exp.abs();
-                    ScalarAtom basTemp = (ScalarAtom) base.copy();
+                    ScalarAtom basTemp = (ScalarAtom) base.clone();
                     ScalarAtom res = LargeInteger.ONE;
                     while (expTemp.greaterThan(LargeInteger.ZERO)) {
                         if (expTemp.isOdd()) {

@@ -35,9 +35,9 @@ public class LargePowerNode extends ScalarAtom{
                 //√(A+B√C) = √x + √y -> A+B√C = x + y + 2√xy. x+y=A, B^2*C/4=xy
                 //y = A-x -> B^2*C/4 = Ax-x^2 -> x^2 + Ax + B^2*C/4 = 0
                 //x = (A + √(A^2 - B^2*C))/2. y = (A - √(A^2 - B^2*C))/2
-                LargeFraction A = R.rationalPart.copy();
-                LargeFraction BCoefficient = R.coefficient.copy();
-                LargeFraction C = R.exponent.base.copy();
+                LargeFraction A = R.rationalPart.clone();
+                LargeFraction BCoefficient = R.coefficient.clone();
+                LargeFraction C = R.exponent.base.clone();
                 if(R.lessThan(LargeInteger.ZERO)){
                     signFactor = signFactor.multiply(LargePowerMonomial.I);
                     A = A.negate();
@@ -88,8 +88,8 @@ public class LargePowerNode extends ScalarAtom{
                 return;
             }
         }
-        ScalarAtom basTemp = (ScalarAtom) base.copy();
-        LargeInteger expTemp = exponent.numerator.copy();
+        ScalarAtom basTemp = (ScalarAtom) base.clone();
+        LargeInteger expTemp = exponent.numerator.clone();
         ScalarAtom res = LargeFraction.ONE;
         while(true){
             if(expTemp.isOdd()){
@@ -104,7 +104,7 @@ public class LargePowerNode extends ScalarAtom{
         this.signFactor = signFactor;
     }
     @Override
-    public LargePowerNode copy() {return new LargePowerNode(base, exponent, signFactor);}
+    public LargePowerNode clone() {return new LargePowerNode(base, exponent, signFactor);}
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
@@ -170,7 +170,7 @@ public class LargePowerNode extends ScalarAtom{
     @Override
     public ScalarAtom abs() {return new LargePowerNode(base, exponent, LargeInteger.ONE);}
     @Override
-    public int compareMags(ScalarAtom other){return 0;}
+    public int compareMagnitudes(ScalarAtom other){return 0;}
     @Override
     public int compareTo(ScalarAtom other){return 0;}
     @Override
@@ -203,7 +203,7 @@ public class LargePowerNode extends ScalarAtom{
     @Override
     public ScalarAtom multiply(ScalarAtom other) {
         if(other.equals(LargeInteger.ZERO)) return LargeInteger.ZERO;
-        else if(other.equals(LargeInteger.ONE)) return this.copy();
+        else if(other.equals(LargeInteger.ONE)) return this.clone();
         if (other instanceof LargePowerNode h){
             if (this.base.equals(h.base))
                 return new LargePowerNode(this.base, (LargeFraction) this.exponent.add(h.exponent), this.signFactor.multiply(h.signFactor));
@@ -212,7 +212,7 @@ public class LargePowerNode extends ScalarAtom{
             LargeFraction GC = exponent.gcd(h.exponent);
             ScalarAtom result = LargeInteger.ONE;
             LargeInteger expTemp = ((LargeFraction)exponent.divide(GC)).numerator;
-            ScalarAtom basTemp = (ScalarAtom) base.copy();
+            ScalarAtom basTemp = (ScalarAtom) base.clone();
             while(true){
                 if(expTemp.isOdd()){
                     if(expTemp.lessThan(LargeInteger.ZERO))
@@ -224,7 +224,7 @@ public class LargePowerNode extends ScalarAtom{
                 expTemp = expTemp.longDivision(LargeInteger.TWO);
             }
             expTemp = ((LargeFraction)h.exponent.divide(GC)).numerator;
-            basTemp = (ScalarAtom) h.base.copy();
+            basTemp = (ScalarAtom) h.base.clone();
             while(true){
                 if(expTemp.isOdd()){
                     if(expTemp.lessThan(LargeInteger.ZERO))

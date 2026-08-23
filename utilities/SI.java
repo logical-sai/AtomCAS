@@ -26,7 +26,7 @@ public class SI extends PhysicalAtom{
     public static final LargeFraction ronto = ronna.reciprocal();
     public static final LargeFraction quecto = quetta.reciprocal();
     @Override
-    public Atom copy() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public Atom clone() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
     @Override
     public String toString() {return "";}
     @Override
