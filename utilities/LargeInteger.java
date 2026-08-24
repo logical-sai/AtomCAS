@@ -4,8 +4,12 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.random.RandomGenerator;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
+
 
 public class LargeInteger extends ScalarAtom {
+    private static final ThreadMXBean TMX = ManagementFactory.getThreadMXBean();
     /**
      * Little-endian limbs where one "digit" is in base 2^64. Any long primitive,
      * negative or positive, is a valid limb. Empty arrays are invalid
@@ -562,9 +566,8 @@ public class LargeInteger extends ScalarAtom {
                 return new SignedMag(addMagnitudes(mag, other.mag), negative);
             // Different signs: subtract smaller abs from larger abs.
             int cmp = compareArray(mag, other.mag);
-            if (cmp == 0)
-                return new SignedMag(ZERO_MAG, false);
-            if (cmp > 0)
+            if (cmp == 0) return ZERO;
+            else if (cmp > 0)
                 return new SignedMag(subtractMagnitudes(mag, other.mag), negative);
             return new SignedMag(subtractMagnitudes(other.mag, mag), other.negative);
         }
@@ -1499,7 +1502,7 @@ public class LargeInteger extends ScalarAtom {
             // Exact divisibility by 2^shift requires these bits to be zero.
             long mask = (1L << shift) - 1L;
             if ((a[0] & mask) != 0L)
-                throw new ArithmeticException("not exactly divisible");
+                throw new ArithmeticException(new LargeInteger(a, false) + " is not exactly divisible by " + Long.toUnsignedString(divisor));
             // Divide magnitude by 2^shift in place.
             long carry = 0L;
             for (int i = a.length - 1; i >= 0; i--) {
@@ -1534,7 +1537,7 @@ public class LargeInteger extends ScalarAtom {
             carry = high;
         }
         if (carry != 0L)
-            throw new ArithmeticException("not exactly divisible");
+            throw new ArithmeticException("not exactly divisible by " + Long.toUnsignedString(divisor));
     }
     private record DivRem(long[] quotient, long remainder) {}
     public static long[][] divideMagnitudes(long[] dividend, long[] divisor){
@@ -1985,15 +1988,11 @@ public class LargeInteger extends ScalarAtom {
         return sum;
     }
     private static long[] modSubtract(long[] a, long[] b, long[] m) {
-        boolean aReduced = compareArray(a, m) < 0;
-        boolean bReduced = compareArray(b, m) < 0;
-        if (aReduced && bReduced) {
-            if (compareArray(a, b) >= 0)
-                return subtractMagnitudes(a, b);
-            return subtractMagnitudes(m, subtractMagnitudes(b, a));
-        }
-        a = aReduced ? a : modMagnitudes(a, m);
-        b = bReduced ? b : modMagnitudes(b, m);
+        a = trimLeadingZeros(a);
+        b = trimLeadingZeros(b);
+        m = trimLeadingZeros(m);
+        a = compareArray(a, m) < 0 ? a : modMagnitudes(a, m);
+        b = compareArray(b, m) < 0 ? b : modMagnitudes(b, m);
         if (compareArray(a, b) >= 0)
             return subtractMagnitudes(a, b);
         return subtractMagnitudes(m, subtractMagnitudes(b, a));
@@ -4886,7 +4885,19 @@ public class LargeInteger extends ScalarAtom {
 
     private static int chooseUnusedPrimeNearLogBounded(QSFactorBase factorBase, boolean[] used, double desiredLogP, int maxIdx, SplittableRandom rng) {
         if (maxIdx < 1) return -1;
-        int center = getCenter(factorBase, desiredLogP, maxIdx);
+        double desiredPDouble = Math.exp(desiredLogP);
+        if (!Double.isFinite(desiredPDouble))
+            desiredPDouble = factorBase.primes[maxIdx];
+        int desiredP = (int) Math.clamp(desiredPDouble, 3, factorBase.primes[maxIdx]);
+        int lo = 1;
+        int hi = maxIdx;
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            if (factorBase.primes[mid] < desiredP)
+                lo = mid + 1;
+            else hi = mid - 1;
+        }
+        int center = Math.clamp(lo, 1, maxIdx);
         // Tiny random jitter, not maxIdx/64.
         int radius = Math.max(8, maxIdx/64);
         for (int tries = 0; tries < 32; tries++) {
@@ -4906,23 +4917,6 @@ public class LargeInteger extends ScalarAtom {
         }
         return -1;
     }
-
-    private static int getCenter(QSFactorBase factorBase, double desiredLogP, int maxIdx) {
-        double desiredPDouble = Math.exp(desiredLogP);
-        if (!Double.isFinite(desiredPDouble))
-            desiredPDouble = factorBase.primes[maxIdx];
-        int desiredP = (int) Math.clamp(desiredPDouble, 3, factorBase.primes[maxIdx]);
-        int lo = 1;
-        int hi = maxIdx;
-        while (lo <= hi) {
-            int mid = (lo + hi) >>> 1;
-            if (factorBase.primes[mid] < desiredP)
-                lo = mid + 1;
-            else hi = mid - 1;
-        }
-        return Math.clamp(lo, 1, maxIdx);
-    }
-
     private static double roughDickman(double u) {
         return switch (u) {
             case double v when v < 0.0 -> 0.0;
@@ -5361,7 +5355,7 @@ public class LargeInteger extends ScalarAtom {
         if (!equalsArray(lhs, rhs))
             throw new AssertionError("Invalid SIQS B at mask=" + mask + " B^2 mod A=" + new LargeInteger(lhs, false) + " N mod A=" + new LargeInteger(rhs, false));
     }
-    private static void sieve128Polynomials(long[] N, QSFactorBase factorBase, int[] fbIndex, ArrayList<QSRelationFull> relations, PartialGraph partials) {
+    private static void sieve128Polynomials(long[] N, QSFactorBase factorBase, int[] fbIndex, ArrayList<QSRelationFull> relations, PartialGraph partials, SplittableRandom rng) {
         int fbSize = factorBase.size;
         int columnCount = fbSize + 1; // negative column + real factor-base primes
         int globalPMax = factorBase.primes[fbSize - 1];
@@ -5375,7 +5369,7 @@ public class LargeInteger extends ScalarAtom {
             bPolys <<= 1;
         }
         count = Math.clamp(count, 4, 8);
-        ACoefficient AR = chooseAByScoring(sqrt2N, factorBase, count, FAST_RNG.split());
+        ACoefficient AR = chooseAByScoring(sqrt2N, factorBase, count, rng);
         verifyACoefficient(AR, factorBase);
         long[] A = AR.A;
         AFactor[] arPrimes = AR.primes;
@@ -5496,6 +5490,12 @@ public class LargeInteger extends ScalarAtom {
                 grayDelta[off + j] = delta;
             }
         }
+        int largeStart = Arrays.binarySearch(factorBase.primes, interval);
+        if (largeStart < 0)
+            largeStart = -largeStart - 1;
+        int[] hitHead = new int[interval];
+        int[] hitNext = new int[2 * (fbSize - largeStart)];
+        int[] hitPrime = new int[2 * (fbSize - largeStart)];
         int prevGray = 0;
         for (int mask = 0; mask < 1 << (count-1); mask++) {
             int gray = mask ^ (mask >>> 1);
@@ -5509,29 +5509,15 @@ public class LargeInteger extends ScalarAtom {
                 if (nowNegative){ // +T_i -> -T_i
                     wrapped = compareArray(oldB, step) < 0;
                     B = modSubtract(oldB, step, A);
-                }else{ // -T_i -> +T_i
-                    B = modAdd(oldB, step, A);
-                    wrapped = compareArray(B, oldB) < 0;
-                }
-                t0 = System.nanoTime();
-                for(int j = 0; j < fbSize; j++){
-                    if(!active[j]) continue;
-                    int p = factorBase.primes[j];
-                    int oldR1 = pos1[j];
-                    int oldR2 = pos2[j];
-                    int delta;
-                    if (bit < cachedBits) delta = grayDelta[bit * fbSize + j];
-                    else {
-                        int stepMod = (int) modSmall(step, p);
-                        long z = (long) stepMod * invAModP[j];
-                        long q = (long) (z * invPDouble[j]);
-                        delta = (int)(z - q * p);
-                        if (delta >= p) delta -= p;
-                        else if (delta < 0) delta += p;
-                    }
-                    int predicted1;
-                    int predicted2;
-                    if (nowNegative) {
+                    long cpuRoot = TMX.getCurrentThreadCpuTime();
+                    for(int j = 0; j < fbSize; j++){
+                        if(!active[j]) continue;
+                        int p = factorBase.primes[j];
+                        int oldR1 = pos1[j];
+                        int oldR2 = pos2[j];
+                        int delta = grayDelta[bit * fbSize + j];
+                        int predicted1;
+                        int predicted2;
                         predicted1 = oldR1 + delta;
                         predicted2 = oldR2 + delta;
                         if (predicted1 >= p) predicted1 -= p;
@@ -5540,7 +5526,22 @@ public class LargeInteger extends ScalarAtom {
                             if (--predicted1 < 0) predicted1 += p;
                             if (--predicted2 < 0) predicted2 += p;
                         }
-                    }else{
+                        pos1[j] = predicted1;
+                        pos2[j] = predicted2;
+                    }
+                    rootCalcTime = TMX.getCurrentThreadCpuTime() - cpuRoot;
+                }else{ // -T_i -> +T_i
+                    B = modAdd(oldB, step, A);
+                    wrapped = compareArray(B, oldB) < 0;
+                    long cpuRoot = TMX.getCurrentThreadCpuTime();
+                    for(int j = 0; j < fbSize; j++){
+                        if(!active[j]) continue;
+                        int p = factorBase.primes[j];
+                        int oldR1 = pos1[j];
+                        int oldR2 = pos2[j];
+                        int delta = grayDelta[bit * fbSize + j];
+                        int predicted1;
+                        int predicted2;
                         predicted1 = oldR1 - delta;
                         predicted2 = oldR2 - delta;
                         if (predicted1 < 0) predicted1 += p;
@@ -5549,11 +5550,11 @@ public class LargeInteger extends ScalarAtom {
                             if (++predicted1 >= p) predicted1 -= p;
                             if (++predicted2 >= p) predicted2 -= p;
                         }
+                        pos1[j] = predicted1;
+                        pos2[j] = predicted2;
                     }
-                    pos1[j] = predicted1;
-                    pos2[j] = predicted2;
+                    rootCalcTime = TMX.getCurrentThreadCpuTime() - cpuRoot;
                 }
-                rootCalcTime = System.nanoTime() - t0;
                 plan.rootCalcTime += rootCalcTime;
                 plan.sieveNs += rootCalcTime;
             }
@@ -5561,11 +5562,13 @@ public class LargeInteger extends ScalarAtom {
             verifyBForA(B, A, N, gray);
             t0 = System.nanoTime();
             SignedMag numeratorC = SignedMag.positive(squareMagnitude(B)).add(SignedMag.negative(N));
-            SignedMag C = new SignedMag(divideExactMag(numeratorC.mag, A), numeratorC.negative);
+            long[] cMag = divideExactMag(numeratorC.mag, A);
+            SignedMag C = new SignedMag(cMag, numeratorC.negative);
             MPQSPolynomial poly = new MPQSPolynomial(A, B, C, arPrimes, aExponents);
             long polyGenTime = System.nanoTime() - t0;
             //log sieve
             long sieveStart = System.nanoTime();
+            long cpuSieve = TMX.getCurrentThreadCpuTime();
             Arrays.fill(score, 0);
             t0 = System.nanoTime();
             long smallSieve = System.nanoTime();
@@ -5593,6 +5596,9 @@ public class LargeInteger extends ScalarAtom {
             }
             smallSieve = System.nanoTime()-smallSieve;
             long largeSieve = System.nanoTime();
+            Arrays.fill(hitHead, -1);
+            int hitCount = 0;
+            largeStart = sieveIndex;
             while(sieveIndex < fbSize){
                 if (!active[sieveIndex]){
                     sieveIndex++;
@@ -5601,22 +5607,33 @@ public class LargeInteger extends ScalarAtom {
                 int logP = factorBase.logPrimes[sieveIndex];
                 int x1 = pos1[sieveIndex];
                 int x2 = pos2[sieveIndex];
-                if(x1 < interval)
+                if (x1 < interval) {
                     score[x1] += logP;
-                if(x2 < interval)
+                    hitPrime[hitCount] = sieveIndex;
+                    hitNext[hitCount] = hitHead[x1];
+                    hitHead[x1] = hitCount;
+                    hitCount++;
+                }
+                if (x2 < interval) {
                     score[x2] += logP;
+                    if (x2 != x1) {
+                        hitPrime[hitCount] = sieveIndex;
+                        hitNext[hitCount] = hitHead[x2];
+                        hitHead[x2] = hitCount;
+                        hitCount++;
+                    }
+                }
                 sieveIndex++;
             }
             largeSieve = System.nanoTime()-largeSieve;
             plan.logSieveNs += System.nanoTime() - t0;
             plan.smallLogSieveNs += smallSieve;
             plan.largeLogSieveNs += largeSieve;
-            long totalSieveTime = System.nanoTime() - sieveStart;
+            long totalSieveTime = Math.min(System.nanoTime() - sieveStart, TMX.getCurrentThreadCpuTime() - cpuSieve);
             //attempt after sieve
             double logQThreshold = plan.logQEdge;
             plan.scanned += interval;
             long attemptStart = System.nanoTime();
-            Arrays.fill(dense, (short) 0);
             for (int idx = 0; idx < interval; idx++) {
                 double value = score[idx]/LOG_SCALE + filterAllowance;
                 if (value < logQThreshold) continue;
@@ -5632,37 +5649,45 @@ public class LargeInteger extends ScalarAtom {
                 }
                 // A contribution: column 0 is negative, factorBase[j] lives at column j + 1.
                 Arrays.fill(dense, (short) 0);
-                if (currentQ.negative)
-                    incExp(dense, 0);
-                long[] remaining = currentQ.mag;
-                long[] currentX = multiplyMagnitudeBySignedLong(A, t).add(SignedMag.positive(poly.B)).modMag(N);
+                if (currentQ.negative) incExp(dense, 0);
+                long[] remaining = currentQ.mag.clone(); // owned mutable copy
+                long[] currentX = SignedMag.positive(A).multiplySignedLong(t).add(SignedMag.positive(B)).modMag(N);
                 if (isOneArray(remaining)){
                     relations.add(new QSRelationFull(new long[][]{currentX}, addSparse(compress(dense), aSparse), new long[0][]));
                     plan.observeRelationAdd(RelationAddKind.FULL);
                     continue;
                 }
                 long tested = 0;
-                for (int j = 0; j < fbSize; j++) {
-                    if(!active[j]) continue;
+                // small-prime part
+                for (int j = 0; j < largeStart; j++) {
                     tested++;
                     int p = factorBase.primes[j];
-                    if (p >= interval) {
-                        if (idx != pos1[j] && idx != pos2[j])
-                            continue;
-                    } else {
-                        if (modSmall(remaining, p) != 0)
-                            continue;
-                    }
-                    do{
-                        incExp(dense, j+1);
+                    while (modSmall(remaining, p) == 0){
+                        incExp(dense, j + 1);
                         divideMagExactInPlace(remaining, p);
-                    }while(modSmall(remaining, p) == 0);
-                    remaining = trimLeadingZeros(remaining);
-                    if (remaining.length == 1) {
-                        long r = remaining[0];
-                        long pp = (long) p * p;
-                        if (Long.compareUnsigned(pp, r) > 0) break;
                     }
+                    remaining = trimLeadingZeros(remaining);
+                }
+                for (int j = largeStart; j < fbSize; j++) {
+                    if (active[j]) continue;
+                    tested++;
+                    int p = factorBase.primes[j];
+                    while (modSmall(remaining, p) == 0){
+                        incExp(dense, j + 1);
+                        divideMagExactInPlace(remaining, p);
+                    }
+                    remaining = trimLeadingZeros(remaining);
+                }
+                // large-prime part: only recorded hits
+                for (int h = hitHead[idx]; h != -1; h = hitNext[h]) {
+                    tested++;
+                    int j = hitPrime[h];
+                    int p = factorBase.primes[j];
+                    do {
+                        incExp(dense, j + 1);
+                        divideMagExactInPlace(remaining, p);
+                    } while (modSmall(remaining, p) == 0);
+                    remaining = trimLeadingZeros(remaining);
                 }
                 plan.observeFactorTests(tested);
                 /*
@@ -7118,12 +7143,16 @@ public class LargeInteger extends ScalarAtom {
             int requiredRelations = factorBase.primes.length + 30;
             ArrayList<QSRelationFull> relations = new ArrayList<>();
             PartialGraph partials = new PartialGraph();
+            //Use a fixed rng seed
+            long A_RNG_SEED = FAST_RNG.split().nextLong();
+            System.out.println("A RNG seed: " + Long.toUnsignedString(A_RNG_SEED));
             System.out.println();
+            SplittableRandom A_RNG = new SplittableRandom(A_RNG_SEED);
             long relationStart = System.nanoTime();
             long blocks = 0;
             while(relations.size() < requiredRelations) {
                 blocks++;
-                sieve128Polynomials(limbs, factorBase, fbIndex, relations, partials);
+                sieve128Polynomials(limbs, factorBase, fbIndex, relations, partials, A_RNG);
 //                if(blocks % 16 == 0){
 //                    System.out.println("Total usable relations up to now: " + relations.size());
 //                    System.out.println("Total blocks up to now: " + blocks);
@@ -7133,7 +7162,7 @@ public class LargeInteger extends ScalarAtom {
             }
             long relationNanos = System.nanoTime() - relationStart;
             System.out.println("Total QS relation time: " + formatSeconds(relationNanos));
-            System.out.println("Overall relation collection rate: " + relations.size() * 1e9 / relationNanos);
+            System.out.println("Overall relation collection rate: " + relations.size() * 1e9 / relationNanos + " relations/second");
             System.out.println("Blocks used: " + blocks);
             System.out.println();
             int originalRelationCount = relations.size();
@@ -7141,7 +7170,7 @@ public class LargeInteger extends ScalarAtom {
             SparseMatrixSetup setup = buildQSMatrix(relations, factorBase, limbs);
             buildMatrixNanos = System.nanoTime() - buildMatrixNanos;
             System.out.println("Matrix build time: " + formatSeconds(buildMatrixNanos));
-            long matrixSeed = FAST_RNG.split().nextLong();
+            long matrixSeed = A_RNG.split().nextLong();
             System.out.println("Block Lanczos RNG seed: " + Long.toUnsignedString(matrixSeed));
             System.out.println();
             long matrixSolveNanos = System.nanoTime();
@@ -7176,10 +7205,11 @@ public class LargeInteger extends ScalarAtom {
             ArrayList<Double> blockRates = new ArrayList<>();
             int blocks = 0;
             boolean qsAccepted;
+            SplittableRandom rng = FAST_RNG.split();
             while (task.relations.size() < requiredRelations) {
                 int relationsBefore = task.relations.size();
                 long blockStart = System.nanoTime();
-                sieve128Polynomials(task.n, factorBase, fbIndex, task.relations, task.partialGraph);
+                sieve128Polynomials(task.n, factorBase, fbIndex, task.relations, task.partialGraph, rng);
                 long blockNanos = System.nanoTime() - blockStart;
                 int relationsAdded = task.relations.size() - relationsBefore;
                 double rate = blockNanos == 0L ? 0.0 : relationsAdded * 1e9 / blockNanos;
@@ -7216,7 +7246,7 @@ public class LargeInteger extends ScalarAtom {
              * Do not restart QS.
              */
             while (task.relations.size() < requiredRelations) {
-                sieve128Polynomials(task.n, factorBase, fbIndex, task.relations, task.partialGraph);
+                sieve128Polynomials(task.n, factorBase, fbIndex, task.relations, task.partialGraph, rng);
                 blocks++;
             }
             System.out.println("Total QS relation time: " + (System.nanoTime() - totalStart) / 1e9 + " seconds");

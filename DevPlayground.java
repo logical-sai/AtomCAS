@@ -97,7 +97,7 @@ public class DevPlayground {
 //        long end = System.nanoTime();
 //        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
         long t0 = System.nanoTime();
-        System.out.println(new LargeInteger("2451955667358449766574244930742726059038594502086245442706362842197225471").quadraticSieveWithoutConstraints());
+        System.out.println(new LargeInteger("796826650060231590107439259688913672165114963647112649").quadraticSieveWithoutConstraints());
         long t1 = System.nanoTime();
         System.out.println((t1-t0)/1e9 + " seconds");
     }
