@@ -316,7 +316,7 @@ public class LargeInteger extends ScalarAtom{
             out[i] = a[i] ^ b[i];
         return fromTwosComplement(out);
     }
-    private static long[] randomMagBetween(long[] startInclusive, long[] endExclusive) {
+    private static long[] randomMagnitudeBetween(long[] startInclusive, long[] endExclusive) {
         startInclusive = trimLeadingZeros(startInclusive);
         endExclusive = trimLeadingZeros(endExclusive);
 
@@ -352,7 +352,7 @@ public class LargeInteger extends ScalarAtom{
      */
     public static LargeInteger random(LargeInteger start, LargeInteger end) {
         if(start.negative) return (LargeInteger) random(ZERO, (LargeInteger) end.subtract(start)).add(start);
-        return new LargeInteger(randomMagBetween(start.limbs, end.limbs), false);
+        return new LargeInteger(randomMagnitudeBetween(start.limbs, end.limbs), false);
     }
     public static LargeInteger randomChunks(int chunks){return randomChunks(chunks, SECURE_RNG);}
     public static LargeInteger randomChunks(int chunks, RandomGenerator rng) {
@@ -1704,7 +1704,6 @@ public class LargeInteger extends ScalarAtom{
                     u[k] = sum;
                     carry = c1 | c2;
                 }
-
                 u[j + n] += carry;
                 int k = j + v.length;
                 u[k] += carry;
@@ -1714,8 +1713,7 @@ public class LargeInteger extends ScalarAtom{
         long[] r = Arrays.copyOf(u, n);
         if (shift != 0)
             shiftRightBitsInPlace(r, shift);
-        q = trimLeadingZeros(q);
-        return new long[][]{q, r};
+        return new long[][]{trimLeadingZeros(q), trimLeadingZeros(r)};
     }
     private static final int BURNIKEL_ZIEGLER_BLOCK_THRESHOLD = 128;
     private static final int BURNIKEL_ZIEGLER_LEAF_THRESHOLD = 64;
@@ -1922,34 +1920,6 @@ public class LargeInteger extends ScalarAtom{
         return new long[][]{trimLeadingZeros(q), trimLeadingZeros(rFull)};
     }
     private static long[] divideExactMag(long[] n, long[] d) {
-//        if (compareArray(d, n) > 0) {
-//            System.err.println(
-//                    "INVALID EXACT DIVISION REQUEST" +
-//                            "\nnLen = " + n.length +
-//                            "\ndLen = " + d.length +
-//                            "\nn = " + new LargeInteger(n, false) +
-//                            "\nd = " + new LargeInteger(d, false)
-//            );
-//            Thread.dumpStack();
-//            throw new AssertionError("Exact divisor larger than dividend");
-//        }
-//        long[] modR = modMagnitudes(n, d);
-//        long[][] fast = divideMagnitudes(n, d);
-//        if (!isZeroArray(fast[1])) {
-//            long[][] knuth = divideMagnitudesKnuth(trimLeadingZeros(n), trimLeadingZeros(d));
-//            System.err.println(
-//                    "Exact division disagreement:" +
-//                            "\n nLen = " + n.length +
-//                            "\n dLen = " + d.length +
-//                            "\n modR len = " + trimLeadingZeros(modR).length +
-//                            "\n fastR len = " + trimLeadingZeros(fast[1]).length +
-//                            "\n knuthR len = " + trimLeadingZeros(knuth[1]).length
-//            );
-//            if (isZeroArray(modR) && isZeroArray(knuth[1]))
-//                throw new AssertionError("BZ/dispatcher division wrong; remainder-only and Knuth agree");
-//            throw new AssertionError("Division implementations disagree in a different way");
-//        }
-//        return fast[0];
         long[][] DR = divideMagnitudes(n, d);
         if(!isZeroArray(DR[1]))
             throw new ArithmeticException("Division was not exact");
@@ -2302,6 +2272,7 @@ public class LargeInteger extends ScalarAtom{
         private final long[] r2ModM;
         private final boolean useCIOS;
         private final long[] scratch;
+        private final long[] ciosScratch;
 
         MontgomeryReducer(long[] inputModulus) {
             if (inputModulus == null)
@@ -2321,6 +2292,7 @@ public class LargeInteger extends ScalarAtom{
             this.mPrime = -y;
             this.useCIOS = k <= 4;
             this.scratch = new long[2 * k + 2];
+            this.ciosScratch = new long[2 * k + 2];
             long[] power = new long[2 * k + 1];
             power[k] = 1L;
             this.rModM = modMagnitudes(power, modulus);
@@ -2394,8 +2366,9 @@ public class LargeInteger extends ScalarAtom{
             else if (cmp > 0) return subtractMagnitudes(a, b);
             return subtractMagnitudes(modulus, subtractMagnitudes(b, a));
         }
-
         long[] multiply(long[] a, long[] b) {
+            a = trimLeadingZeros(a);
+            b = trimLeadingZeros(b);
             if (useCIOS) return multiplyCIOS(a, b);
             if (Math.min(a.length, b.length) < KARATSUBA_THRESHOLD) {
                 Arrays.fill(scratch, 0L);
@@ -2439,33 +2412,22 @@ public class LargeInteger extends ScalarAtom{
             for (int i = 0; i < n; i++) {
                 for (int j = i + 1; j < n; j++) {
                     LongPair product = LongPair.multiply64(a[i], a[j]);
-
                     // Double the unsigned 128-bit product.
                     long low  = product.low << 1;
                     long high = (product.high << 1) | (product.low >>> 63);
                     long top  = product.high >>> 63;   // possible 129th bit
-
                     add192Into(out, i + j, low, high, top);
                 }
             }
         }
-
-        private static void add128Into(
-                long[] out,
-                int index,
-                long low,
-                long high
-        ) {
+        private static void add128Into(long[] out, int index, long low, long high) {
             LongPair sum = LongPair.add64(out[index], low);
             out[index] = sum.low;
             long carry = sum.high;
-
             sum = LongPair.add64(out[index + 1], high).addLow(carry);
             out[index + 1] = sum.low;
             carry = sum.high;
-
             index += 2;
-
             while (carry != 0L) {
                 sum = LongPair.add64(out[index], carry);
                 out[index] = sum.low;
@@ -2473,7 +2435,6 @@ public class LargeInteger extends ScalarAtom{
                 index++;
             }
         }
-
         private static void add192Into(long[] out, int index, long low, long high, long top) {
             LongPair sum = LongPair.add64(out[index], low);
             out[index] = sum.low;
@@ -2503,8 +2464,6 @@ public class LargeInteger extends ScalarAtom{
          * where R = 2^(64*k).
          */
         long[] multiplyCIOS(long[] a, long[] b) {
-            a = trimLeadingZeros(a);
-            b = trimLeadingZeros(b);
             requireReducedMagnitude(a, "a");
             requireReducedMagnitude(b, "b");
             /*
@@ -2518,103 +2477,80 @@ public class LargeInteger extends ScalarAtom{
              * This implementation needs only this k+2-limb accumulator
              * plus the returned result.
              */
-            long[] t = new long[k + 2];
-
+            Arrays.fill(ciosScratch, 0L);
             for (int i = 0; i < k; i++) {
                 long bi = i < b.length ? b[i] : 0L;
-
                 //t += a * bi
                 long carry = 0L;
-
                 for (int j = 0; j < a.length; j++) {
                     long low = a[j] * bi;
                     long high = Math.unsignedMultiplyHigh(a[j], bi);
-
-                    long s1 = t[j] + low;
-                    long c1 = Long.compareUnsigned(s1, t[j]) < 0 ? 1L : 0L;
-
+                    long s1 = ciosScratch[j] + low;
+                    long c1 = Long.compareUnsigned(s1, ciosScratch[j]) < 0 ? 1L : 0L;
                     long s2 = s1 + carry;
                     long c2 = Long.compareUnsigned(s2, s1) < 0 ? 1L : 0L;
-
-                    t[j] = s2;
-
+                    ciosScratch[j] = s2;
                     /*
                      * Under the multiplication invariant, this unsigned
                      * addition cannot overflow past ONE limb.
                      */
                     carry = high + c1 + c2;
                 }
-
                 /*
                  * Add the product carry above a's highest stored limb.
                  * a may contain fewer than k limbs.
                  */
                 int carryIndex = a.length;
                 while (carry != 0L) {
-                    long old = t[carryIndex];
+                    long old = ciosScratch[carryIndex];
                     long sum = old + carry;
-                    t[carryIndex] = sum;
+                    ciosScratch[carryIndex] = sum;
                     carry = Long.compareUnsigned(sum, old) < 0 ? 1L : 0L;
                     carryIndex++;
-
-                    if (carryIndex >= t.length && carry != 0L)
+                    if (carryIndex >= ciosScratch.length && carry != 0L)
                         throw new AssertionError("CIOS product accumulation overflow");
                 }
-
                 //q is chosen so that t[0] + q * modulus[0] == 0 mod 2^6
-                long q = t[0] * mPrime;
-
+                long q = ciosScratch[0] * mPrime;
                 /*
-                 * t += q * modulus
-                 * Simultaneously divide by 2^64. The value written for
-                 * limb j is placed at j-1, so the canceled low limb is
-                 * never copied or retained.
+                  t += q * modulus
+                  Simultaneously divide by 2^64. The value written for
+                  limb j is placed at j-1, so the canceled low limb is
+                  never copied or retained.
                  */
-
                 for (int j = 0; j < k; j++) {
                     long low = modulus[j] * q;
-                    long high = Math.unsignedMultiplyHigh(modulus[j], q);
-
-                    long s1 = t[j] + low;
-                    long c1 = Long.compareUnsigned(s1, t[j]) < 0 ? 1L : 0L;
-
+                    carry = Math.unsignedMultiplyHigh(modulus[j], q);
+                    long s1 = ciosScratch[j] + low;
+                    if(Long.compareUnsigned(s1, ciosScratch[j]) < 0) carry++;
                     long s2 = s1 + carry;
-                    long c2 = Long.compareUnsigned(s2, s1) < 0 ? 1L : 0L;
-
-                    carry = high + c1 + c2;
-
+                    if(Long.compareUnsigned(s2, s1) < 0) carry++;
                     if (j == 0) {
                         //This is the fundamental Montgomery invariant.
                         if (s2 != 0L) throw new AssertionError("Montgomery cancellation failed");
-                    } else t[j - 1] = s2; //Store S / 2^64 directly.
+                    } else ciosScratch[j - 1] = s2; //Store S / 2^64 directly.
                 }
 
                 //Finish the shifted top limbs.
-                long oldTop = t[k];
+                long oldTop = ciosScratch[k];
                 long shiftedTop = oldTop + carry;
-                long topCarry =
-                        Long.compareUnsigned(shiftedTop, oldTop) < 0 ? 1L : 0L;
-
-                t[k - 1] = shiftedTop;
-
-                long oldExtra = t[k + 1];
+                long topCarry = Long.compareUnsigned(shiftedTop, oldTop) < 0 ? 1L : 0L;
+                ciosScratch[k - 1] = shiftedTop;
+                long oldExtra = ciosScratch[k + 1];
                 long newExtra = oldExtra + topCarry;
-
                 if (Long.compareUnsigned(newExtra, oldExtra) < 0)
                     throw new AssertionError("CIOS top-limb overflow");
-
-                t[k] = newExtra;
-                t[k + 1] = 0L;
+                ciosScratch[k] = newExtra;
+                ciosScratch[k + 1] = 0L;
             }
-
             /*
-             * With reduced operands, the CIOS result is in [0, 2m).
-             * Therefore, at most 1 subtraction is required.
+              With reduced operands, the CIOS result is in [0, 2m).
+              Therefore, at most 1 subtraction is required.
              */
-            if (compareArray(t, modulus) >= 0) subtractMagnitudeInPlace(t, modulus);
-            if (t[k] != 0L || compareArray(t, modulus) >= 0)
+            if (compareArray(ciosScratch, modulus) >= 0) subtractMagnitudeInPlace(ciosScratch, modulus);
+            if (ciosScratch[k] != 0L || compareArray(ciosScratch, modulus) >= 0)
                 throw new AssertionError("CIOS result was not fully reduced");
-            return trimLeadingZeros(Arrays.copyOf(t, k));
+            return trimLeadingZeros(Arrays.copyOf(ciosScratch, k));
         }
         long[] square(long[] a) {
             if (useCIOS) return multiplyCIOS(a, a);
@@ -3033,7 +2969,7 @@ public class LargeInteger extends ScalarAtom{
     }
     private static boolean passesMillerRabin(int rounds, MontgomeryReducer reducer, long[] oneMont, long[] minusOneMont, long[] d, long s, long[] nMinusOne) {
         for (int round = 0; round < rounds; round++) {
-            long[] witnessMont = reducer.toMontgomery(randomMagBetween(TWO_MAG, nMinusOne));
+            long[] witnessMont = reducer.toMontgomery(randomMagnitudeBetween(TWO_MAG, nMinusOne));
             long[] x = reducer.powMontgomery(witnessMont, d);
             if (equalsArray(x, oneMont) || equalsArray(x, minusOneMont)) continue;
             boolean passed = false;
@@ -3685,12 +3621,14 @@ public class LargeInteger extends ScalarAtom{
     }
     public LargeList<LargeInteger> divisors() {
         LargeList<LargeInteger> result = new LargeList<>();
-        if (isZeroArray(limbs) || equals(ONE)) return result;
+        if (isZeroArray(limbs) || isOneArray(limbs)) return result;
         LargeMap<LargeInteger, LargeFraction> factorMap = abs().factor();
         result.add(ONE);
-        if (factorMap.keyAtIndex(ZERO).equals(ONE)) return result;
+        if (isOneArray(factorMap.keyAtIndex(ZERO).limbs)) return result;
         for (LargeInteger p : factorMap.keys()) {
-            if (p.equals(NEGATIVE_ONE)) continue;
+            if (p.negative) continue;
+            if(!p.isProbablyPrime())
+                throw new ArithmeticException("divisors() requires full prime decomposition");
             LargeInteger exp = factorMap.get(p).numerator;
             LargeInteger currentSize = result.size();
             LargeInteger pPower = ONE;
@@ -3847,7 +3785,7 @@ public class LargeInteger extends ScalarAtom{
             int q = primes[i];
             if (q > B2) break;
             int targetM = (q + D - 1) / D;
-            while (currentM < targetM) {
+            while(currentM < targetM){
                 giant = reducer.multiply(giant, xToD);
                 currentM++;
             }
@@ -3898,8 +3836,8 @@ public class LargeInteger extends ScalarAtom{
         else if (bits <= 320) steps = 250_000L;
         else steps = 100_000L;
         MontgomeryReducer reducer = new MontgomeryReducer(n);
-        long[] y = randomMagBetween(TWO_MAG, subtractSmallMag(n, 2));
-        long[] c = randomMagBetween(ONE_MAG, subtractSmallMag(n, 1));
+        long[] y = randomMagnitudeBetween(TWO_MAG, subtractSmallMag(n, 2));
+        long[] c = randomMagnitudeBetween(ONE_MAG, subtractSmallMag(n, 1));
         long m = 1024;
         long r = 1;
         long times = 0;
@@ -3952,6 +3890,7 @@ public class LargeInteger extends ScalarAtom{
             return addMagnitudes(sqrtN, sqrtCeilMag(diff));
         return ONE_MAG;
     }
+
     private record MontgomeryPoint(long[] X, long[] Z) {}
     private static final class MontgomeryCurve {
         final long[] A24; //(A+2)/4 mod n
@@ -3966,11 +3905,10 @@ public class LargeInteger extends ScalarAtom{
             A24 = reducer.toMontgomery(A24Normal);
             n = reducer.modulus;
         }
-        MontgomeryPoint doublePoint(MontgomeryPoint P, ECMStats stats) {
+        MontgomeryPoint doublePointInto(MontgomeryPoint P, ECMStats stats) {
             requireCanonicalPoint(P);
             return doublePointCanonical(P, stats);
         }
-
         private MontgomeryPoint doublePointCanonical(MontgomeryPoint P, ECMStats stats) {
             long t0 = 0;
             if (stage2) t0 = System.nanoTime();
@@ -3985,14 +3923,12 @@ public class LargeInteger extends ScalarAtom{
             if (stage2) stats.stage2DoublingTime += System.nanoTime() - t0;
             return new MontgomeryPoint(X2, Z2);
         }
-
         MontgomeryPoint diffAdd(MontgomeryPoint P, MontgomeryPoint Q, MontgomeryPoint PMinusQ, ECMStats stats) {
             requireCanonicalPoint(P);
             requireCanonicalPoint(Q);
             requireCanonicalPoint(PMinusQ);
             return diffAddCanonical(P, Q, PMinusQ, stats);
         }
-
         private MontgomeryPoint diffAddCanonical(MontgomeryPoint P, MontgomeryPoint Q, MontgomeryPoint PMinusQ, ECMStats stats) {
             long t0 = 0;
             if (stage2) t0 = System.nanoTime();
@@ -4000,28 +3936,22 @@ public class LargeInteger extends ScalarAtom{
             long[] b = reducer.subtractCanonical(P.X, P.Z);
             long[] c = reducer.addCanonical(Q.X, Q.Z);
             long[] d = reducer.subtractCanonical(Q.X, Q.Z);
-
             long[] da = reducer.multiply(d, a);
             long[] cb = reducer.multiply(c, b);
-
             long[] plus = reducer.addCanonical(da, cb);
             long[] minus = reducer.subtractCanonical(da, cb);
             if (stage2) stats.stage2DifferentialAdditionTime += System.nanoTime() - t0;
             return new MontgomeryPoint(reducer.multiply(PMinusQ.Z, reducer.square(plus)), reducer.multiply(PMinusQ.X, reducer.square(minus)));
         }
-
         private record DblAddResult(MontgomeryPoint doubled, MontgomeryPoint added) {}
         private DblAddResult doubleAndDiffAddCanonical(MontgomeryPoint P, MontgomeryPoint Q, MontgomeryPoint PMinusQ, ECMStats stats) {
             long[] a = reducer.addCanonical(P.X, P.Z);
             long[] b = reducer.subtractCanonical(P.X, P.Z);
-
             long[] aa = reducer.square(a);
             long[] bb = reducer.square(b);
             long[] e = reducer.subtractCanonical(aa, bb);
-
             long[] c = reducer.addCanonical(Q.X, Q.Z);
             long[] d = reducer.subtractCanonical(Q.X, Q.Z);
-
             long[] da = reducer.multiply(d, a);
             long[] cb = reducer.multiply(c, b);
             long[] plus = reducer.addCanonical(da, cb);
@@ -4031,7 +3961,6 @@ public class LargeInteger extends ScalarAtom{
             stats.stage2MontMultiplications += 7;
             return new DblAddResult(doubled, added);
         }
-
         MontgomeryPoint multiply(MontgomeryPoint P, long k, ECMStats stats) {
             if (k <= 0L) throw new IllegalArgumentException("Scalar must be positive");
             int shifts = Long.numberOfTrailingZeros(k);
@@ -4046,7 +3975,6 @@ public class LargeInteger extends ScalarAtom{
             PracChain chain = PracChain.buildPracChain(k);
             return multiplyPrac(P, chain.operations, 0, chain.operations.length, chain.trailingDoubling, stats);
         }
-
         MontgomeryPoint multiplyPrac(MontgomeryPoint P, byte[] operations, int from, int toExclusive, int trailingDoubling, ECMStats stats) {
             if (from < 0 || toExclusive < from || toExclusive > operations.length || trailingDoubling < 0)
                 throw new IllegalArgumentException("Invalid PRAC slice");
@@ -4056,35 +3984,30 @@ public class LargeInteger extends ScalarAtom{
             MontgomeryPoint C = P;
             for (int index = from; index < toExclusive; index++) {
                 switch (operations[index]) {
-                    case PracBlock.SWAP -> {
+                    case PracChain.SWAP -> {
                         MontgomeryPoint temp = A;
                         A = B;
                         B = temp;
-                    }
-                    case PracBlock.CASE_1 -> {
+                    }case PracChain.CASE_1 -> {
                         MontgomeryPoint sum = diffAddCanonical(A, B, C, stats);
                         MontgomeryPoint newA = diffAddCanonical(sum, A, B, stats);
                         MontgomeryPoint newB = diffAddCanonical(B, sum, A, stats);
                         A = newA;
                         B = newB;
-                    }
-                    case PracBlock.CASE_2, PracBlock.CASE_4 -> {
+                    }case PracChain.CASE_2, PracChain.CASE_4 -> {
                         DblAddResult pair = doubleAndDiffAddCanonical(A, B, C, stats);
                         A = pair.doubled;
                         B = pair.added;
-                    }
-                    case PracBlock.CASE_3 -> {
+                    }case PracChain.CASE_3 -> {
                         MontgomeryPoint oldB = B;
                         B = diffAddCanonical(B, A, C, stats);
                         C = oldB;
-                    }
-                    case PracBlock.CASE_5 -> {
+                    }case PracChain.CASE_5 -> {
                         // Computes 2A and A+C, where |A-C| = B.
                         DblAddResult pair = doubleAndDiffAddCanonical(A, C, B, stats);
                         A = pair.doubled;
                         C = pair.added;
-                    }
-                    case PracBlock.CASE_6 -> {
+                    }case PracChain.CASE_6 -> {
                         MontgomeryPoint oldA = A;
                         MontgomeryPoint oldB = B;
                         MontgomeryPoint oldC = C;
@@ -4094,16 +4017,14 @@ public class LargeInteger extends ScalarAtom{
                         A = diffAddCanonical(pair.doubled, oldA, oldA, stats);
                         B = diffAddCanonical(pair.doubled, pair.added, oldC, stats);
                         C = oldB;
-                    }
-                    case PracBlock.CASE_7 -> {
+                    }case PracChain.CASE_7 -> {
                         MontgomeryPoint oldA = A;
                         MontgomeryPoint oldB = B;
 
                         DblAddResult pair = doubleAndDiffAddCanonical(oldA, oldB, C, stats);
                         B = diffAddCanonical(pair.added, oldA, oldB, stats);
                         A = diffAddCanonical(pair.doubled, oldA, oldA, stats);
-                    }
-                    case PracBlock.CASE_8 -> {
+                    }case PracChain.CASE_8 -> {
                         MontgomeryPoint oldA = A;
                         MontgomeryPoint oldB = B;
                         MontgomeryPoint oldC = C;
@@ -4112,14 +4033,12 @@ public class LargeInteger extends ScalarAtom{
                         A = diffAddCanonical(pair.doubled, oldA, oldA, stats);
                         B = pair.added;
                         C = diffAddCanonical(oldA, oldC, oldB, stats);
-                    }
-                    case PracBlock.CASE_9 -> {
+                    }case PracChain.CASE_9 -> {
                         // Computes 2B and B+C, where |B-C| = A.
                         DblAddResult pair = doubleAndDiffAddCanonical(B, C, A, stats);
                         B = pair.doubled;
                         C = pair.added;
-                    }
-                    default -> throw new IllegalStateException("Unknown PRAC operation: " + operations[index]);
+                    }default -> throw new IllegalStateException("Unknown PRAC operation: " + operations[index]);
                 }
             }
             MontgomeryPoint result = diffAddCanonical(A, B, C, stats);
@@ -4128,7 +4047,6 @@ public class LargeInteger extends ScalarAtom{
             return result;
         }
     }
-
     private static long goldenSplit(long k) {
         if (k <= 0L)
             throw new IllegalArgumentException("k must be positive");
@@ -4159,72 +4077,6 @@ public class LargeInteger extends ScalarAtom{
     }
 
     private record PracChain(byte[] operations, int trailingDoubling, long oddPart) {
-        static PracChain buildPracChain(long k) {
-            if (k <= 0L)
-                throw new IllegalArgumentException("k must be positive");
-            int trailingDoubling = Long.numberOfTrailingZeros(k);
-            long oddK = k >>> trailingDoubling;
-            if (oddK == 1L)
-                return new PracChain(new byte[0], trailingDoubling, oddK);
-
-            long r = choosePracSplit(oddK);
-
-            long d = oddK - r;
-            long e = r - d;
-
-            ByteArrayOutputStream operations = new ByteArrayOutputStream();
-
-            while (d != e) {
-                if (d < e) {
-                    long temporary = d;
-                    d = e;
-                    e = temporary;
-                    operations.write(PracBlock.SWAP);
-                }
-                // Apply the first qualifying PRAC condition.
-                if (d - e <= e / 4L && (d + e) % 3L == 0L) {
-                    operations.write(PracBlock.CASE_1);
-                    d = (2L * d - e) / 3L;
-                    e = (e - d) / 2L;
-                } else if (d - e <= e / 4L && (d - e) % 6L == 0L) {
-                    operations.write(PracBlock.CASE_2);
-                    d = (d - e) / 2L;
-                } else if ((d + 3L) / 4L <= e) {
-                    operations.write(PracBlock.CASE_3);
-                    d -= e;
-                } else if ((d + e) % 2L == 0L) {
-                    operations.write(PracBlock.CASE_4);
-                    d = (d - e) / 2L;
-                } else if ((d & 1L) == 0L) {
-                    operations.write(PracBlock.CASE_5);
-                    d /= 2L;
-                } else if (d % 3L == 0L) {
-                    operations.write(PracBlock.CASE_6);
-                    d = d / 3L - e;
-                } else if ((d + e) % 3L == 0L) {
-                    operations.write(PracBlock.CASE_7);
-                    d = (d - 2L * e) / 3L;
-                } else if ((d - e) % 3L == 0L) {
-                    operations.write(PracBlock.CASE_8);
-                    d = (d - e) / 3L;
-                } else {
-                    operations.write(PracBlock.CASE_9);
-                    e /= 2L;
-                }
-                if (d <= 0L || e <= 0L)
-                    throw new IllegalStateException("Invalid PRAC reduction");
-            }
-            if (d != 1L)
-                throw new IllegalStateException("PRAC pair was not coprime");
-            return new PracChain(operations.toByteArray(), trailingDoubling, k);
-        }
-    }
-
-    /**
-     * @param offsets          Chain k occupies operations[offsets[k] ... offsets[k + 1]).
-     * @param trailingDoubling A long scalar has at most 63 trailing zero bits.
-     */
-    private record PracBlock(byte[] operations, int[] offsets, byte[] trailingDoubling, int powerOfTwoDoubling) {
         static final byte SWAP = 0;
         static final byte CASE_1 = 1;
         static final byte CASE_2 = 2;
@@ -4235,88 +4087,52 @@ public class LargeInteger extends ScalarAtom{
         static final byte CASE_7 = 7;
         static final byte CASE_8 = 8;
         static final byte CASE_9 = 9;
-
-        PracBlock {
-            if (offsets.length != trailingDoubling.length + 1)
-                throw new IllegalArgumentException("Offsets must contain ONE terminal entry");
-            if (offsets[0] != 0 || offsets[offsets.length - 1] != operations.length)
-                throw new IllegalArgumentException("Invalid PRAC operation offsets");
-        }
-
-        private static PracBlock buildPracBlock(long[] primes, long bound) {
-            ByteArrayOutputStream operations = new ByteArrayOutputStream();
-
-            int[] offsets = new int[primes.length + 1];
-            byte[] trailingDoubling = new byte[primes.length];
-
-            int chainCount = 0;
-            int powerOfTwoDoubling = 0;
-
-            for (long prime : primes) {
-                if (prime < 2L || prime > bound)
-                    continue;
-
-                long scalar = prime;
-
-                while (scalar <= bound / prime)
-                    scalar *= prime;
-
-                int shifts = Long.numberOfTrailingZeros(scalar);
-                long oddPart = scalar >>> shifts;
-
-                if (oddPart == 1L) {
-                    // This can only be the largest power of 2 <= bound.
-                    powerOfTwoDoubling = shifts;
-                    continue;
-                }
-                offsets[chainCount] = operations.size();
-                appendPracOperations(oddPart, operations);
-                trailingDoubling[chainCount] = (byte) shifts;
-                chainCount++;
-            }
-            offsets[chainCount] = operations.size();
-            return new PracBlock(operations.toByteArray(), Arrays.copyOf(offsets, chainCount + 1), Arrays.copyOf(trailingDoubling, chainCount), powerOfTwoDoubling);
-        }
-        private static void appendPracOperations(long oddScalar, ByteArrayOutputStream operations) {
-            long r = goldenSplit(oddScalar);
-            while (gcdLong(oddScalar, r) != 1L) r--;
-            long d = oddScalar - r;
+        static PracChain buildPracChain(long k) {
+            if (k <= 0L)
+                throw new IllegalArgumentException("k must be positive");
+            int trailingDoubling = Long.numberOfTrailingZeros(k);
+            long oddK = k >>> trailingDoubling;
+            if (oddK == 1L)
+                return new PracChain(new byte[0], trailingDoubling, oddK);
+            long r = choosePracSplit(oddK);
+            long d = oddK - r;
             long e = r - d;
+            ByteArrayOutputStream operations = new ByteArrayOutputStream();
             while (d != e) {
                 if (d < e) {
                     long temporary = d;
                     d = e;
                     e = temporary;
-                    operations.write(PracBlock.SWAP);
+                    operations.write(SWAP);
                 }
                 // Apply the first qualifying PRAC condition.
                 if (d - e <= e / 4L && (d + e) % 3L == 0L) {
-                    operations.write(PracBlock.CASE_1);
+                    operations.write(CASE_1);
                     d = (2L * d - e) / 3L;
                     e = (e - d) / 2L;
                 } else if (d - e <= e / 4L && (d - e) % 6L == 0L) {
-                    operations.write(PracBlock.CASE_2);
+                    operations.write(CASE_2);
                     d = (d - e) / 2L;
                 } else if ((d + 3L) / 4L <= e) {
-                    operations.write(PracBlock.CASE_3);
+                    operations.write(CASE_3);
                     d -= e;
                 } else if ((d + e) % 2L == 0L) {
-                    operations.write(PracBlock.CASE_4);
+                    operations.write(CASE_4);
                     d = (d - e) / 2L;
                 } else if ((d & 1L) == 0L) {
-                    operations.write(PracBlock.CASE_5);
+                    operations.write(CASE_5);
                     d /= 2L;
                 } else if (d % 3L == 0L) {
-                    operations.write(PracBlock.CASE_6);
+                    operations.write(CASE_6);
                     d = d / 3L - e;
                 } else if ((d + e) % 3L == 0L) {
-                    operations.write(PracBlock.CASE_7);
+                    operations.write(CASE_7);
                     d = (d - 2L * e) / 3L;
                 } else if ((d - e) % 3L == 0L) {
-                    operations.write(PracBlock.CASE_8);
+                    operations.write(CASE_8);
                     d = (d - e) / 3L;
                 } else {
-                    operations.write(PracBlock.CASE_9);
+                    operations.write(CASE_9);
                     e /= 2L;
                 }
                 if (d <= 0L || e <= 0L)
@@ -4324,20 +4140,9 @@ public class LargeInteger extends ScalarAtom{
             }
             if (d != 1L)
                 throw new IllegalStateException("PRAC pair was not coprime");
+            return new PracChain(operations.toByteArray(), trailingDoubling, k);
         }
     }
-
-    //    private static int firstGreaterThan(int[] values, int target) {
-//        int low = 0;
-//        int high = values.length;
-//        while (low < high) {
-//            int mid = (low + high) >>> 1;
-//            if (values[mid] <= target)
-//                low = mid + 1;
-//            else high = mid;
-//        }
-//        return low;
-//    }
     private static final class ECMCurveWork {
         final MontgomeryCurve curve;
         MontgomeryPoint point;
@@ -4362,7 +4167,6 @@ public class LargeInteger extends ScalarAtom{
     private static final class Stage2State {
         private static final int D = 2310;
         private static final int HALF_D = D >>> 1;
-
         final MontgomeryCurve curve;
         final MontgomeryPoint Q;
         final MontgomeryPoint[] baby;
@@ -4387,7 +4191,7 @@ public class LargeInteger extends ScalarAtom{
             baby = new MontgomeryPoint[HALF_D];
             baby[0] = Q;
             MontgomeryPoint previousMultiple = Q;
-            MontgomeryPoint currentMultiple = curve.doublePoint(Q, stats);
+            MontgomeryPoint currentMultiple = curve.doublePointInto(Q, stats);
 
             for (int r = 2; r < HALF_D; r++) {
                 if (gcdLong(r, D) == 1)
@@ -4418,9 +4222,9 @@ public class LargeInteger extends ScalarAtom{
         long[] stage2Term(long q, ECMStats stats) {
             stats.stage2TermCount++;
             long targetM = nearestCenterIndex(q);
-            while (currentM < targetM) {
+            while(currentM < targetM){
                 MontgomeryPoint next;
-                if (currentM == 1L) next = curve.doublePoint(difference, stats);
+                if (currentM == 1L) next = curve.doublePointInto(difference, stats);
                 else next = curve.diffAdd(current, difference, previous, stats);
                 previous = current;
                 current = next;
@@ -4434,7 +4238,6 @@ public class LargeInteger extends ScalarAtom{
             long[] right = curve.reducer.multiply(B.X, current.Z);
             return curve.reducer.subtract(left, right);
         }
-
         void clearStage2Block() {
             blockProduct = curve.reducer.rModM;
             blockTermCount = 0;
@@ -4484,12 +4287,12 @@ public class LargeInteger extends ScalarAtom{
     private static final ECMPlan[] EXTREME_PLANS = {
             new ECMPlan(2_000L, 200_000L, 64),
             new ECMPlan(11_000L, 1_900_000L, 96),
-            new ECMPlan(50_000L, 13_000_000L, 354),
+            new ECMPlan(50_000L, 13_000_000L, 384),
             new ECMPlan(250_000L, 130_000_000L, 768),
             new ECMPlan(1_000_000L, 1_000_000_000L, 1824),
-            new ECMPlan(3_000_000L, 5_700_000_000L, 5120),
-            new ECMPlan(11_000_000L, 35_000_000_000L, 4800),
-            new ECMPlan(43_000_000L, 240_000_000_000L, 8000)
+            new ECMPlan(3_000_000L, 5_700_000_000L, 5152),
+            new ECMPlan(11_000_000L, 35_000_000_000L, 12288),
+            new ECMPlan(43_000_000L, 240_000_000_000L, 32768)
     };
     private record ECMRuntimeKey(int limbCount, long B1, long B2) {}
     private static final class ECMRuntimeAggregate {
@@ -4563,10 +4366,9 @@ public class LargeInteger extends ScalarAtom{
             //Create the curves
             int curveCount = 0;
             while (curveCount < works.length) {
-                long[] sigma = randomMagBetween(SIX_MAG, n);
+                long[] sigma = randomMagnitudeBetween(SIX_MAG, n);
                 // Normal residue
                 long[] sigmaSquared = modMagnitudes(squareMagnitude(sigma), n);
-
                 long[] u = modMagnitudes(subtractSmallMag(sigmaSquared, 5), n);
                 long[] v = modMagnitudes(shiftLeftBits(sigma, 2), n);
 
@@ -4606,18 +4408,91 @@ public class LargeInteger extends ScalarAtom{
                 long[] primes = sievePrimeBlock(lower, upper, SMALL_PRIMES);
                 stats.stage1SieveNanos += System.nanoTime() - t0;
                 t0 = System.nanoTime();
-                PracBlock block = PracBlock.buildPracBlock(primes, plan.B1);
+                ByteArrayOutputStream operations = new ByteArrayOutputStream();
+
+                int[] offsets = new int[primes.length + 1];
+                byte[] trailingDoubling = new byte[primes.length];
+
+                int chainCount = 0;
+                int powerOfTwoDoubling = 0;
+
+                for (long prime : primes) {
+                    if (prime < 2L || prime > plan.B1)
+                        continue;
+                    long scalar = prime;
+                    while (scalar <= plan.B1 / prime)
+                        scalar *= prime;
+
+                    int shifts = Long.numberOfTrailingZeros(scalar);
+                    long oddPart = scalar >>> shifts;
+
+                    if (oddPart == 1L) {
+                        // This can only be the largest power of 2 <= bound.
+                        powerOfTwoDoubling = shifts;
+                        continue;
+                    }
+                    offsets[chainCount] = operations.size();
+                    long r = goldenSplit(oddPart);
+                    while (gcdLong(oddPart, r) != 1L) r--;
+                    long d = oddPart - r;
+                    long e = r - d;
+                    while (d != e) {
+                        if (d < e) {
+                            long temporary = d;
+                            d = e;
+                            e = temporary;
+                            operations.write(PracChain.SWAP);
+                        }
+                        // Apply the first qualifying PRAC condition.
+                        if (d - e <= e / 4L && (d + e) % 3L == 0L) {
+                            operations.write(PracChain.CASE_1);
+                            d = (2L * d - e) / 3L;
+                            e = (e - d) / 2L;
+                        } else if (d - e <= e / 4L && (d - e) % 6L == 0L) {
+                            operations.write(PracChain.CASE_2);
+                            d = (d - e) / 2L;
+                        } else if ((d + 3L) / 4L <= e) {
+                            operations.write(PracChain.CASE_3);
+                            d -= e;
+                        } else if ((d + e) % 2L == 0L) {
+                            operations.write(PracChain.CASE_4);
+                            d = (d - e) / 2L;
+                        } else if ((d & 1L) == 0L) {
+                            operations.write(PracChain.CASE_5);
+                            d /= 2L;
+                        } else if (d % 3L == 0L) {
+                            operations.write(PracChain.CASE_6);
+                            d = d / 3L - e;
+                        } else if ((d + e) % 3L == 0L) {
+                            operations.write(PracChain.CASE_7);
+                            d = (d - 2L * e) / 3L;
+                        } else if ((d - e) % 3L == 0L) {
+                            operations.write(PracChain.CASE_8);
+                            d = (d - e) / 3L;
+                        } else {
+                            operations.write(PracChain.CASE_9);
+                            e /= 2L;
+                        }
+                        if (d <= 0L || e <= 0L)
+                            throw new IllegalStateException("Invalid PRAC reduction");
+                    }
+                    if (d != 1L)
+                        throw new IllegalStateException("PRAC pair was not coprime");
+                    trailingDoubling[chainCount] = (byte) shifts;
+                    chainCount++;
+                }
+                offsets[chainCount] = operations.size();
+                offsets = Arrays.copyOf(offsets, chainCount + 1);
+                trailingDoubling = Arrays.copyOf(trailingDoubling, chainCount);
+                byte[] ops = operations.toByteArray();
                 stats.stage1ChainBuildNanos += System.nanoTime() - t0;
                 //apply the Prac block
                 t0 = System.nanoTime();
                 for (ECMCurveWork state : works) {
-                    for (int i = 0; i < block.powerOfTwoDoubling; i++)
-                        state.point = state.curve.doublePoint(state.point, stats);
-                    byte[] operations = block.operations;
-                    int[] offsets = block.offsets;
-                    byte[] doubling = block.trailingDoubling;
-                    for (int chain = 0; chain < doubling.length; chain++)
-                        state.point = state.curve.multiplyPrac(state.point, operations, offsets[chain], offsets[chain + 1], doubling[chain], stats);
+                    for (int i = 0; i < powerOfTwoDoubling; i++)
+                        state.point = state.curve.doublePointInto(state.point, stats);
+                    for (int chain = 0; chain < trailingDoubling.length; chain++)
+                        state.point = state.curve.multiplyPrac(state.point, ops, offsets[chain], offsets[chain + 1], trailingDoubling[chain], stats);
                 }
                 stats.stage1ApplyNanos += System.nanoTime() - t0;
                 lower = upper;
@@ -4643,10 +4518,8 @@ public class LargeInteger extends ScalarAtom{
             upperExclusive = plan.B2 + 1L;
             Stage2State[] stage2States = new Stage2State[works.length];
             long blockLower = lower;
-
             while (blockLower < upperExclusive) {
                 long blockUpper = upperExclusive - blockLower <= 1_048_576L ? upperExclusive : blockLower + 1_048_576L;
-
                 long[] primes = sievePrimeBlock(blockLower, blockUpper, SMALL_PRIMES);
                 if (primes.length == 0) {
                     blockLower = blockUpper;
@@ -4661,7 +4534,6 @@ public class LargeInteger extends ScalarAtom{
                      */
                     if (stage2States[k] == null)
                         stage2States[k] = new Stage2State(work.curve, work.point, primes[0], stats);
-
                     Stage2State s2 = stage2States[k];
                     stats.stage2BlockCount++;
                     s2.blockStartPrevious = s2.previous;

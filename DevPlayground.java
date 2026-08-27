@@ -141,15 +141,20 @@ public class DevPlayground {
         long startTime = System.nanoTime();
         for (int i: LargeInteger.sieve(10000)) {
             LargeInteger n = LargeInteger.TWO.power(i).numerator.subtract(1);
+            BigInteger b = n.toBigInteger();
+            for(int k = 0; k < 10000-i; k++){
+                sink = n.isProbablyPrime();
+                sink = b.isProbablePrime(100);
+            }
 
             long t1 = System.nanoTime();
             boolean li = n.isProbablyPrime();
             long t2 = System.nanoTime();
-            boolean bi = n.toBigInteger().isProbablePrime(100);
+            boolean bi = b.isProbablePrime(100);
             long t3 = System.nanoTime();
 
             System.out.printf(
-                    "p=%d limbs=%d LI=%.3fms BI=%.3fms%n",
+                    "p=%d limbs=%d LI=%.6fms BI=%.6fms ",
                     i,
                     n.limbs.length,
                     (t2 - t1) / 1e6,
@@ -163,6 +168,7 @@ public class DevPlayground {
                 System.out.println("BI = " + bi);
                 throw new AssertionError();
             }
+            System.out.println("Prime? " + li);
         }
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
@@ -178,8 +184,10 @@ public class DevPlayground {
 //        demoBaseConversion();
 //        long end = System.nanoTime();
 //        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
-        testPrimeExponents();
-
+        long startTime = System.nanoTime();
+        System.out.println(new LargeInteger("10^101-1").factor());
+        long endTime = System.nanoTime();
+        System.out.println((endTime - startTime) / 1e9 + " seconds");
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
