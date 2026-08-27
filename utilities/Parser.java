@@ -1,5 +1,11 @@
 package com.AtomCAS.utilities;
 public class Parser{
+    private Parser() {
+        throw new UnsupportedOperationException(
+                "N O  I N S T A N C E S  F O R  Y O U,  Y O U  D I R T Y  T H I E F. " +
+                        "Parser is static-only; if you reached this constructor, your code is wrong."
+        );
+    }
     public static ScalarAtom parse(String str) {
         return CASTrace.call("Parser.parse", str, () -> {
             String S = str;

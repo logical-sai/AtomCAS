@@ -386,6 +386,7 @@ public class LargeMatrix extends TensorAtom {
         }
         return R;
     }
+    public LargeMatrix divide(LargeMatrix other) {return (LargeMatrix) this.multiply(other.inverse());}
     public LargeInteger rank(){
         LargeInteger rank = LargeInteger.ZERO;
         LargeMatrix M = reducedRowEchelonForm();

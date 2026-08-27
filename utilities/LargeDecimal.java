@@ -14,7 +14,7 @@ public class LargeDecimal extends ScalarAtom{
         return true;
     }
     @Override
-    public Atom clone() {return new LargeDecimal(intPart, decPart, sign);}
+    public LargeDecimal clone() {return new LargeDecimal(intPart, decPart, sign);}
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

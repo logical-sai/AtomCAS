@@ -2,6 +2,7 @@ package com.AtomCAS;
 import com.AtomCAS.utilities.*;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.SplittableRandom;
 
 public class DevPlayground {
     private static void testReciprocal(String input) {
@@ -9,36 +10,87 @@ public class DevPlayground {
         System.out.println("1/(" + x + ") = " + x.reciprocal());
     }
     static volatile Object sink = new Object();
-    static void benchmarkSquare(){
-        int[] karatsubaThresholds = {32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096};
-        int[] toomThresholds = {128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 8192, 16384, 32768, 65536, 131072, Integer.MAX_VALUE};
-        int[] chunkSizes = {32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288,
-                16384, 24576, 32768, 49152, 65536};
-        for (int chunkSize : chunkSizes) {
-            System.out.println("Chunk size tried: " + chunkSize);
-            for(int karatsubaThreshold : karatsubaThresholds)
-                System.out.printf("%10d", karatsubaThreshold);
-            System.out.println();
-            long[] A = LargeInteger.randomChunks(chunkSize).limbs;
-            int trials = 131072/chunkSize;
-            for (int toom : toomThresholds) {
-                if(toom > 2*chunkSize) continue;
-                System.out.printf("%-8d", toom);
-                for (int karatsuba : karatsubaThresholds) {
-                    if (karatsuba >= toom) continue;
-                    for(int i = 0; i < trials; i++)
-                        LargeInteger.squareMagnitudeWithThresholds(A, karatsuba, toom);
-                    long start = System.nanoTime();
-                    for (int i = 0; i < trials; i++)
-                        LargeInteger.squareMagnitudeWithThresholds(A, karatsuba, toom);
-                    long end = System.nanoTime();
-                    long duration = end - start;
-                    System.out.printf("%-10.3f",  duration/1e9);
+    static void benchmarkModMagnitudes() {
+        SplittableRandom rng = new SplittableRandom(123456789L);
+
+        int[] sizes = {64, 96, 128, 160, 192, 256, 384, 512, 768, 1024};
+        System.out.printf("%6s %6s %8s %12s %12s %9s%n", "div", "num", "reps", "Knuth(ns)", "BZ(ns)", "BZ/Knuth");
+        long sink = 0;
+        for (int dLen : sizes) {
+            int[] dividendLengths = {dLen + 32, dLen * 2, dLen * 4};
+            for (int nLen : dividendLengths) {
+                long[] divisor = randomBenchmarkMag(dLen, rng);
+                long[] dividend = randomBenchmarkMag(nLen, rng);
+
+                // Make sure dividend >= divisor.
+                dividend[nLen - 1] |= 1L << 63;
+                divisor[dLen - 1] |= 1L << 63;
+
+                // Roughly constant amount of Knuth work per test point.
+                int reps = Math.clamp(
+                        4_000_000L / ((long)nLen * dLen),
+                        2,
+                        2000
+                );
+
+                // warmup
+                for (int i = 0; i < Math.min(50, reps); i++) {
+                    sink ^= LargeInteger.modMagnitudesKnuth(dividend, divisor)[0];
+                    sink ^= LargeInteger.modMagnitudesBurnikelZiegler(dividend, divisor)[0];
                 }
-                System.out.println();
+
+                // correctness once, outside timing
+                long[] rk = LargeInteger.modMagnitudesKnuth(dividend, divisor);
+                long[] rb = LargeInteger.modMagnitudesBurnikelZiegler(dividend, divisor);
+
+                if (!Arrays.equals(rk, rb))
+                    throw new AssertionError(
+                            "Remainder disagreement at " +
+                                    nLen + " / " + dLen
+                    );
+
+                long t0 = System.nanoTime();
+                for (int i = 0; i < reps; i++)
+                    sink ^= LargeInteger.modMagnitudesKnuth(dividend, divisor)[0];
+                long knuth = System.nanoTime() - t0;
+
+                t0 = System.nanoTime();
+                for (int i = 0; i < reps; i++)
+                    sink ^= LargeInteger.modMagnitudesBurnikelZiegler(dividend, divisor)[0];
+                long bz = System.nanoTime() - t0;
+
+                double kNs = (double)knuth / reps;
+                double bNs = (double)bz / reps;
+
+                System.out.printf(
+                        "%6d %6d %8d %12.0f %12.0f %9.3f%n",
+                        dLen,
+                        nLen,
+                        reps,
+                        kNs,
+                        bNs,
+                        bNs / kNs
+                );
             }
-            System.out.println();
         }
+        // Keep HotSpot from deciding results don't matter.
+        if (sink == 0x123456789ABCDEFL)
+            System.out.println(sink);
+    }
+
+    private static long[] randomBenchmarkMag(
+            int limbs,
+            SplittableRandom rng
+    ) {
+        long[] x = new long[limbs];
+
+        for (int i = 0; i < limbs; i++)
+            x[i] = rng.nextLong();
+
+        // Guarantee exact requested limb length.
+        x[limbs - 1] |= 1L << 63;
+
+        return x;
     }
     static void testMultiply(){
         int BI_Wins = 0;
@@ -85,6 +137,36 @@ public class DevPlayground {
         Arrays.sort(ratios);
         System.out.println("Median ratio: " + ratios[ratios.length/2]);
     }
+    static void testPrimeExponents(){
+        long startTime = System.nanoTime();
+        for (int i: LargeInteger.sieve(10000)) {
+            LargeInteger n = LargeInteger.TWO.power(i).numerator.subtract(1);
+
+            long t1 = System.nanoTime();
+            boolean li = n.isProbablyPrime();
+            long t2 = System.nanoTime();
+            boolean bi = n.toBigInteger().isProbablePrime(100);
+            long t3 = System.nanoTime();
+
+            System.out.printf(
+                    "p=%d limbs=%d LI=%.3fms BI=%.3fms%n",
+                    i,
+                    n.limbs.length,
+                    (t2 - t1) / 1e6,
+                    (t3 - t2) / 1e6
+            );
+
+            if (li != bi) {
+                System.out.println("Mismatch:");
+                System.out.println(n);
+                System.out.println("LI = " + li);
+                System.out.println("BI = " + bi);
+                throw new AssertionError();
+            }
+        }
+        long elapsedTime = System.nanoTime() - startTime;
+        System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
+    }
     static void main() {
 //        long start = System.nanoTime();
 //        demoIntegers();
@@ -96,10 +178,8 @@ public class DevPlayground {
 //        demoBaseConversion();
 //        long end = System.nanoTime();
 //        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
-        long t0 = System.nanoTime();
-        System.out.println(new LargeInteger("796826650060231590107439259688913672165114963647112649").quadraticSieveWithoutConstraints());
-        long t1 = System.nanoTime();
-        System.out.println((t1-t0)/1e9 + " seconds");
+        testPrimeExponents();
+
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
