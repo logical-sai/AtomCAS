@@ -2,7 +2,7 @@ package com.AtomCAS.utilities;
 public class AlgebraicNumber extends ScalarAtom{
     public final LargePolynomial minimalPolynomial;
     public final RationalBox rectangle;
-    public AlgebraicNumber(ScalarAtom s){
+    public AlgebraicNumber(ScalarAtom s) throws CloneNotSupportedException {
         minimalPolynomial = LargePolynomial.minimalPolynomial(s);
         rectangle = new RationalBox(s);
     }

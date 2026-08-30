@@ -50,16 +50,16 @@ public class Base{
         }while(R.doesntEqual(start));
     }
     private String digitToString(long digit) {
-        if (base < 10) return Long.toString(digit);
-        if (base <= 62) {
-            if (digit < 10) return Long.toString(digit);
-            return Character.toString(chars[(int) digit - 10]);
-        }
+        if (digit < 0 || digit >= base)
+            throw new IllegalArgumentException("Invalid digit " + digit + " for base " + base);
+        if (base <= 62)
+            return Character.toString(chars[Math.toIntExact(digit)]);
         return Long.toString(digit);
     }
-    private static final char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',  'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h',
-    'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
+    private static final char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',
+            'C', 'D', 'E', 'F', 'G', 'H',  'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+            'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+            'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'};
     public String toString(){
         StringBuilder sb = new StringBuilder();
         if (sign) sb.append('-');
@@ -81,7 +81,8 @@ public class Base{
         //repeating part
         if (repeatingPart.size().greaterThan(LargeInteger.ZERO)) {
             sb.append("{");
-            LargeInteger shown = repeatingPart.size().lesserThanOrEqualTo(LargeInteger.THOUSAND) ? repeatingPart.size() : LargeInteger.THOUSAND;
+            LargeInteger shown = repeatingPart.size().lesserThanOrEqualTo(LargeInteger.THOUSAND)
+                    ? repeatingPart.size() : LargeInteger.THOUSAND;
             for (LargeInteger i = LargeInteger.ZERO; i.lessThan(shown); i = i.add(1)) {
                 if (base > 62 && i.greaterThan(LargeInteger.ZERO))
                     sb.append(",");

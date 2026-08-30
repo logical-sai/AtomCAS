@@ -50,7 +50,7 @@ public class LargePowerNode extends ScalarAtom{
 
                 RadicalTerm xAtom = (RadicalTerm) A.add(sqrtDisc).divide(LargeInteger.TWO);
                 RadicalTerm yAtom = (RadicalTerm) A.subtract(sqrtDisc).divide(LargeInteger.TWO);
-                if (xAtom.sign().equals(LargeInteger.NEGATIVE_ONE) || yAtom.sign().equals(LargeInteger.NEGATIVE_ONE)){
+                if (xAtom.lessThan(LargeInteger.ZERO) || yAtom.lessThan(LargeInteger.ZERO)) {
                     this.base = base;
                     this.exponent = exponent;
                     this.signFactor = signFactor;
@@ -163,7 +163,7 @@ public class LargePowerNode extends ScalarAtom{
             return base.equals(((ScalarAtom) other).abs()) && exponent.equals(LargeInteger.ONE) && signFactor.equals(((ScalarAtom) other).sign());
         else if (other instanceof LargePowerNode h)
             return this.base.equals(h.base) && this.exponent.equals(h.exponent) && this.signFactor.equals(h.signFactor);
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     @Override
     public ScalarAtom negate() {return new LargePowerNode(base, exponent, signFactor.negate());}
@@ -198,7 +198,7 @@ public class LargePowerNode extends ScalarAtom{
     public ScalarAtom add(ScalarAtom other) {
         if(other instanceof LargeFraction || other instanceof LargeInteger)
             return new RadicalTermNode((LargeFraction) other.divide(LargeInteger.ONE), LargeFraction.ONE, this);
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     @Override
     public ScalarAtom multiply(ScalarAtom other) {

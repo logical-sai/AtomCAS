@@ -3,13 +3,13 @@ public class Logarithm extends ScalarAtom {
     public ScalarAtom argument;
     public Logarithm(ScalarAtom a){argument = (ScalarAtom) a.clone();}
     @Override
-    public ScalarAtom clone() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public ScalarAtom clone() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
-    public LargeInteger floor() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public LargeInteger floor() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
-    public LargeInteger ceil() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public LargeInteger ceil() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
-    public ScalarAtom abs() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public ScalarAtom abs() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
     public int compareMagnitudes(ScalarAtom other) {return 0;}
     @Override
@@ -31,11 +31,11 @@ public class Logarithm extends ScalarAtom {
         return null;
     }
     @Override
-    public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
-    public ScalarAtom multiply(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public ScalarAtom multiply(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
-    public ScalarAtom reciprocal() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public ScalarAtom reciprocal() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
     public ScalarAtom power(LargeFraction f) {return null;}
     @Override

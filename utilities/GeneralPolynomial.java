@@ -13,7 +13,7 @@ public class GeneralPolynomial{
         for(ScalarAtom coefficient : coefficients){
             if(coefficient.isAlgebraic())
                 this.coefficients.add((ScalarAtom) coefficient.clone());
-            else throw new IllegalArgumentException("Error: At least ONE coefficient is not algebraic");
+            else throw new IllegalArgumentException("At least 1 coefficient is not algebraic");
         }
     }
     public static GeneralPolynomial fromLargePolynomial(LargePolynomial p){
@@ -87,7 +87,7 @@ public class GeneralPolynomial{
     }
     public LargeInteger degree(){return (LargeInteger) coefficients.size().subtract(LargeInteger.ONE);}
     public GeneralPolynomial increaseDegree(LargeInteger i){
-        if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Error: Input means decreasing the degree");
+        if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Input means decreasing the degree");
         if(this.isZero()) return new GeneralPolynomial();
         LargeList<ScalarAtom> cands = new LargeList<>();
         for(ScalarAtom I: coefficients) cands.add(I);
@@ -182,7 +182,7 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial square(){return this.multiply(this);}
     public GeneralPolynomial monomialPower(LargeInteger I){
-        if(I.lessThan(LargeInteger.ZERO)) throw new ArithmeticException("Error: Rational functions not implemented yet");
+        if(I.lessThan(LargeInteger.ZERO)) throw new ArithmeticException("Rational functions not implemented yet");
         if(I.equals(LargeInteger.ZERO)){
             return new GeneralPolynomial().add(LargeInteger.ONE);
         }
@@ -202,7 +202,7 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial longDivision(GeneralPolynomial divisor){
         //long division
-        if (divisor.isZero()) throw new ArithmeticException("Error: Cannot divide by 0");
+        if (divisor.isZero()) throw new ArithmeticException("Cannot divide by 0");
         GeneralPolynomial remainder = new GeneralPolynomial(this.coefficients);
         GeneralPolynomial quotient = new GeneralPolynomial();
         LargeInteger divisorDegree = divisor.degree();

@@ -58,24 +58,24 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public ScalarAtom imagPart(){return this.sign().imagPart().multiply(this.abs());}
     @Override
-    public ScalarAtom abs() {throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");}
+    public ScalarAtom abs() {throw new UnsupportedOperationException("Operation with this type together not supported yet");}
     @Override
-    public LargeInteger floor() {throw new UnsupportedOperationException("Error: Operation with this type not supported yet");}
+    public LargeInteger floor() {throw new UnsupportedOperationException("Operation with this type not supported yet");}
     @Override
-    public LargeInteger ceil() {throw new UnsupportedOperationException("Error: Operation with this type together not supported yet");}
+    public LargeInteger ceil() {throw new UnsupportedOperationException("Operation with this type together not supported yet");}
     @Override
-    public int compareMagnitudes(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public int compareMagnitudes(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
     @Override
-    public int compareTo(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public int compareTo(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
     @Override
-    public ScalarAtom negate() {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public ScalarAtom negate() {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
     @Override
-    public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
     @Override
     public ScalarAtom multiply(ScalarAtom other) {
         if(other instanceof LargeInteger || other instanceof LargeFraction)
             return new RadicalTermNode((LargeFraction) rationalPart.multiply(other), (LargeFraction) coefficient.multiply(other), exponent);
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     @Override
     public ScalarAtom reciprocal(){return new LargePowerNode(this, LargeFraction.NEGATIVE_ONE, LargeFraction.ZERO);}
@@ -84,5 +84,5 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
-    public boolean equals(Atom other) {throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");}
+    public boolean equals(Atom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
 }

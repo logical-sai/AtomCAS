@@ -2,14 +2,14 @@ package com.AtomCAS.utilities;
 import java.util.ArrayList;
 public class ScalarList{
     public LargeList<ScalarAtom> list;
-    public ScalarList(LargeList<ScalarAtom> list) {this.list = list.copy();}
+    public ScalarList(LargeList<ScalarAtom> list) throws CloneNotSupportedException {this.list = list.copy();}
     public ScalarAtom get(int i) {return list.get(i);}
     public ScalarAtom get(LargeInteger i){return list.get(i);}
     public LargeInteger size(){return list.size();}
     private void requireReal(String operation) {
         for (ScalarAtom atom : list) {
             if (atom.isNotReal())
-                throw new IllegalStateException("Error: " + operation + " is only defined for real-valued ScalarLists");
+                throw new IllegalStateException(operation + " is only defined for real-valued ScalarLists");
         }
     }
     public boolean sorted(){
@@ -86,7 +86,7 @@ public class ScalarList{
     public ScalarAtom median() {
         requireReal("median");
         sort();
-        if (list.intSize() == 0) throw new IllegalArgumentException("Error: Cannot calculate median of empty list");
+        if (list.intSize() == 0) throw new IllegalArgumentException("Cannot calculate median of empty list");
         if (list.size().isOdd()) return list.get(list.size().longDivision(LargeInteger.TWO));
         else return list.get(list.size().longDivision(LargeInteger.TWO)).add(list.get((LargeInteger) list.size().longDivision(LargeInteger.TWO).subtract(LargeInteger.ONE))).divide(LargeInteger.TWO);
     }
@@ -100,10 +100,10 @@ public class ScalarList{
         sort();
         return list.getLast();
     }
-    public ScalarAtom IQR() {
+    public ScalarAtom IQR() throws CloneNotSupportedException {
         requireReal("IQR");
         if (list.size().lessThan(LargeInteger.TWO))
-            throw new IllegalArgumentException("Error: Need at least 2 values in list");
+            throw new IllegalArgumentException("Need at least 2 values in list");
         sort();
         LargeList<ScalarAtom> copy = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(list.size().longDivision(LargeInteger.TWO)); i = (LargeInteger) i.add(LargeInteger.ONE))
@@ -113,7 +113,7 @@ public class ScalarList{
             copy2.add(list.get(i));
         return new ScalarList(copy2).median().subtract(new ScalarList(copy).median());
     }
-    public ScalarAtom mad() {
+    public ScalarAtom mad() throws CloneNotSupportedException {
         requireReal("mad");
         LargeList<ScalarAtom> copy = new LargeList<>();
         ScalarAtom m = this.median();
@@ -121,7 +121,7 @@ public class ScalarList{
             copy.add(l.subtract(m).abs());
         return new ScalarList(copy).median();
     }
-    public ScalarAtom mode() {
+    public ScalarAtom mode() throws CloneNotSupportedException {
         ScalarList copy = new ScalarList(list);
         LargeInteger frequency = LargeInteger.ONE;
         LargeList<LargeInteger> frequencies = new LargeList<>();
@@ -147,7 +147,7 @@ public class ScalarList{
     }
     public ScalarAtom variancePopulation() {
         if (list.size().equals(LargeInteger.ZERO))
-            throw new ArithmeticException("Error: Cannot compute variance of empty list");
+            throw new ArithmeticException("Cannot compute variance of empty list");
         ScalarAtom mean = mean();
         ScalarAtom sum = LargeInteger.ZERO;
         for (ScalarAtom atom : list) {
@@ -159,7 +159,7 @@ public class ScalarList{
 
     public ScalarAtom varianceSample() {
         if (list.size().lesserThanOrEqualTo(LargeInteger.ONE))
-            throw new ArithmeticException("Error: Sample variance requires at least TWO values");
+            throw new ArithmeticException("Sample variance requires at least TWO values");
         ScalarAtom mean = mean();
         ScalarAtom sum = LargeInteger.ZERO;
         for (ScalarAtom atom : list) {

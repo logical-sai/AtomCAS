@@ -16,7 +16,7 @@ public class LargeFraction extends ScalarAtom {
         this.numerator = numerator.longDivision(g);
         this.denominator = denominator.longDivision(g);
         if (LargeInteger.isZeroArray(this.denominator.limbs))
-            throw new ArithmeticException("Error: Cannot divide by 0");
+            throw new ArithmeticException("Cannot divide by 0");
     }
     public LargeFraction(String str){
         ScalarAtom R = Parser.parse(str);
@@ -39,7 +39,7 @@ public class LargeFraction extends ScalarAtom {
             denominator = F.denominator;
             return;
         }
-        throw new IllegalArgumentException("Error: Inputted expression does not evaluate to a rational number");
+        throw new IllegalArgumentException("Inputted expression does not evaluate to a rational number");
     }
     public LargeFraction(long num) {
         numerator = LargeInteger.valueOf(num);
@@ -64,9 +64,9 @@ public class LargeFraction extends ScalarAtom {
     public boolean equals(Atom other) {
         if (!(other instanceof ScalarAtom)) return false;
         if(other instanceof LargeInteger I)
-            return LargeInteger.equalsArray(numerator.limbs, I.limbs) && LargeInteger.isOneArray(denominator.limbs);
+            return numerator.equals(I) && LargeInteger.isOneArray(denominator.limbs);
         else if(other instanceof LargeFraction F)
-            return LargeInteger.equalsArray(numerator.limbs, F.numerator.limbs) && LargeInteger.equalsArray(denominator.limbs, F.denominator.limbs);
+            return numerator.equals(F.numerator) && denominator.equals(F.denominator);
         return this.compareTo((ScalarAtom) other) == 0L;
     }
     @Override
@@ -83,10 +83,10 @@ public class LargeFraction extends ScalarAtom {
             return f.compareTo(o);
         }else if(other instanceof RadicalTerm RT)
             return this.subtract(RT.rationalPart).divide(RT.coefficient).compareMagnitudes(RT.exponent);
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public int compareTo(ScalarAtom other) {
-        if(other.isNotReal()) throw new ArithmeticException("Error: Complex numbers cannot be compared");
+        if(other.isNotReal()) throw new ArithmeticException("Complex numbers cannot be compared");
         switch (other) {
             case LargeInteger I -> {return numerator.compareTo(I.multiply(denominator));}
             case LargeFraction F -> {return numerator.multiply(F.denominator).compareTo(F.numerator.multiply(denominator));}
@@ -111,7 +111,7 @@ public class LargeFraction extends ScalarAtom {
                     cmp = -cmp;
                 return cmp;
             }
-            default -> throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+            default -> throw new UnsupportedOperationException("Operation with these types together not supported yet");
         }
     }
     @Override
@@ -154,7 +154,7 @@ public class LargeFraction extends ScalarAtom {
         LargeMap<LargeInteger, LargeFraction> N = new LargeMap<>();
         LargeMap<LargeInteger, LargeFraction> D = new LargeMap<>();
         for(LargeInteger I: pr.keys()){
-            if(!LargeInteger.isZeroArray(pr.get(I).numerator.limbs))
+            if(!pr.get(I).numerator.negative)
                 N.put(I, pr.get(I).clone());
             else D.put(I, pr.get(I).negate());
         }
@@ -166,15 +166,18 @@ public class LargeFraction extends ScalarAtom {
             return new LargeFraction((LargeInteger) numerator.add(I.multiply(denominator)), denominator);
         else if (other instanceof LargeFraction F){
             LargeInteger l = denominator.lcm(F.denominator);
-            return new LargeFraction((LargeInteger) this.numerator.multiply(l.longDivision(denominator)).add(F.numerator.multiply(l.longDivision(denominator))), l);
+            return new LargeFraction((LargeInteger) this.numerator.multiply(l.longDivision(denominator))
+                    .add(F.numerator.multiply(l.longDivision(F.denominator))), l);
         }else if (other instanceof LargePowerMonomial LPM) return new RadicalTerm(this, ONE, LPM);
         else if (other instanceof RadicalTerm RT)
             return new RadicalTerm((LargeFraction) this.add(RT.rationalPart), RT.coefficient, RT.exponent);
         else if (other instanceof RadicalTermSum RTS)
             return new RadicalTermSum(RTS.sum, (LargeFraction) RTS.constant.add(this));
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
-    public LargeFraction add(long other) {return new LargeFraction((LargeInteger) numerator.add(denominator.multiply(other)), denominator);}
+    public LargeFraction add(long other) {
+        return new LargeFraction((LargeInteger) numerator.add(denominator.multiply(other)), denominator);
+    }
     public ScalarAtom add(ScalarAtom... other) {
         ScalarAtom result = this.clone();
         for (ScalarAtom atom : other) result = result.add(atom);
@@ -190,9 +193,11 @@ public class LargeFraction extends ScalarAtom {
         if (other instanceof LargeInteger)
             return new LargeFraction((LargeInteger) numerator.multiply(other), denominator);
         else if (other instanceof LargeFraction F)
-            return new LargeFraction((LargeInteger) this.numerator.multiply(F.numerator), (LargeInteger) this.denominator.multiply(F.denominator));
+            return new LargeFraction((LargeInteger) this.numerator.multiply(F.numerator),
+                    (LargeInteger) this.denominator.multiply(F.denominator));
         else if (other instanceof RadicalTerm RT)
-            return new RadicalTerm((LargeFraction) RT.rationalPart.multiply(this), (LargeFraction) RT.coefficient.multiply(this), RT.exponent);
+            return new RadicalTerm((LargeFraction) RT.rationalPart.multiply(this),
+                    (LargeFraction) RT.coefficient.multiply(this), RT.exponent);
         return other.multiply(this);
     }
     public LargeFraction multiply(long other) {return new LargeFraction(numerator.multiply(other), denominator);}

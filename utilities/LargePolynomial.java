@@ -115,7 +115,7 @@ public class LargePolynomial{
     }
     public LargeInteger degree(){return (LargeInteger) coefficients.size().subtract(LargeInteger.ONE);}
     public LargePolynomial increaseDegree(LargeInteger i){
-        if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Error: Input means decreasing the degree");
+        if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Input means decreasing the degree");
         if(this.isZero()) return new LargePolynomial();
         LargeList<LargeFraction> out = new LargeList<>();
         for(LargeFraction I: coefficients) out.add(I);
@@ -203,7 +203,7 @@ public class LargePolynomial{
     }
     public LargePolynomial square(){return this.multiply(this);}
     public LargePolynomial monomialPower(LargeInteger I){
-        if(I.sign().equals(LargeInteger.NEGATIVE_ONE)) throw new ArithmeticException("Error: Rational functions not implemented yet");
+        if(I.sign().equals(LargeInteger.NEGATIVE_ONE)) throw new ArithmeticException("Rational functions not implemented yet");
         if(I.equals(LargeInteger.ZERO))
             return LargePolynomial.ONE();
         LargePolynomial P = new LargePolynomial();
@@ -223,7 +223,7 @@ public class LargePolynomial{
     public LargePolynomial longDivision(LargePolynomial divisor){return divideAndRemainder(divisor)[0];}
     public LargePolynomial remainder(LargePolynomial divisor){return divideAndRemainder(divisor)[1];}
     private LargePolynomial[] divideAndRemainder(LargePolynomial divisor) {
-        if (divisor.isZero()) throw new ArithmeticException("Error: Cannot divide by 0");
+        if (divisor.isZero()) throw new ArithmeticException("Cannot divide by 0");
         LargePolynomial remainder = this.copy();
         LargePolynomial quotient = new LargePolynomial();
         LargeInteger divisorDegree = divisor.degree();
@@ -251,7 +251,7 @@ public class LargePolynomial{
     }
     public static LargePolynomial cyclotomic(LargeInteger n){
         if (n.equals(LargeInteger.ZERO))
-            throw new IllegalArgumentException("Error: Cyclotomic index must be positive");
+            throw new IllegalArgumentException("Cyclotomic index must be positive");
         if (n.equals(LargeInteger.ONE))
             return LargePolynomial.xMinus(LargeFraction.ONE);
         if(n.equals(LargeInteger.TWO))
@@ -299,7 +299,7 @@ public class LargePolynomial{
     }
     public LargePolynomial composeXPower(LargeInteger k) {
         if (k.lesserThanOrEqualTo(LargeInteger.ZERO))
-            throw new IllegalArgumentException("Error: exponent must be positive");
+            throw new IllegalArgumentException("exponent must be positive");
         LargeList<LargeFraction> out = new LargeList<>();
         LargeInteger newDegree = (LargeInteger) this.degree().multiply(k);
         for (LargeInteger e = newDegree; e.greaterThanOrEqualTo(LargeInteger.ZERO); e = e.subtract(1)) {
@@ -319,8 +319,8 @@ public class LargePolynomial{
             result = result.multiply(inner).add(coefficients.get(i));
         return result;
     }
-    public static LargePolynomial annihilatingPolynomial(ScalarAtom s){
-        if(!s.isAlgebraic()) throw new IllegalArgumentException("Error: Transcendental numbers do not satisfy any polynomials");
+    public static LargePolynomial annihilatingPolynomial(ScalarAtom s) throws CloneNotSupportedException {
+        if(!s.isAlgebraic()) throw new IllegalArgumentException("Transcendental numbers do not satisfy any polynomials");
         LargePolynomial P = x();
         switch (s) {
             case LargeInteger I -> {return P.subtract(new LargeFraction(I, LargeInteger.ONE));}
@@ -477,12 +477,12 @@ public class LargePolynomial{
                 if(PS.equals(xMinus(LargeFraction.ONE))) return PM;
                 return null;
             }
-            default -> throw new UnsupportedOperationException("Error: Annihilating polynomial does not support this type yet");
+            default -> throw new UnsupportedOperationException("Annihilating polynomial does not support this type yet");
         }
     }
-    public static LargePolynomial minimalPolynomial(ScalarAtom s) {
+    public static LargePolynomial minimalPolynomial(ScalarAtom s) throws CloneNotSupportedException {
         if (!s.isAlgebraic())
-            throw new IllegalArgumentException("Error: Transcendental numbers do not satisfy any polynomials");
+            throw new IllegalArgumentException("Transcendental numbers do not satisfy any polynomials");
         LargePolynomial ann = annihilatingPolynomial(s);
         assert ann != null;
         LargeList<LargePolynomial> LQ = ann.factorOverRationals();
@@ -490,7 +490,7 @@ public class LargePolynomial{
             if(p.evaluateAt(s).equals(LargeInteger.ZERO))
                 return p.primitivePart();
         }
-        throw new UnsupportedOperationException("Error: Minimal polynomial does not support this type yet");
+        throw new UnsupportedOperationException("Minimal polynomial does not support this type yet");
     }
     private LargePolynomial extractLinearFactor(){
         LargePolynomial P = this.primitivePart();
@@ -546,7 +546,7 @@ public class LargePolynomial{
         }
         return false; //does not necessarily mean reducible
     }
-    public LargeList<LargePolynomial> factorOverRationals() {
+    public LargeList<LargePolynomial> factorOverRationals() throws CloneNotSupportedException {
         LargeList<LargePolynomial> factors = new LargeList<>();
         LargeList<LargePolynomial> work = new LargeList<>();
         LargePolynomial P = this.primitivePart();
@@ -599,7 +599,7 @@ public class LargePolynomial{
         }
         return factors;
     }
-    private boolean irreducibleBySomeModPrimeTest() {
+    private boolean irreducibleBySomeModPrimeTest() throws CloneNotSupportedException {
         LargePolynomial P = this.primitivePart();
         for (int p0 : LargeInteger.SMALL_PRIMES) {
             LargeInteger p = LargeInteger.valueOf(p0);
@@ -616,7 +616,7 @@ public class LargePolynomial{
         }
         return false;
     }
-    private LargePolynomial tryFactorFromModPrime(){
+    private LargePolynomial tryFactorFromModPrime() throws CloneNotSupportedException {
         for(int i: LargeInteger.SMALL_PRIMES){
             LargeInteger I = LargeInteger.valueOf(i);
             ModPolynomial MP = ModPolynomial.fromLargePolynomial(this, I);
@@ -740,7 +740,7 @@ class ModPolynomial {
         if (r.greaterThan(LargeInteger.ONE)) throw new ArithmeticException("Not invertible");
         return mod(t, p);
     }
-    ModPolynomial gcd(ModPolynomial other) {
+    ModPolynomial gcd(ModPolynomial other) throws CloneNotSupportedException {
         ModPolynomial a = this;
         ModPolynomial b = other;
         while (!b.isZero()) {
@@ -761,7 +761,7 @@ class ModPolynomial {
                 out.set((LargeInteger) i.add(j), mod((LargeInteger) out.get((LargeInteger) i.add(j)).add(this.coefficients.get(i).multiply(other.coefficients.get(j))), p));
         return new ModPolynomial(out, p);
     }
-    private ModPolynomial[] divideAndRemainder(ModPolynomial divisor) {
+    private ModPolynomial[] divideAndRemainder(ModPolynomial divisor) throws CloneNotSupportedException {
         if (this.p.doesntEqual(divisor.p))
             throw new IllegalArgumentException("Different moduli");
         if (divisor.isZero())
@@ -806,8 +806,8 @@ class ModPolynomial {
                 new ModPolynomial(rem, p)
         };
     }
-    public ModPolynomial longDivision(ModPolynomial divisor) {return divideAndRemainder(divisor)[0];}
-    public ModPolynomial remainder(ModPolynomial divisor) {return divideAndRemainder(divisor)[1];}
+    public ModPolynomial longDivision(ModPolynomial divisor) throws CloneNotSupportedException {return divideAndRemainder(divisor)[0];}
+    public ModPolynomial remainder(ModPolynomial divisor) throws CloneNotSupportedException {return divideAndRemainder(divisor)[1];}
     ModPolynomial derivative() {
         LargeList<LargeInteger> out = new LargeList<>();
         LargeInteger n = degree();
@@ -821,7 +821,7 @@ class ModPolynomial {
         }
         return new ModPolynomial(out, p);
     }
-    boolean isIrreducible() {
+    boolean isIrreducible() throws CloneNotSupportedException {
         if (degree().lesserThanOrEqualTo(LargeInteger.ZERO)) return false;
         if (degree().equals(LargeInteger.ONE)) return true;
 

@@ -193,7 +193,7 @@ public class RadicalTermSum extends ScalarAtom{
                     return false;
             return true;
         }
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public boolean isReal(){
         for (LargePowerMonomial L: sum.keys())
@@ -208,7 +208,7 @@ public class RadicalTermSum extends ScalarAtom{
     public ScalarAtom imagPart(){return this.sign().imagPart().multiply(this.abs());}
     @Override
     public LargeInteger floor() {
-        if(this.isNotReal()) throw new IllegalStateException("Error: Cannot floor or apply ceiling a non-real atom");
+        if(this.isNotReal()) throw new IllegalStateException("Cannot floor or apply ceiling a non-real atom");
         else if(this.isRational()) return constant.floor();
         LargeList<LargeFraction> floors = new LargeList<>();
         LargeList<LargeFraction> ceilings = new LargeList<>();
@@ -268,7 +268,7 @@ public class RadicalTermSum extends ScalarAtom{
     public int compareMagnitudes(ScalarAtom other){return this.abs().compareTo(other.abs());}
     @Override
     public int compareTo(ScalarAtom other){
-        if(this.isNotReal() || other.isNotReal()) throw new IllegalStateException("Error: Complex numbers cannot be compared");
+        if(this.isNotReal() || other.isNotReal()) throw new IllegalStateException("Complex numbers cannot be compared");
         ScalarAtom s = this.subtract(other).sign();
         if(s.equals(LargeInteger.ONE)) return 1;
         if(s.equals(LargeInteger.NEGATIVE_ONE)) return -1;
@@ -305,7 +305,7 @@ public class RadicalTermSum extends ScalarAtom{
                 rt.add(new RadicalTerm(LargeFraction.ZERO, o.sum.get(m), m));
             return new RadicalTermSum(rt, (LargeFraction) constant.add(o.constant));
         }
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     @Override
     public ScalarAtom multiply(ScalarAtom other){
@@ -382,7 +382,7 @@ public class RadicalTermSum extends ScalarAtom{
     @Override
     public ScalarAtom reciprocal(){
         if (this.equals(LargeInteger.ZERO))
-            throw new ArithmeticException("Error: Cannot divide by 0");
+            throw new ArithmeticException("Cannot divide by 0");
 
         if (sum.size().equals(LargeInteger.ZERO))
             return constant.reciprocal();
@@ -435,7 +435,7 @@ public class RadicalTermSum extends ScalarAtom{
             for (LargeInteger I : pr.keys()) {
                 if (I.equals(LargeInteger.NEGATIVE_ONE))
                     continue;
-                if (pr.get(I).denominator.equals(LargeInteger.ONE))
+                if (LargeInteger.isOneArray(pr.get(I).denominator.limbs))
                     continue; // rational contribution; not a radical generator
                 LargePowerMonomial gen = new LargePowerMonomial(new LargeFraction(I, LargeInteger.ONE), new LargeFraction(LargeInteger.ONE, pr.get(I).denominator));
                 addGenIfMissing(newGens, gen);
@@ -444,7 +444,7 @@ public class RadicalTermSum extends ScalarAtom{
         //merge same bases
         LargeMap<LargeFraction, LargeInteger> baseToDenominator = new LargeMap<>();
         for (LargePowerMonomial g : newGens) {
-            if (g.exponent.denominator.equals(LargeInteger.ONE)) continue;
+            if (LargeInteger.isOneArray(g.exponent.denominator.limbs)) continue;
             if (baseToDenominator.containsKey(g.base)) {
                 LargeInteger oldDenominator = baseToDenominator.get(g.base);
                 baseToDenominator.put(g.base, oldDenominator.lcm(g.exponent.denominator));
@@ -499,16 +499,16 @@ public class RadicalTermSum extends ScalarAtom{
         rhs.set(LargeInteger.ZERO, LargeFraction.ONE);
         M.appendRow(rhs);
         M = M.transpose().reducedRowEchelonForm();
-        LargeFraction cons = M.get(LargeInteger.ZERO, (LargeInteger) M.cols().subtract(LargeInteger.ONE));
+        LargeFraction cons = M.get(LargeInteger.ZERO, M.cols().subtract(1));
         LargeMap<LargePowerMonomial, LargeFraction> resultMap = new LargeMap<>();
         for (LargeInteger i = LargeInteger.ONE; i.lessThan(M.rows()); i = i.add(1)) {
-            LargeFraction coefficient = M.get(i, (LargeInteger) M.cols().subtract(LargeInteger.ONE));
+            LargeFraction coefficient = M.get(i, M.cols().subtract(1));
             if (coefficient.doesntEqual(LargeInteger.ZERO))
                 resultMap.put(basis.get(i), coefficient);
         }
         RadicalTermSum result = new RadicalTermSum(resultMap, cons);
         if (result.multiply(this).doesntEqual(LargeInteger.ONE))
-            throw new ArithmeticException("Error: Could not find the proper reciprocal. The used basis was " + basis + " and has size " + basis.size());
+            throw new AssertionError("Could not find the proper reciprocal. The used basis was " + basis + " and has size " + basis.size());
         return result;
     }
 }

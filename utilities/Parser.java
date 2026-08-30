@@ -2,8 +2,7 @@ package com.AtomCAS.utilities;
 public class Parser{
     private Parser() {
         throw new UnsupportedOperationException(
-                "N O  I N S T A N C E S  F O R  Y O U,  Y O U  D I R T Y  T H I E F. " +
-                        "Parser is static-only; if you reached this constructor, your code is wrong."
+                "N O  P A R S E R  I N S T A N C E S  F O R  Y O U,  Y O U  D I R T Y  T H I E F. "
         );
     }
     public static ScalarAtom parse(String str) {
@@ -12,7 +11,7 @@ public class Parser{
             S = S.replaceAll("\\s+", "");
             S = stripOuterParentheses(S);
             if (S.isEmpty())
-                throw new IllegalArgumentException("Error: Invalid input");
+                throw new IllegalArgumentException("Invalid input");
             if (S.matches("-?\\d+")) {
                 CASTrace.step("Recognized integer literal", S);
                 return new LargeInteger(S);
@@ -57,7 +56,7 @@ public class Parser{
             if (depth == 0 && i < str.length() - 1)
                 return false;
             if (depth < 0)
-                throw new IllegalArgumentException("Error: Mismatched parentheses");
+                throw new IllegalArgumentException("Mismatched parentheses");
         }
         return depth == 0;
     }
@@ -123,13 +122,13 @@ public class Parser{
     private static ScalarAtom parseFactorial(String str){
         return CASTrace.call("Parser.parseFactorial", str, ()->{
             int index = findMainOperator(str, "!");
-            if (index == -1) throw new IllegalArgumentException("Error: Invalid input");
+            if (index == -1) throw new IllegalArgumentException("Invalid input");
             String left = str.substring(0, index);
             String right = str.substring(index + 1);
             ScalarAtom S;
             if (left.matches("-?\\d+"))
                 S = ((LargeInteger) parse(left)).factorial();
-            else throw new IllegalArgumentException("Error: Factorial currently only defined for positive integers");
+            else throw new IllegalArgumentException("Factorial currently only defined for positive integers");
             if (right.isEmpty()) return S;
             return S.multiply(parse(right));
         });
@@ -138,7 +137,7 @@ public class Parser{
         return CASTrace.call("Parser.parseSquareRoot", str, ()->{
             int index = findMainSqrtOperator(str);
             if (index == -1) return parsePower(str);
-            if (str.length() == 1) throw new IllegalArgumentException("Error: Invalid input");
+            if (str.length() == 1) throw new IllegalArgumentException("Invalid input");
             String left = str.substring(0, index);
             ScalarAtom leftAtom;
             if (left.isEmpty()) leftAtom = LargeInteger.ONE;
@@ -164,7 +163,7 @@ public class Parser{
             if (rightAtom.isRational()) {
                 switch (rightAtom) {
                     case LargeInteger largeInteger ->
-                            rightAtom = new LargePowerMonomial(new LargeFraction(largeInteger, LargeInteger.ONE), LargeFraction.HALF).add(LargeInteger.ZERO);
+                            rightAtom = new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, new LargePowerMonomial(new LargeFraction(largeInteger, LargeInteger.ONE), LargeFraction.HALF));
                     case LargeFraction largeFraction ->
                             rightAtom = new LargePowerMonomial(largeFraction, LargeFraction.HALF).add(LargeInteger.ZERO);
                     case LargePowerMonomial L -> rightAtom = L.power(LargeFraction.HALF).add(LargeInteger.ZERO);
@@ -190,7 +189,7 @@ public class Parser{
             ScalarAtom exp = parse(str.substring(index + 1));
             exp = parse(exp.toString());
             if (exp.equals(LargeInteger.ZERO) && base.equals(LargeInteger.ZERO))
-                throw new ArithmeticException("Error: Indeterminate form: 0^0");
+                throw new ArithmeticException("Indeterminate form: 0^0");
             switch (exp) {
                 case LargeInteger _ -> {
                     if (base.equals(LargeInteger.TWO))
@@ -219,7 +218,7 @@ public class Parser{
                         return new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.ONE), largeFraction).add(LargeInteger.ZERO);
                     return new LargePowerNode(base, largeFraction, LargeFraction.ONE);
                 }
-                default -> throw new IllegalArgumentException("Error: Power must be rational");
+                default -> throw new IllegalArgumentException("Power must be rational");
             }
         });
     }
@@ -227,12 +226,12 @@ public class Parser{
         LargeInteger num;
         LargeInteger dem = LargeInteger.ONE;
         if (str.contains(".")){
-            if (str.contains("..")) throw new IllegalArgumentException("Error: Invalid input");
+            if (str.contains("..")) throw new IllegalArgumentException("Invalid input");
             if (str.contains("{") || str.contains("}")) {
                 if (!str.contains("}")) str += "}";
                 if (!str.contains("{")) str = str.replace(".", ".{");
                 if (str.indexOf("{") != str.lastIndexOf("{") || str.indexOf("}") != str.lastIndexOf("}"))
-                    throw new IllegalArgumentException("Error: Invalid input");
+                    throw new IllegalArgumentException("Invalid input");
                 String nonRepeat = str.substring(str.indexOf(".") + 1, str.indexOf("{"));
                 String repeat = str.substring(str.indexOf("{") + 1, str.indexOf("}"));
                 String whole = str.substring(0, str.indexOf("."));
@@ -264,7 +263,7 @@ public class Parser{
                 if(whole.charAt(0) == '-') num = num.multiply(-1);
                 num = (LargeInteger) num.add(new LargeInteger(whole).multiply(dem));
             } else if (str.contains("}") && !str.contains("{"))
-                throw new IllegalArgumentException("Error: Invalid Input");
+                throw new IllegalArgumentException("Invalid Input");
             else{
                 while(str.endsWith("0"))
                     str = str.substring(0, str.length() - 1);
@@ -287,7 +286,7 @@ public class Parser{
             }
         }else{
             if(str.contains("{") || str.contains("}"))
-                throw new IllegalArgumentException("Error: Invalid input");
+                throw new IllegalArgumentException("Invalid input");
             num = (LargeInteger) Parser.parse(str);
             return new LargeFraction(num, dem);
         }

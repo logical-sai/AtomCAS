@@ -5,32 +5,34 @@ public class LargeList<T> implements Iterable<T>{
 
     private LargeInteger size = LargeInteger.ZERO;
     private int sizeInt = 0;
-    private boolean intSized = true;
 
     private int height = 0; // 0 means root is a leaf Object[1000]
     private Object[] root = new Object[CHUNK_SIZE];
-    public LargeList<T> copy() {
-        LargeList<T> lt = new LargeList<>();
-        if (intSized())
-            for (int i = 0; i < sizeInt; i++)
-                lt.add(get(i));
-        else
-            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(size); i = i.add(1))
-                lt.add(get(i));
-        return lt;
+    @SuppressWarnings("unchecked")
+    public LargeList<T> copy() throws CloneNotSupportedException {
+        LargeList<T> clone = (LargeList<T>) super.clone();
+        clone.sizeInt = this.sizeInt;
+        clone.height = this.height;
+        clone.size = this.size;
+        clone.root = this.root;
+        return clone;
     }
     public String toString() {
-        if(sizeInt == 0) return "{}";
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        for (int i = 0; i < 100; i++) {
-            sb.append(this.get(i));
-            if (i < sizeInt-1) sb.append(", ");
-            else break;
+        if(sizeInt == 0) return "{}";
+        else if(sizeInt > 100 || sizeInt < 0){
+            for(int i = 0; i < 100; i++){
+                sb.append(get(i));
+                if(i < 99) sb.append(", ");
+            }
+            sb.append(" +").append(size.subtract(100)).append(" more");
+            sb.append("}");
+            return sb.toString();
         }
-        if(sizeInt > 100){
-            sb.append("+");
-            sb.append(size.subtract(100)).append(" more");
+        for(int i = 0; i < sizeInt; i++){
+            sb.append(get(i));
+            if(i < sizeInt-1) sb.append(", ");
         }
         sb.append("}");
         return sb.toString();
@@ -49,8 +51,8 @@ public class LargeList<T> implements Iterable<T>{
         size = size.add(1);
         if(intSized()){
             sizeInt++;
-            if(sizeInt == 2147483647)
-                intSized = false;
+            if(sizeInt == -2147483648)
+                sizeInt = -1;
         }
     }
     public void addFirst(T value) {
@@ -72,7 +74,7 @@ public class LargeList<T> implements Iterable<T>{
     }
     public void set(int index, T value){
         if(index < 0 || index >= sizeInt)
-            throw new IndexOutOfBoundsException("Error: Index " + index + " out of bounds for range [0, " + size + ")");
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         setRaw(index, value);
     }
     private void setRaw(LargeInteger index, T value){
@@ -102,11 +104,11 @@ public class LargeList<T> implements Iterable<T>{
         node[leafSlot] = value;
     }
     public LargeInteger size() {return size;}
-    public boolean intSized() {return intSized;}
+    public boolean intSized() {return sizeInt != -1;}
     public int intSize() {
         if (intSized())
             return sizeInt;
-        throw new ArithmeticException("Error: List too large to fit in int");
+        throw new ArithmeticException("List too large to fit in int");
     }
     private void ensureCapacity(LargeInteger index) {
         while (index.greaterThanOrEqualTo(capacity())) {
@@ -125,14 +127,14 @@ public class LargeList<T> implements Iterable<T>{
     @SuppressWarnings("unchecked")
     public T get(LargeInteger index) {
         if (index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
-            throw new IndexOutOfBoundsException("Error: Index " + index + " out of bounds for range [0, " + size + ")");
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         if(intSized()) return get(Integer.parseInt(index.toString()));
         int[] path = base1000Digits(index);
         Object[] node = root;
         for (int level = 0; level < height; level++) {
             int slot = path[level];
             if (node[slot] == null)
-                throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+                throw new UnsupportedOperationException("Operation with these types together not supported yet");
             node = (Object[]) node[slot];
         }
         return (T) node[path[height]];
@@ -140,14 +142,14 @@ public class LargeList<T> implements Iterable<T>{
     @SuppressWarnings("unchecked")
     public T get(int index) {
         if (index < 0 || index >= sizeInt)
-            throw new IndexOutOfBoundsException("Error: Index " + index + " out of bounds for range [0, " + sizeInt + ")");
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + sizeInt + ")");
         int[] digits = base1000Digits(index);
         Object[] node = root;
         int leadingZeros = height + 1 - digits.length;
         for (int level = 0; level < height; level++) {
             int slot = level < leadingZeros ? 0 : digits[level - leadingZeros];
             if (node[slot] == null)
-                throw new UnsupportedOperationException("Error: Missing LargeList node");
+                throw new UnsupportedOperationException("Missing LargeList node");
             node = (Object[]) node[slot];
         }
         int leafSlot = height < leadingZeros ? 0 : digits[height - leadingZeros];
@@ -171,22 +173,20 @@ public class LargeList<T> implements Iterable<T>{
     public void addAll(LargeList<T> other){for(T I: other) this.add(I);}
     public void remove(LargeInteger index){
         if(index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
-            throw new IndexOutOfBoundsException("Error:  Index " + index + " out of bounds for range [0, " + size + ")");
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         for(LargeInteger i = index; i.lessThan(this.size().subtract(LargeInteger.ONE)); i = i.add(1))
             this.set(i, this.get(i.add(1)));
-        this.set((LargeInteger) this.size().subtract(LargeInteger.ONE), null);
-        size = (LargeInteger) size.subtract(LargeInteger.ONE);
+        this.set(this.size().subtract(1), null);
+        size = size.subtract(1);
         if(intSized())
             sizeInt--;
         else
-            if(size.equals(LargeInteger.valueOf(2147483647))){
+            if(size.equals(LargeInteger.valueOf(2147483647)))
                 sizeInt = 2147483647;
-                intSized = true;
-            }
     }
     public void remove(int index){
         if(index < 0 || index >= sizeInt)
-            throw new IndexOutOfBoundsException("Error:  Index " + index + " out of bounds for range [0, " + sizeInt + ")");
+            throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + sizeInt + ")");
         if(intSized()) {
             for (int i = index; i < this.sizeInt - 1; i++)
                 this.set(i, this.get(i + 1));
@@ -200,17 +200,14 @@ public class LargeList<T> implements Iterable<T>{
         if(intSized())
             sizeInt--;
         else
-        if(size.equals(LargeInteger.valueOf(2147483647))){
+        if(size.equals(LargeInteger.valueOf(2147483647)))
             sizeInt = 2147483647;
-            intSized = true;
-        }
     }
     public void removeFirst(){remove(0);}
     public void removeLast(){remove((LargeInteger) size.subtract(LargeInteger.ONE));}
     public void clear(){
         size = LargeInteger.ZERO;
         sizeInt = 0;
-        intSized = true;
         height = 0;
         root = new Object[CHUNK_SIZE];
     }

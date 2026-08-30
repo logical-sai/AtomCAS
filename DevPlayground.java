@@ -156,7 +156,7 @@ public class DevPlayground {
             System.out.printf(
                     "p=%d limbs=%d LI=%.6fms BI=%.6fms ",
                     i,
-                    n.limbs.length,
+                    i/64,
                     (t2 - t1) / 1e6,
                     (t3 - t2) / 1e6
             );
@@ -173,21 +173,45 @@ public class DevPlayground {
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
+    static void benchmarkPowMod(){
+        for(int k: new int[]{1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2000}){
+            long LI_time = 0;
+            long BI_time = 0;
+            int trials = 4000/k;
+            for(int j = 0; j < 100; j++){
+                LargeInteger base = LargeInteger.randomChunks(10);
+                LargeInteger exponent = LargeInteger.basePower(k);
+                LargeInteger modulus = LargeInteger.randomChunks(10).or(LargeInteger.ONE);
+                BigInteger bigBase = base.toBigInteger();
+                BigInteger bigExponent = exponent.toBigInteger();
+                BigInteger bigModulus = modulus.toBigInteger();
+                if(!base.powMod(exponent, modulus).toBigInteger().equals(bigBase.modPow(bigExponent, bigModulus)))
+                    throw new AssertionError("PowMod is wrong");
+                //warmup
+                for(int i = 0; i < 20; i++){
+                    sink = base.powMod(exponent, modulus);
+                    sink = bigBase.modPow(bigExponent, bigModulus);
+                }
+                //benchmark
+                long t0 = System.nanoTime();
+                for(int i = 0; i < trials; i++)
+                    sink = base.powMod(exponent, modulus);
+                long t1 = System.nanoTime();
+                for(int i = 0; i < trials; i++)
+                    sink = bigBase.modPow(bigExponent, bigModulus);
+                long t2 = System.nanoTime();
+                LI_time += t1 - t0;
+                BI_time += t2 - t1;
+            }
+            System.out.println("Chunks tried: " + k);
+            System.out.println("Average LI time: " + LI_time/1e9/(100.0*trials) + " seconds/trial");
+            System.out.println("Average BI time: " + BI_time/1e9/(100.0*trials) + " seconds/trial");
+            System.out.println("LI/BI = " + LI_time*1.0/BI_time);
+            System.out.println();
+        }
+    }
     static void main() {
-//        long start = System.nanoTime();
-//        demoIntegers();
-//        demoFractions();
-//        demoRadicals();
-//        demoRadicalReciprocals();
-//        demoVectorsMatrices();
-//        demoParser();
-//        demoBaseConversion();
-//        long end = System.nanoTime();
-//        System.out.println("Elapsed time: " + (end - start)/1e9 + " seconds");
-        long startTime = System.nanoTime();
-        System.out.println(new LargeInteger("10^101-1").factor());
-        long endTime = System.nanoTime();
-        System.out.println((endTime - startTime) / 1e9 + " seconds");
+        System.out.println(new LargeInteger("300673292540926274656877963*593562305928448520276993201").quadraticSieveWithoutConstraints());
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
@@ -223,6 +247,7 @@ public class DevPlayground {
         System.out.println("6/8 + 5/120 = " + f.add(g));
         System.out.println("6/8 * 5/120 = " + f.multiply(g));
         System.out.println("6/8 / 5/120 = " + f.divide(g));
+        System.out.println("1/5 + 1/2 = " + Parser.parse("1/5 + 1/2"));
         System.out.println();
     }
 
@@ -239,7 +264,6 @@ public class DevPlayground {
     }
     private static void demoRadicalReciprocals(){
         System.out.println("=== Advanced reciprocal Demo ===");
-        System.out.println("This section in particular intends to show exact simplification of reciprocals of several expressions");
         // Rational-only
         testReciprocal("2");
         testReciprocal("-3/7");
@@ -312,7 +336,6 @@ public class DevPlayground {
         System.out.println("|v| = " + v.magnitude());
         System.out.println();
     }
-
     private static void demoParser() {
         System.out.println("=== Parser Demo ===");
 
@@ -328,8 +351,11 @@ public class DevPlayground {
                 "(1+√7)^8"
         };
         for (String input : inputs) {
-            try {System.out.println(input + " -> " + Parser.parse(input));}
-            catch (Exception e) {System.out.println(input + " -> ERROR: " + e.getMessage());}
+            try {
+                System.out.println(input + " -> " + Parser.parse(input));
+            } catch (Exception e) {
+                System.out.println(input + " -> ERROR: " + e.getMessage());
+            }
         }
         System.out.println();
     }

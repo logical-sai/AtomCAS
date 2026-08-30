@@ -125,7 +125,7 @@ public class LargeMatrix extends TensorAtom {
         LargeList<LargeInteger> cop = new LargeList<>();
         for(LargeInteger I: B)
             cop.add(I.clone());
-        if(rows().greaterThan(LargeInteger.ZERO) && cop.size().doesntEqual(cols())) throw new IllegalStateException("Error: Rows must be same sizes");
+        if(rows().greaterThan(LargeInteger.ZERO) && cop.size().doesntEqual(cols())) throw new IllegalStateException("Rows must be same sizes");
         list.add(cop);
     }
     public void appendRow(LargeVector b){
@@ -168,7 +168,7 @@ public class LargeMatrix extends TensorAtom {
     public TensorAtom add(TensorAtom other) {
         if(other instanceof LargeMatrix){
             if(((LargeMatrix) other).cols().doesntEqual(this.cols()) || this.rows().doesntEqual(((LargeMatrix) other).rows()))
-                throw new IllegalStateException("Error: Dimension mismatch");
+                throw new IllegalStateException("Dimension mismatch");
             LargeList<LargeList<LargeFraction>> bk = new LargeList<>();
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.rows()); i = i.add(1)){
                 LargeList<LargeFraction> bs = new LargeList<>();
@@ -178,7 +178,7 @@ public class LargeMatrix extends TensorAtom {
             }
             return new LargeMatrix(bk);
         }
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     @Override
     public TensorAtom subtract(TensorAtom other){return this.add(other.negate());}
@@ -186,7 +186,7 @@ public class LargeMatrix extends TensorAtom {
     public TensorAtom multiply(TensorAtom other){
         if(other instanceof LargeVector){
             if(this.cols().doesntEqual(((LargeVector) other).dimension()))
-                throw new ArithmeticException("Error: Dimension mismatch");
+                throw new ArithmeticException("Dimension mismatch");
             LargeList<LargeFraction> bk = new LargeList<>();
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.rows()); i = i.add(1)){
                 LargeFraction f = LargeFraction.ZERO;
@@ -197,7 +197,7 @@ public class LargeMatrix extends TensorAtom {
             return new LargeVector(bk);
         }else if(other instanceof LargeMatrix){
             if(this.cols().doesntEqual(((LargeMatrix) other).rows()))
-                throw new ArithmeticException("Error: Dimension mismatch");
+                throw new ArithmeticException("Dimension mismatch");
             LargeList<LargeList<LargeInteger>> result = new LargeList<>();
             for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.rows()); i = (LargeInteger) i.add(LargeInteger.ONE)) {
                 LargeList<LargeInteger> row = new LargeList<>();
@@ -211,7 +211,7 @@ public class LargeMatrix extends TensorAtom {
             }
             return new LargeMatrix(result, (LargeFraction) factor.multiply(((LargeMatrix) other).factor));
         }
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     @Override
     public TensorAtom scale(LargeFraction scalar) {return new LargeMatrix(list, (LargeFraction) factor.multiply(scalar));}
@@ -227,11 +227,11 @@ public class LargeMatrix extends TensorAtom {
                     if(this.get(i, j).doesntEqual(((LargeMatrix) other).get(i, j))) return false;
             return true;
         }
-        throw new UnsupportedOperationException("Error: Operation with these types together not supported yet");
+        throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public LargeFraction determinant() {
         if(this.isNotSquare())
-            throw new ArithmeticException("Error: Determinant only defined for square matrices");
+            throw new ArithmeticException("Determinant only defined for square matrices");
         LargeInteger n = this.rows();
         if(n.equals(LargeInteger.ZERO))
             return LargeFraction.ONE;
@@ -241,15 +241,13 @@ public class LargeMatrix extends TensorAtom {
         LargeList<LargeList<LargeInteger>> m = new LargeList<>();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i = i.add(1)){
             LargeList<LargeInteger> row = new LargeList<>();
-            for(LargeInteger j = LargeInteger.ZERO; j.lessThan(n); j = (LargeInteger) j.add(LargeInteger.ONE))
+            for(LargeInteger j = LargeInteger.ZERO; j.lessThan(n); j = j.add(1))
                 row.add(this.getRaw(i, j).clone());
             m.add(row);
         }
         LargeInteger previousPivot = LargeInteger.ONE;
         long sign = 1L;
-        for (LargeInteger k = LargeInteger.ZERO;
-             k.lessThan(n.subtract(LargeInteger.ONE));
-             k = (LargeInteger) k.add(LargeInteger.ONE)) {
+        for (LargeInteger k = LargeInteger.ZERO; k.lessThan(n.subtract(1)); k = k.add(1)) {
             // find nonzero pivot
             LargeInteger pivotRow = k;
             while (pivotRow.lessThan(n) && m.get(pivotRow).get(k).equals(LargeInteger.ZERO))
@@ -264,12 +262,8 @@ public class LargeMatrix extends TensorAtom {
                 sign *= -1L;
             }
             LargeInteger pivot = m.get(k).get(k);
-            for (LargeInteger i = (LargeInteger) k.add(LargeInteger.ONE);
-                 i.lessThan(n);
-                 i = (LargeInteger) i.add(LargeInteger.ONE)) {
-                for (LargeInteger j = (LargeInteger) k.add(LargeInteger.ONE);
-                     j.lessThan(n);
-                     j = (LargeInteger) j.add(LargeInteger.ONE)) {
+            for (LargeInteger i = k.add(1); i.lessThan(n); i = i.add(1)) {
+                for (LargeInteger j = k.add(1); j.lessThan(n); j = j.add(1)) {
                     LargeInteger aij = m.get(i).get(j);
                     LargeInteger aik = m.get(i).get(k);
                     LargeInteger akj = m.get(k).get(j);
@@ -279,14 +273,11 @@ public class LargeMatrix extends TensorAtom {
                 }
             }
             // Optional cleanup: clear below/right stale values
-            for (LargeInteger i = (LargeInteger) k.add(LargeInteger.ONE);
-                 i.lessThan(n);
-                 i = (LargeInteger) i.add(LargeInteger.ONE)) {
+            for (LargeInteger i = (LargeInteger) k.add(LargeInteger.ONE); i.lessThan(n); i = i.add(1))
                 m.get(i).set(k, LargeInteger.ZERO);
-            }
             previousPivot = pivot;
         }
-        LargeInteger rawDet = m.get((LargeInteger) n.subtract(LargeInteger.ONE)).get((LargeInteger) n.subtract(LargeInteger.ONE));
+        LargeInteger rawDet = m.get(n.subtract(1)).get(n.subtract(1));
         if(sign == -1L)
             rawDet = rawDet.negate();
         return (LargeFraction) rawDet.multiply(factor.power(n));
@@ -294,63 +285,61 @@ public class LargeMatrix extends TensorAtom {
     public LargeMatrix rowEchelonFrom(){
         LargeMatrix M = this.clone();
         LargeInteger pivotRow = LargeInteger.ZERO;
-        for(LargeInteger pivotCol = LargeInteger.ZERO; pivotCol.lessThan(M.cols()) && pivotRow.lessThan(M.rows()); pivotCol = (LargeInteger) pivotCol.add(LargeInteger.ONE)){
+        for(LargeInteger pivotCol = LargeInteger.ZERO; pivotCol.lessThan(M.cols()) && pivotRow.lessThan(M.rows()); pivotCol = pivotCol.add(1)){
             //determine the first row in which pivot is nonzero, in the current column
             LargeInteger nextRow = LargeInteger.NEGATIVE_ONE;
-            for(LargeInteger i = pivotRow; i.lessThan(M.rows()); i = (LargeInteger) i.add(LargeInteger.ONE))
+            for(LargeInteger i = pivotRow; i.lessThan(M.rows()); i = i.add(1))
                 if(M.get(i, pivotCol).doesntEqual(LargeInteger.ZERO)){
                     nextRow = i;
                     break;
                 }
-            if(nextRow.equals(LargeInteger.NEGATIVE_ONE)) continue;
+            if(nextRow.negative) continue;
             M.swapRows(pivotRow, nextRow);
             LargeFraction pivot = M.get(pivotRow, pivotCol);
             // eliminate entries below pivot
-            for(LargeInteger r = (LargeInteger) pivotRow.add(LargeInteger.ONE); r.lessThan(M.rows()); r = (LargeInteger) r.add(LargeInteger.ONE)){
+            for(LargeInteger r = pivotRow.add(1); r.lessThan(M.rows()); r = r.add(1)){
                 LargeFraction entry = M.get(r, pivotCol);
                 if(entry.equals(LargeInteger.ZERO)) continue;
                 LargeFraction factor = (LargeFraction) entry.divide(pivot);
-                for(LargeInteger c = pivotCol; c.lessThan(M.cols()); c = (LargeInteger) c.add(LargeInteger.ONE)){
+                for(LargeInteger c = pivotCol; c.lessThan(M.cols()); c = c.add(1)){
                     LargeFraction updated = (LargeFraction) M.get(r, c).subtract(factor.multiply(M.get(pivotRow, c)));
                     M.set(r, c, updated);
                 }
             }
-            pivotRow = (LargeInteger) pivotRow.add(LargeInteger.ONE);
+            pivotRow = pivotRow.add(1);
         }
         return M;
     }
     public LargeMatrix reducedRowEchelonForm(){
         LargeMatrix M = this.clone();
-        LargeInteger pivotRow = LargeInteger.ZERO;
-        for(LargeInteger pivotCol = LargeInteger.ZERO; pivotCol.lessThan(M.cols()) && pivotRow.lessThan(M.rows()); pivotCol = (LargeInteger) pivotCol.add(LargeInteger.ONE)){
+        for(LargeInteger pivotCol = LargeInteger.ZERO, pivotRow = LargeInteger.ZERO; pivotCol.lessThan(M.cols()) && pivotRow.lessThan(M.rows()); pivotCol = pivotCol.add(1), pivotRow = pivotRow.add(1)){
             //determine the first row in which pivot is nonzero, in the current column
             LargeInteger nextRow = LargeInteger.NEGATIVE_ONE;
-            for(LargeInteger i = pivotRow; i.lessThan(M.rows()); i = (LargeInteger) i.add(LargeInteger.ONE))
+            for(LargeInteger i = pivotRow; i.lessThan(M.rows()); i = i.add(1))
                 if(M.get(i, pivotCol).doesntEqual(LargeInteger.ZERO)){
                     nextRow = i;
                     break;
                 }
-            if(nextRow.equals(LargeInteger.NEGATIVE_ONE)) continue;
+            if(nextRow.negative) continue;
             M.swapRows(pivotRow, nextRow);
             LargeFraction pivot = M.get(pivotRow, pivotCol);
             //scale pivot row so that pivot is 1
-            for(LargeInteger c = pivotCol; c.lessThan(M.cols()); c = (LargeInteger) c.add(LargeInteger.ONE))
+            for(LargeInteger c = pivotCol; c.lessThan(M.cols()); c = c.add(1))
                 M.set(pivotRow, c, (LargeFraction) M.get(pivotRow, c).divide(pivot));
             // eliminate entries below and above pivot
-            for(LargeInteger r = LargeInteger.ZERO; r.lessThan(M.rows()); r = (LargeInteger) r.add(LargeInteger.ONE)){
+            for(LargeInteger r = LargeInteger.ZERO; r.lessThan(M.rows()); r = r.add(1)){
                 if(r.equals(pivotRow)) continue;
                 LargeFraction factor = M.get(r, pivotCol);
                 if(factor.equals(LargeInteger.ZERO)) continue;
-                for(LargeInteger c = pivotCol; c.lessThan(M.cols()); c = (LargeInteger) c.add(LargeInteger.ONE))
+                for(LargeInteger c = pivotCol; c.lessThan(M.cols()); c = c.add(1))
                     M.set(r, c, (LargeFraction) M.get(r, c).subtract(factor.multiply(M.get(pivotRow, c))));
             }
-            pivotRow = (LargeInteger) pivotRow.add(LargeInteger.ONE);
         }
         return M;
     }
     public LargeMatrix inverse(){
         if(this.isNotSquare())
-            throw new ArithmeticException("Error: Inverse only defined for square matrices");
+            throw new ArithmeticException("Inverse only defined for square matrices");
         LargeInteger n = this.rows();
         // Build augmented matrix [A | I]
         LargeMatrix M = new LargeMatrix();
@@ -376,7 +365,7 @@ public class LargeMatrix extends TensorAtom {
             L.appendRow(v);
         }
         if(L.doesntEqual(identity(n)))
-            throw new ArithmeticException("Error: This matrix does not have an inverse");
+            throw new ArithmeticException("This matrix does not have an inverse");
         LargeMatrix R = new LargeMatrix();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i = i.add(1)){
             LargeVector v = new LargeVector();
@@ -402,7 +391,7 @@ public class LargeMatrix extends TensorAtom {
         return rank;
     }
     public LargePolynomial characteristicPolynomial() {
-        if(isNotSquare()) throw new IllegalArgumentException("Error: Characteristic polynomial defined only for square matrices");
+        if(isNotSquare()) throw new IllegalArgumentException("Characteristic polynomial defined only for square matrices");
         LargeInteger n = rows();
         LargeList<LargeList<LargePolynomial>> M = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i = i.add(1)) {
@@ -417,7 +406,7 @@ public class LargeMatrix extends TensorAtom {
         return determinantOfPolynomialMatrix(M);
     }
     public static LargePolynomial determinantOfPolynomialMatrix(LargeList<LargeList<LargePolynomial>> input) {
-        if(input.size().doesntEqual(input.getFirst().size())) throw new IllegalArgumentException("Error: Determinant only defined for square matrices");
+        if(input.size().doesntEqual(input.getFirst().size())) throw new IllegalArgumentException("Determinant only defined for square matrices");
         LargeInteger n = input.size();
 
         if (n.equals(LargeInteger.ZERO)) return LargePolynomial.ONE();
