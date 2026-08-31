@@ -211,7 +211,10 @@ public class DevPlayground {
         }
     }
     static void main() {
-        System.out.println(new LargeInteger("300673292540926274656877963*593562305928448520276993201").quadraticSieveWithoutConstraints());
+        long startTime = System.nanoTime();
+        System.out.println(new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139").quadraticSieveWithoutConstraints());
+        long elapsedTime = System.nanoTime() - startTime;
+        System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
