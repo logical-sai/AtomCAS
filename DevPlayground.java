@@ -211,8 +211,9 @@ public class DevPlayground {
         }
     }
     static void main() {
+        LargeInteger N = new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139");
         long startTime = System.nanoTime();
-        System.out.println(new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139").quadraticSieveWithoutConstraints());
+        System.out.println(N.quadraticSieveWithoutConstraints());
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }

@@ -4490,10 +4490,8 @@ public class LargeInteger extends ScalarAtom{
                 long[] sigmaSquared = modMagnitudes(squareMagnitude(sigma), n);
                 long[] u = modMagnitudes(subtractSmall(sigmaSquared, 5), n);
                 long[] v = modMagnitudes(shiftLeftBits(sigma, 2), n);
-
                 long[] numerator = SignedMag.positive(v).subtractMagnitude(u).cube().multiplyMagnitude(addMagnitudes(v, multiplySmall(u, 3L))).modMag(n);
                 long[] denominator = modMagnitudes(shiftLeftBits(multiplyMagnitudes(cubeMagnitude(u), v), 2L), n);
-
                 ExtGcdMag eg = extendedGcdMagnitudes(denominator, n);
                 if (isNontrivialFactor(eg.gcd, n)) {
                     stats.curveCreateNanos = System.nanoTime() - t0;
@@ -4504,11 +4502,9 @@ public class LargeInteger extends ScalarAtom{
                 long[] A = SignedMag.positive(numerator).multiply(eg.x).subtractMagnitude(TWO_MAG).modMag(n);
                 long[] A24 = modMagnitudes(multiplyMagnitudes(addSmall(A, 2L), context.inv4), n);
                 MontgomeryCurve curve = new MontgomeryCurve(reducer, A24);
-
                 // Convert u and v before Montgomery multiplication.
                 long[] uMont = reducer.toMontgomery(u);
                 long[] vMont = reducer.toMontgomery(v);
-
                 long[] X = reducer.cube(uMont);
                 long[] Z = reducer.cube(vMont);
                 MontgomeryPoint point = new MontgomeryPoint(X, Z);
@@ -4809,7 +4805,36 @@ public class LargeInteger extends ScalarAtom{
      * @param index column index: 0 = negative, j+1 = factorBase[j]
      * @param count exponent count
      */
-    private record SparseExponents(int[] index, short[] count) {}
+    private record SparseExponents(int[] index, short[] count) {
+        SparseExponents addSparse(SparseExponents b){
+            int i = 0, j = 0, k = 0;
+            int[] tmpIndex = new int[index.length + b.index.length];
+            short[] tmpCount = new short[tmpIndex.length];
+            while (i < index.length || j < b.index.length) {
+                if (j >= b.index.length || (i < index.length && index[i] < b.index[j])) {
+                    tmpIndex[k] = index[i];
+                    tmpCount[k] = count[i];
+                    i++;
+                } else if (i >= index.length || b.index[j] < index[i]) {
+                    tmpIndex[k] = b.index[j];
+                    tmpCount[k] = b.count[j];
+                    j++;
+                } else {
+                    int sum = count[i] + b.count[j];
+                    if (sum != 0) {
+                        tmpIndex[k] = index[i];
+                        tmpCount[k] = (short) sum;
+                        k++;
+                    }
+                    i++;
+                    j++;
+                    continue;
+                }
+                k++;
+            }
+            return new SparseExponents(Arrays.copyOf(tmpIndex, k), Arrays.copyOf(tmpCount, k));
+        }
+    }
     private static SparseExponents compress(short[] dense) {
         int nonzero = 0;
         for (short v : dense) {
@@ -5189,10 +5214,10 @@ public class LargeInteger extends ScalarAtom{
         long attemptNs;
         long polyNs;
 
-        AStats(long[] A, long[] halfMag, QSFactorBase factorBase, int aFactorCount, long largePrimeBound, RelationYieldEstimate estimate) {
+        AStats(long[] A, long half, QSFactorBase factorBase, int aFactorCount, long largePrimeBound, RelationYieldEstimate estimate) {
             this.aFactorCount = aFactorCount;
             bCount = 1L << (aFactorCount - 1);
-            half = halfMag[0];
+            this.half = half;
             interval = 2L * half;
             positionsPerA = Math.multiplyExact(interval, bCount);
 
@@ -5345,14 +5370,6 @@ public class LargeInteger extends ScalarAtom{
         }
     }
     private static String formatSeconds(long nanoSeconds) {return nanoSeconds/1e9 + " seconds";}
-    private static AStats makeAPlan(long[] A, long[] sqrt2N, QSFactorBase factorBase, int aFactorCount, long largePrimeBound) {
-        long[] halfMag = divideMagnitudes(sqrt2N, A)[0];
-        if (isZeroArray(halfMag) || halfMag.length > 1)
-            throw new AssertionError("Bad A HALF=" + new LargeInteger(halfMag, false));
-        int pMax = factorBase.primes[factorBase.size - 1];
-        RelationYieldEstimate estimate = RelationYieldEstimate.estimateRelationYieldPerPolynomial(A, halfMag, pMax, largePrimeBound);
-        return new AStats(A, halfMag, factorBase, aFactorCount, largePrimeBound, estimate);
-    }
     private static final double LOG_SCALE = 64.0;
     private static QSFactorBase buildFactorBase(long[] n, int bound) {
         int[] candidates = sieve(bound);
@@ -5513,12 +5530,13 @@ public class LargeInteger extends ScalarAtom{
         long[] A = AR.A;
         int[] aFactors = AR.factors;
         long[] halfMag = divideMagnitudes(sqrt2N, A)[0];
-        if (halfMag.length > 1)
-            throw new AssertionError("A is too small");
+        if (isZeroArray(halfMag) || halfMag.length > 1)
+            throw new AssertionError("Bad A HALF=" + new LargeInteger(halfMag, false));
         int half = (int)halfMag[0];
         int startT = -half;
         int interval = 2 * half;
-        AStats plan = makeAPlan(A, sqrt2N, factorBase, aFactors.length, factorBase.largePrimeBound);
+        RelationYieldEstimate estimate = RelationYieldEstimate.estimateRelationYieldPerPolynomial(A, half, factorBase.globalPMax, factorBase.largePrimeBound);
+        AStats plan = new AStats(A, half, factorBase, aFactors.length, factorBase.largePrimeBound, estimate);
         // Precompute values depending only on A.
         int[] invAModP = new int[fbSize];
         int[] inactive = new int[aFactors.length + 1];
@@ -5539,8 +5557,7 @@ public class LargeInteger extends ScalarAtom{
         }
         inactiveLarge = Arrays.copyOf(inactiveLarge, inactiveLargeCount);
         int inactivePos = Arrays.binarySearch(inactive, largeStart);
-        if (inactivePos < 0)
-            inactivePos = -inactivePos - 1;
+        if (inactivePos < 0) inactivePos = -inactivePos - 1;
         long[] B = new long[A.length + 1];
         long[][] twoTerms = new long[aFactors.length][];
         for (int i = 0; i < aFactors.length; i++) {
@@ -5550,9 +5567,7 @@ public class LargeInteger extends ScalarAtom{
             int root = (packed & 1) != 1 ? factorBase.root1[index] : factorBase.root2[index];
             long[] Ai = A.clone();
             divideMagExactInPlace(Ai, q);
-            int aiModQ = modSmallInt(Ai, Ai.length, q);
-            long inv = inverseModSmall(aiModQ, q);
-            long coefficient = inv * root % q;
+            long coefficient = (long) inverseModSmall(modSmallInt(Ai, Ai.length, q), q) * root % q;
             long[] bTerm = multiplySmall(Ai, coefficient);
             twoTerms[i] = multiplySmall(bTerm, 2);
             if (compareArray(twoTerms[i], A) >= 0)
@@ -5569,15 +5584,12 @@ public class LargeInteger extends ScalarAtom{
         computeInitialRoots(pos1, pos2, inactive, primes, A, invAModP, B, factorBase, fbSize, startT);
         long rootCalcTime = TMX.getCurrentThreadCpuTime() - root0;
         plan.rootCalcTime += rootCalcTime;
-        plan.sieveNs += rootCalcTime;
         short[] dense = new short[factorBase.columnCount];
         int[] used = new int[factorBase.columnCount];
-        int[] sparseFactors = aFactors.clone();
-        Arrays.sort(sparseFactors);
-        SparseExponents aSparse = new SparseExponents(new int[sparseFactors.length], new short[sparseFactors.length]);
-        for (int i = 0; i < sparseFactors.length; i++) {
-            int index = sparseFactors[i] >>> 1;
-            aSparse.index[i] = index + 1;
+        Arrays.sort(aFactors);
+        SparseExponents aSparse = new SparseExponents(new int[aFactors.length], new short[aFactors.length]);
+        for (int i = 0; i < aFactors.length; i++) {
+            aSparse.index[i] = (aFactors[i] >>> 1) + 1;
             aSparse.count[i] = 1;
         }
         int cachedBits = aFactors.length - 1;
@@ -5589,8 +5601,8 @@ public class LargeInteger extends ScalarAtom{
             for (int hi : inactive) {
                 for (int j = lo; j < hi; j++) {
                     int p = primes[j];
-                    int stepMod = modSmallInt(step, step.length, p);
-                    long z = (long) stepMod * invAModP[j];
+                    long stepMod = modSmallInt(step, step.length, p);
+                    long z = stepMod * invAModP[j];
                     long q = z/p;
                     int delta = (int) (z - q * p);
                     if (delta >= p) delta -= p;
@@ -5601,8 +5613,8 @@ public class LargeInteger extends ScalarAtom{
             }
             for (int j = lo; j < fbSize; j++) {
                 int p = primes[j];
-                int stepMod = modSmallInt(step, step.length, p);
-                long z = (long) stepMod * invAModP[j];
+                long stepMod = modSmallInt(step, step.length, p);
+                long z = stepMod * invAModP[j];
                 long q = z/p;
                 int delta = (int) (z - q * p);
                 if (delta >= p) delta -= p;
@@ -5613,26 +5625,24 @@ public class LargeInteger extends ScalarAtom{
         precomputation = TMX.getCurrentThreadCpuTime() - precomputation;
         plan.precomputation = precomputation;
         int[] hitHead = new int[interval];
-        int[] hitNext = new int[2 * (fbSize - largeStart)];
-        int[] hitPrime = new int[2 * (fbSize - largeStart)];
-        int hitCount;
+        int[] hitNext = new int[2*(fbSize - largeStart)];
+        int[] hitPrime = new int[2*(fbSize - largeStart)];
+        int hitCount = 0;
         int prevGray = 0;
         for (int mask = 0; mask < 1 << (factorBase.aPrimeCount-1); mask++) {
             int gray = mask ^ (mask >>> 1);
             long[] oldB = B;
             if (mask != 0) {
-                int changed = gray ^ prevGray;
-                int bit = Integer.numberOfTrailingZeros(changed);
+                int bit = Integer.numberOfTrailingZeros(gray ^ prevGray);
                 long[] step = twoTerms[bit+1];
-                boolean nowNegative = ((gray >>> bit) & 1) != 0;
-                if (nowNegative){ // +T_i -> -T_i
+                if (((gray >>> bit) & 1) != 0){ // +T_i -> -T_i
                     B = modSubtract(oldB, step, A);
                     long cpuRoot = TMX.getCurrentThreadCpuTime();
                     if (compareArray(oldB, step) < 0)
                         updateRootsAddWrapped(pos1, pos2, grayDelta, primes, inactive, fbSize, bit);
                     else updateRootsAdd(pos1, pos2, grayDelta, primes, inactive, fbSize, bit);
                     rootCalcTime = TMX.getCurrentThreadCpuTime() - cpuRoot;
-                }else{ // -T_i -> +T_i
+                }else{ // -T_i -> +T_i8
                     B = modAdd(oldB, step, A);
                     long cpuRoot = TMX.getCurrentThreadCpuTime();
                     if (compareArray(B, oldB) < 0)
@@ -5646,16 +5656,15 @@ public class LargeInteger extends ScalarAtom{
             prevGray = gray;
             long polyGenTime = TMX.getCurrentThreadCpuTime();
             long[] b2 = squareMagnitude(B);
-            boolean cNegative;
+            SignedMag C;
             if (compareArray(b2, N) >= 0) {
                 subtractMagnitudeInPlace(b2, N);
                 b2 = trimLeadingZeros(b2);
-                cNegative = false;
+                C = new SignedMag(divideExactMag(b2, A), false);
             } else {
                 b2 = subtractMagnitudes(N, b2);
-                cNegative = true;
+                C = new SignedMag(divideExactMag(b2, A), true);
             }
-            SignedMag C = new SignedMag(divideExactMag(b2, A), cNegative);
             long[] twoB = shiftLeftBits(B, 1);
             polyGenTime = TMX.getCurrentThreadCpuTime() - polyGenTime;
             //log sieve
@@ -5667,8 +5676,6 @@ public class LargeInteger extends ScalarAtom{
             plan.smallLogSieveNs += System.nanoTime() - smallSieve;
             // ---------------- LARGE SIEVE ----------------
             long largeSieve = System.nanoTime();
-            Arrays.fill(hitHead, -1);
-            hitCount = 0;
             markLargeRoots(inactive, largeStart, pos1, pos2, interval, score, logPrimes, hitPrime, hitNext,
                     hitHead, hitCount, inactivePos, fbSize);
             plan.largeLogSieveNs += System.nanoTime() - largeSieve;
@@ -5965,6 +5972,7 @@ public class LargeInteger extends ScalarAtom{
     private static void markLargeRoots(int[] inactive, int largeStart, int[] pos1, int[] pos2, int interval,
                                        int[] score, int[] logPrimes, int[] hitPrime, int[] hitNext, int[] hitHead,
                                        int hitCount, int inactivePos, int fbSize){
+        Arrays.fill(hitHead, -1);
         int lo = largeStart;
         for (int k = inactivePos; k < inactive.length; k++) {
             int hi = inactive[k];
@@ -6045,7 +6053,7 @@ public class LargeInteger extends ScalarAtom{
                 continue;
             }
             if (isOneArray(remaining)){
-                relations.add(new QSRelationFull(new long[][]{currentX}, addSparse(compress(dense), aSparse),
+                relations.add(new QSRelationFull(new long[][]{currentX}, aSparse.addSparse(compress(dense)),
                         new long[0][]));
                 plan.observeRelationAdd(RelationAddKind.FULL);
                 continue;
@@ -6103,12 +6111,11 @@ public class LargeInteger extends ScalarAtom{
                 int j = hitPrime[h];
                 int p = factorBase.primes[j];
                 int column = j+1;
-                do {
-                    if (dense[column] == 0)
-                        used[usedCount++] = column;
+                do{
+                    if (dense[column] == 0) used[usedCount++] = column;
                     incExp(dense, j + 1);
                     divideMagExactInPlace(remaining, p);
-                } while (modSmallInt(remaining, remLength, p) == 0);
+                }while(modSmallInt(remaining, remLength, p) == 0);
                 remLength = remaining.length;
                 while (remaining[remLength-1] == 0 && remLength > 1) remLength--;
             }
@@ -6124,27 +6131,15 @@ public class LargeInteger extends ScalarAtom{
             if (remaining.length == 1) {
                 int index = factorBaseIndexOf(fbIndex, remaining[0]);
                 if (index >= 0) {
-                    if(dense[index+1] == 0)
-                        used[usedCount++] = index+1;
+                    if(dense[index+1] == 0) used[usedCount++] = index+1;
                     incExp(dense, index + 1);
                     remaining = ONE_MAG;
                 }
             }
             Arrays.sort(used, 0, usedCount);
-            int[] index = Arrays.copyOf(used, usedCount);
-            short[] count = new short[usedCount];
-            for (int i = 0; i < usedCount; i++)
-                count[i] = dense[index[i]];
-            SparseExponents sparse = new SparseExponents(index, count);
-//            SparseExponents reference = compress(dense);
-//            if (!Arrays.equals(reference.index, sparse.index) ||
-//                    !Arrays.equals(reference.count, sparse.count)) {
-//                System.err.println("reference = " + Arrays.toString(reference.index));
-//                System.err.println("fast      = " + Arrays.toString(sparse.index));
-//
-//                throw new AssertionError("Sparse compression mismatch");
-//            }
-            sparse = addSparse(sparse, aSparse);
+            SparseExponents sparse = new SparseExponents(Arrays.copyOf(used, usedCount), new short[usedCount]);
+            for (int i = 0; i < usedCount; i++) sparse.count[i] = dense[sparse.index[i]];
+            sparse = sparse.addSparse(aSparse);
             plan.observeRelationAdd(classifyRelation(remaining, sparse, xValues, relations, partials,
                     fbIndex, factorBase));
             plan.relationClassifyNs += TMX.getCurrentThreadCpuTime() - classifyTime;
@@ -6232,10 +6227,9 @@ public class LargeInteger extends ScalarAtom{
             double usableRowsPerPoly = fullHitsPerPoly + singlePartialMergesPerPoly + doublePartialMergesPerPoly;
             return new RelationYieldEstimate(fullHitsPerPoly, singlePartialHitsPerPoly, singlePartialMergesPerPoly, doublePartialHitsPerPoly, doublePartialMergesPerPoly, usableRowsPerPoly);
         }
-        private static RelationYieldEstimate estimateRelationYieldPerPolynomial(long[] A, long[] halfMag, int factorBasePMax, long largePrimeBound) {
-            if (isZeroArray(halfMag) || halfMag.length != 1 || halfMag[0] <= 0 || factorBasePMax <= 1 || largePrimeBound <= factorBasePMax)
+        private static RelationYieldEstimate estimateRelationYieldPerPolynomial(long[] A, long half, int factorBasePMax, long largePrimeBound) {
+            if (half <= 0 || factorBasePMax <= 1 || largePrimeBound <= factorBasePMax)
                 return new RelationYieldEstimate(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-            long half = halfMag[0];
             double interval = 2.0 * half;
             double logA = logMag(A);
             double logM = Math.log(half);
@@ -6259,7 +6253,7 @@ public class LargeInteger extends ScalarAtom{
             double singleShare = estimateSinglePartialShare(logQ, logB,logLP);
             double singlePartialHits = calibratedPartialPool * singleShare;
             double doublePartialHits = calibratedPartialPool * (1.0 - singleShare);
-            return RelationYieldEstimate.of(fullHits, singlePartialHits, 0.0, doublePartialHits,0.0);
+            return of(fullHits, singlePartialHits, 0.0, doublePartialHits,0.0);
         }
         private static double estimateSinglePartialShare(double logQ, double logB, double logLP) {
             double lpSpan = logLP - logB;
@@ -6378,34 +6372,6 @@ public class LargeInteger extends ScalarAtom{
     private static boolean withinLargePrimeRange(long value, long globalPMax, long largePrimeBound) {
         return Long.compareUnsigned(value, globalPMax) > 0 && Long.compareUnsigned(value, largePrimeBound) <= 0;
     }
-    private static SparseExponents addSparse(SparseExponents a, SparseExponents b) {
-        int i = 0, j = 0, k = 0;
-        int[] tmpIndex = new int[a.index.length + b.index.length];
-        short[] tmpCount = new short[tmpIndex.length];
-        while (i < a.index.length || j < b.index.length) {
-            if (j >= b.index.length || (i < a.index.length && a.index[i] < b.index[j])) {
-                tmpIndex[k] = a.index[i];
-                tmpCount[k] = a.count[i];
-                i++;
-            } else if (i >= a.index.length || b.index[j] < a.index[i]) {
-                tmpIndex[k] = b.index[j];
-                tmpCount[k] = b.count[j];
-                j++;
-            } else {
-                int sum = a.count[i] + b.count[j];
-                if (sum != 0) {
-                    tmpIndex[k] = a.index[i];
-                    tmpCount[k] = (short) sum;
-                    k++;
-                }
-                i++;
-                j++;
-                continue;
-            }
-            k++;
-        }
-        return new SparseExponents(Arrays.copyOf(tmpIndex, k), Arrays.copyOf(tmpCount, k));
-    }
     private static void incrementLargePrimeCount(HashMap<Long, Integer> counts, long vertex) {
         if (vertex == PARTIAL_ROOT) return;
         counts.merge(vertex, 1, Integer::sum);
@@ -6431,7 +6397,7 @@ public class LargeInteger extends ScalarAtom{
          */
         HashMap<Long, Integer> largePrimeCounts = new HashMap<>();
         for (QSRelationPartial partial : cycle) {
-            mergedExponents = addSparse(mergedExponents, partial.exponents);
+            mergedExponents = mergedExponents.addSparse(partial.exponents);
             xCount += partial.xValues.length;
             incrementLargePrimeCount(largePrimeCounts, partial.vertex1);
             incrementLargePrimeCount(largePrimeCounts, partial.vertex2);
