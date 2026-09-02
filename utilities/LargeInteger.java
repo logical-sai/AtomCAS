@@ -5585,7 +5585,6 @@ public class LargeInteger extends ScalarAtom{
         long rootCalcTime = TMX.getCurrentThreadCpuTime() - root0;
         plan.rootCalcTime += rootCalcTime;
         short[] dense = new short[factorBase.columnCount];
-        int[] used = new int[factorBase.columnCount];
         Arrays.sort(aFactors);
         SparseExponents aSparse = new SparseExponents(new int[aFactors.length], new short[aFactors.length]);
         for (int i = 0; i < aFactors.length; i++) {
@@ -5596,18 +5595,16 @@ public class LargeInteger extends ScalarAtom{
         int[] grayDelta = new int[cachedBits * fbSize];
         for (int bit = 0; bit < cachedBits; bit++) {
             long[] step = twoTerms[bit+1];
-            int off = bit * fbSize;
+            int offset = bit * fbSize;
             int lo = 0;
             for (int hi : inactive) {
                 for (int j = lo; j < hi; j++) {
                     int p = primes[j];
                     long stepMod = modSmallInt(step, step.length, p);
                     long z = stepMod * invAModP[j];
-                    long q = z/p;
-                    int delta = (int) (z - q * p);
-                    if (delta >= p) delta -= p;
-                    else if (delta < 0) delta += p;
-                    grayDelta[off + j] = delta;
+                    int delta = (int)(z % p);
+                    if (delta < 0) delta += p;
+                    grayDelta[offset + j] = delta;
                 }
                 lo = hi + 1;
             }
@@ -5615,19 +5612,15 @@ public class LargeInteger extends ScalarAtom{
                 int p = primes[j];
                 long stepMod = modSmallInt(step, step.length, p);
                 long z = stepMod * invAModP[j];
-                long q = z/p;
-                int delta = (int) (z - q * p);
-                if (delta >= p) delta -= p;
-                else if (delta < 0) delta += p;
-                grayDelta[off + j] = delta;
+                int delta = (int)(z % p);
+                if (delta < 0) delta += p;
+                grayDelta[offset + j] = delta;
             }
         }
         precomputation = TMX.getCurrentThreadCpuTime() - precomputation;
         plan.precomputation = precomputation;
         int[] hitHead = new int[interval];
-        int[] hitNext = new int[2*(fbSize - largeStart)];
-        int[] hitPrime = new int[2*(fbSize - largeStart)];
-        int hitCount = 0;
+        long[] hitData = new long[2*(fbSize - largeStart)];
         int prevGray = 0;
         for (int mask = 0; mask < 1 << (factorBase.aPrimeCount-1); mask++) {
             int gray = mask ^ (mask >>> 1);
@@ -5651,7 +5644,6 @@ public class LargeInteger extends ScalarAtom{
                     rootCalcTime = TMX.getCurrentThreadCpuTime() - cpuRoot;
                 }
                 plan.rootCalcTime += rootCalcTime;
-                plan.sieveNs += rootCalcTime;
             }
             prevGray = gray;
             long polyGenTime = TMX.getCurrentThreadCpuTime();
@@ -5676,8 +5668,8 @@ public class LargeInteger extends ScalarAtom{
             plan.smallLogSieveNs += System.nanoTime() - smallSieve;
             // ---------------- LARGE SIEVE ----------------
             long largeSieve = System.nanoTime();
-            markLargeRoots(inactive, largeStart, pos1, pos2, interval, score, logPrimes, hitPrime, hitNext,
-                    hitHead, hitCount, inactivePos, fbSize);
+            markLargeRoots(inactive, largeStart, pos1, pos2, interval, score, logPrimes, hitData,
+                    hitHead, inactivePos, fbSize);
             plan.largeLogSieveNs += System.nanoTime() - largeSieve;
             long totalSieveTime = TMX.getCurrentThreadCpuTime() - cpuSieve;
             //attempt after sieve
@@ -5685,7 +5677,7 @@ public class LargeInteger extends ScalarAtom{
             plan.scanned += interval;
             long relationTime = TMX.getCurrentThreadCpuTime();
             collectQSRelations(N, A, B, twoB, C, score, interval, startT, logQThreshold, factorBase, fbIndex,
-                    largeStart, inactiveLarge, hitHead, hitNext, hitPrime, dense, used, aSparse, relations,
+                    largeStart, inactiveLarge, hitHead, hitData, dense, aSparse, relations,
                     partials, plan);
             relationTime = TMX.getCurrentThreadCpuTime() - relationTime;
             plan.finishPolynomial(totalSieveTime, relationTime, polyGenTime);
@@ -5970,8 +5962,9 @@ public class LargeInteger extends ScalarAtom{
         }
     }
     private static void markLargeRoots(int[] inactive, int largeStart, int[] pos1, int[] pos2, int interval,
-                                       int[] score, int[] logPrimes, int[] hitPrime, int[] hitNext, int[] hitHead,
-                                       int hitCount, int inactivePos, int fbSize){
+                                       int[] score, int[] logPrimes, long[] hitData, int[] hitHead,
+                                       int inactivePos, int fbSize) {
+        int hitCount = 0;
         Arrays.fill(hitHead, -1);
         int lo = largeStart;
         for (int k = inactivePos; k < inactive.length; k++) {
@@ -5983,14 +5976,12 @@ public class LargeInteger extends ScalarAtom{
                 int logP = logPrimes[j];
                 if (x1 < interval) {
                     score[x1] += logP;
-                    hitPrime[hitCount] = j;
-                    hitNext[hitCount] = hitHead[x1];
+                    hitData[hitCount] = ((long) hitHead[x1] << 32) | (j & 0xffffffffL);
                     hitHead[x1] = hitCount++;
                 }
-                if (x2 < interval && x1 != x2) {
+                if (x2 < interval) {
                     score[x2] += logP;
-                    hitPrime[hitCount] = j;
-                    hitNext[hitCount] = hitHead[x2];
+                    hitData[hitCount] = ((long) hitHead[x2] << 32) | (j & 0xffffffffL);
                     hitHead[x2] = hitCount++;
                 }
             }
@@ -6003,44 +5994,52 @@ public class LargeInteger extends ScalarAtom{
             int logP = logPrimes[j];
             if (x1 < interval) {
                 score[x1] += logP;
-                hitPrime[hitCount] = j;
-                hitNext[hitCount] = hitHead[x1];
+                hitData[hitCount] = ((long) hitHead[x1] << 32) | (j & 0xffffffffL);
                 hitHead[x1] = hitCount++;
             }
-            if (x2 < interval && x1 != x2) {
+            if (x2 < interval) {
                 score[x2] += logP;
-                hitPrime[hitCount] = j;
-                hitNext[hitCount] = hitHead[x2];
+                hitData[hitCount] = ((long) hitHead[x2] << 32) | (j & 0xffffffffL);
                 hitHead[x2] = hitCount++;
             }
         }
     }
+    private static void clearUsed(short[] dense, int[] used, int usedCount) {
+        for (int i = 0; i < usedCount; i++)
+            dense[used[i]] = 0;
+    }
     private static void collectQSRelations(long[] N, long[] A, long[] B, long[] twoB, SignedMag C,
                                            int[] score, int interval, long startT, double logQThreshold,
                                            QSFactorBase factorBase, int[] fbIndex,
-                                           int largeStart, int[] inactiveLarge, int[] hitHead, int[] hitNext,
-                                           int[] hitPrime, short[] dense, int[] used, SparseExponents aSparse,
+                                           int largeStart, int[] inactiveLarge, int[] hitHead, long[] hitData,
+                                           short[] dense, SparseExponents aSparse,
                                            ArrayList<QSRelationFull> relations, PartialGraph partials,
                                            AStats plan) {
-        int usedCount;
+        int[] used = new int[factorBase.columnCount];
+        final double allowance = factorBase.filterAllowance;
+        final int scoreThreshold = (int) Math.ceil((logQThreshold - allowance) * LOG_SCALE);
+        final double invLogScale = 1.0 / LOG_SCALE;
         for (int idx = 0; idx < interval; idx++) {
-            double value = score[idx]/LOG_SCALE + factorBase.filterAllowance;
+            int rawScore = score[idx];
+            if (rawScore < scoreThreshold) continue;
+            double value = rawScore * invLogScale + allowance;
             if (value < logQThreshold) continue;
             plan.firstFilterHits++;
             long qEvaluation = TMX.getCurrentThreadCpuTime();
             long t = startT + idx;
-            SignedMag currentQ = multiplyMagnitudeBySigned(A, t).addMagnitude(twoB);
+            SignedMag At = multiplyMagnitudeBySigned(A, t);
+            SignedMag currentQ = At.addMagnitude(twoB);
             currentQ = currentQ.multiplySignedLong(t).add(C);
             double actualLogQ = logMag(currentQ.mag);
             plan.qEvaluation += TMX.getCurrentThreadCpuTime() - qEvaluation;
             if (value < actualLogQ) continue;
             plan.secondFilterHits++;
             long xTime = TMX.getCurrentThreadCpuTime();
-            long[] currentX = multiplyMagnitudeBySigned(A, t).addMagnitude(B).modMag(N);
+            long[] currentX = At.addMagnitude(B).modMag(N);
             plan.xTime += TMX.getCurrentThreadCpuTime() - xTime;
             long fillTime = TMX.getCurrentThreadCpuTime();
             Arrays.fill(dense, (short) 0);
-            usedCount = 0;
+            int usedCount = 0;
             plan.fillTime += TMX.getCurrentThreadCpuTime() - fillTime;
             // A contribution: column 0 is negative, factorBase[j] lives at column j + 1.
             if (currentQ.negative){
@@ -6048,13 +6047,20 @@ public class LargeInteger extends ScalarAtom{
                 incExp(dense, 0);
             }
             long[] remaining = currentQ.mag.clone();
-            if(isZeroArray(remaining)){
+            if (isZeroArray(remaining)) {
+                clearUsed(dense, used, usedCount);
                 plan.observeRelationAdd(RelationAddKind.NONE);
                 continue;
             }
-            if (isOneArray(remaining)){
-                relations.add(new QSRelationFull(new long[][]{currentX}, aSparse.addSparse(compress(dense)),
-                        new long[0][]));
+            if (isOneArray(remaining)) {
+                Arrays.sort(used, 0, usedCount);
+                int[] indexes = Arrays.copyOf(used, usedCount);
+                short[] counts = new short[usedCount];
+                for (int i = 0; i < usedCount; i++)
+                    counts[i] = dense[indexes[i]];
+                SparseExponents sparse = new SparseExponents(indexes, counts).addSparse(aSparse);
+                clearUsed(dense, used, usedCount);
+                relations.add(new QSRelationFull(new long[][]{currentX}, sparse, new long[0][]));
                 plan.observeRelationAdd(RelationAddKind.FULL);
                 continue;
             }
@@ -6072,7 +6078,6 @@ public class LargeInteger extends ScalarAtom{
                     incExp(dense, j + 1);
                     divideMagExactInPlace(remaining, p);
                 }
-                remLength = remaining.length;
                 while(remaining[remLength-1] == 0 && remLength > 1) remLength--;
                 if(remLength == 1){
                     long part = remaining[0];
@@ -6084,6 +6089,7 @@ public class LargeInteger extends ScalarAtom{
             }
             plan.smallDivideTime += TMX.getCurrentThreadCpuTime() - smallDivideTime;
             long nonactiveDivideTime = TMX.getCurrentThreadCpuTime();
+            remLength = remaining.length;
             for (int j : inactiveLarge) {
                 int p = factorBase.primes[j];
                 int column = j+1;
@@ -6093,7 +6099,6 @@ public class LargeInteger extends ScalarAtom{
                     incExp(dense, j + 1);
                     divideMagExactInPlace(remaining, p);
                 }
-                remLength = remaining.length;
                 while(remaining[remLength-1] == 0 && remLength > 1) remLength--;
                 if(remLength == 1){
                     long part = remaining[0];
@@ -6106,9 +6111,11 @@ public class LargeInteger extends ScalarAtom{
             plan.nonactiveDivideTime += TMX.getCurrentThreadCpuTime() - nonactiveDivideTime;
             long hitDivideTime = TMX.getCurrentThreadCpuTime();
             // large-prime part: only recorded hits
-            for (int h = hitHead[idx]; h != -1; h = hitNext[h]) {
+            for (int h = hitHead[idx]; h != -1;) {
                 tested++;
-                int j = hitPrime[h];
+                long node = hitData[h];
+                int j = (int) node;
+                h = (int) (node >>> 32);
                 int p = factorBase.primes[j];
                 int column = j+1;
                 do{
@@ -6116,7 +6123,6 @@ public class LargeInteger extends ScalarAtom{
                     incExp(dense, j + 1);
                     divideMagExactInPlace(remaining, p);
                 }while(modSmallInt(remaining, remLength, p) == 0);
-                remLength = remaining.length;
                 while (remaining[remLength-1] == 0 && remLength > 1) remLength--;
             }
             plan.hitDivideTime += TMX.getCurrentThreadCpuTime() - hitDivideTime;
@@ -6137,11 +6143,14 @@ public class LargeInteger extends ScalarAtom{
                 }
             }
             Arrays.sort(used, 0, usedCount);
-            SparseExponents sparse = new SparseExponents(Arrays.copyOf(used, usedCount), new short[usedCount]);
-            for (int i = 0; i < usedCount; i++) sparse.count[i] = dense[sparse.index[i]];
-            sparse = sparse.addSparse(aSparse);
-            plan.observeRelationAdd(classifyRelation(remaining, sparse, xValues, relations, partials,
-                    fbIndex, factorBase));
+            int[] indexes = Arrays.copyOf(used, usedCount);
+            short[] counts = new short[usedCount];
+            for (int i = 0; i < usedCount; i++)
+                counts[i] = dense[indexes[i]];
+            SparseExponents sparse = new SparseExponents(indexes, counts).addSparse(aSparse);
+            clearUsed(dense, used, usedCount);
+            plan.observeRelationAdd(classifyRelation(remaining, sparse, xValues, relations, partials, fbIndex,
+                    factorBase));
             plan.relationClassifyNs += TMX.getCurrentThreadCpuTime() - classifyTime;
         }
     }
