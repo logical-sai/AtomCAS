@@ -4,7 +4,7 @@ package com.AtomCAS.utilities;
  * It has operations like floor, ceil, basic arithmetic, exponentiation, sign and abs, and so on.
  * approximateToDecimal is still a stub. I'll implement that later.
  */
-public abstract class ScalarAtom extends Atom{
+public abstract class ScalarAtom extends Atom implements Comparable<ScalarAtom>{
     public abstract LargeInteger floor();
     public abstract LargeInteger ceil();
     public abstract int compareMagnitudes(ScalarAtom other);
@@ -23,7 +23,6 @@ public abstract class ScalarAtom extends Atom{
     public abstract boolean isReal();
     public boolean isNotReal(){return !isReal();}
     public abstract boolean isAlgebraic();
-    public boolean isTranscendental(){return !isAlgebraic();}
     public abstract ScalarAtom realPart();
     public abstract ScalarAtom imagPart();
     public abstract ScalarAtom add(ScalarAtom other);

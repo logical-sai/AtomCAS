@@ -1,8 +1,7 @@
 package com.AtomCAS;
 import com.AtomCAS.utilities.*;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.SplittableRandom;
+import java.util.*;
 
 public class DevPlayground {
     private static void testReciprocal(String input) {
@@ -13,7 +12,7 @@ public class DevPlayground {
     static void benchmarkModMagnitudes() {
         SplittableRandom rng = new SplittableRandom(123456789L);
 
-        int[] sizes = {64, 96, 128, 160, 192, 256, 384, 512, 768, 1024};
+        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 160, 192, 256, 384, 512, 768, 1024};
         System.out.printf("%6s %6s %8s %12s %12s %9s%n", "div", "num", "reps", "Knuth(ns)", "BZ(ns)", "BZ/Knuth");
         long sink = 0;
         for (int dLen : sizes) {
@@ -77,7 +76,30 @@ public class DevPlayground {
         if (sink == 0x123456789ABCDEFL)
             System.out.println(sink);
     }
-
+    static void benchmarkMultiplyMagnitudes() {
+        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536};
+        int[] KThresholds = {32, 48, 64, 128, 192, 256, 384, 512, 768};
+        int[] TThresholds = {128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384};
+        for (int mLen : sizes) {
+            LargeInteger A = LargeInteger.randomChunks(mLen);
+            LargeInteger B = LargeInteger.randomChunks(mLen);
+            System.out.println("Chunks: " + mLen);
+            //warmup
+            for(int trial = 0; trial < 100; trial++)
+                sink = A.multiply(B);
+            for(int KT: KThresholds) {
+                if(KT > mLen) continue;
+                for(int TT: TThresholds) {
+                    if(TT > KT) continue;
+                    long start = System.nanoTime();
+                    for(int round = 0; round < mLen; round++)
+                        sink = LargeInteger.multiplyMagnitudesWithThresholds(A.limbs, B.limbs, KT, TT);
+                    long elapsed = System.nanoTime() - start;
+                    System.out.printf("%20.5f", elapsed/1e9/mLen);
+                }
+            }
+        }
+    }
     private static long[] randomBenchmarkMag(
             int limbs,
             SplittableRandom rng
@@ -95,47 +117,77 @@ public class DevPlayground {
     static void testMultiply(){
         int BI_Wins = 0;
         int LI_Wins = 0;
-        double[] ratios = new double[15001];
-        for (int k = 1; k < 15001; k ++) {
-            int trials = 15001-k;
-            LargeInteger A = LargeInteger.randomChunks(k);
-            LargeInteger B = LargeInteger.randomChunks(k);
-            BigInteger BA = A.toBigInteger();
-            BigInteger BB = B.toBigInteger();
+        int[] sizes = {8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536};
+        int pairs = 10;
+        double[] ratios = new double[sizes.length*pairs];
+        for (int k = 0; k < sizes.length; k++) {
+            int trials = 3145728/sizes[k];
+            System.out.println("Chunks tried: " + sizes[k] + " with " + pairs + " pairs and " + trials + " trials per pair");
+            double[] sizeRatios = new double[pairs];
+            for (int l = 0; l < pairs; l++) {
+                LargeInteger A = LargeInteger.randomChunks(sizes[k]);
+                LargeInteger B = LargeInteger.randomChunks(sizes[k]);
+                BigInteger BA = A.toBigInteger();
+                BigInteger BB = B.toBigInteger();
+                LargeInteger LResult = (LargeInteger) A.multiply(B);
+                BigInteger BResult = BA.multiply(BB);
+                if (!LResult.toBigInteger().equals(BResult))
+                    throw new AssertionError("Product is wrong");
+                long liTime;
+                long biTime;
+                long t0;
+                long t1;
+                if (((k * pairs + l) & 1) == 1){
+                    for (int i = 0; i < trials; i++) {
+                        sink = A.multiply(B);
+                        sink = BA.multiply(BB);
+                    }
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = A.multiply(B);
+                    t1 = System.nanoTime();
+                    liTime = t1 - t0;
 
-            LargeInteger LResult = A.square();
-            BigInteger BResult = BA.multiply(BA);
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = BA.multiply(BB);
+                    t1 = System.nanoTime();
+                    biTime = t1 - t0;
 
-            if (!LResult.toBigInteger().equals(BResult))
-                throw new AssertionError("Product is wrong");
-            // Warmup
-            for (int i = 0; i < trials; i++) {
-                sink = A.multiply(B);
-                sink = BA.multiply(BB);
+                } else {
+                    for (int i = 0; i < trials; i++) {
+                        sink = BA.multiply(BB);
+                        sink = A.multiply(B);
+                    }
+
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = BA.multiply(BB);
+                    t1 = System.nanoTime();
+                    biTime = t1 - t0;
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = A.multiply(B);
+                    t1 = System.nanoTime();
+                    liTime = t1 - t0;
+                }
+                double ratio = (double) liTime / biTime;
+                if (ratio < 1.0) LI_Wins++;
+                else BI_Wins++;
+                System.out.println("LargeInteger time: " + liTime / (1e9 * trials) + " seconds/trial");
+                System.out.println("BigInteger time: " + biTime / (1e9 * trials) + " seconds/trial");
+                System.out.println("Ratio: " + ratio);
+                sizeRatios[l] = ratio;
+                ratios[k * pairs + l] = ratio;
             }
-            // Measure LI
-            long t0 = System.nanoTime();
-            for (int i = 0; i < trials; i++)
-                sink = A.multiply(A);
-            long t1 = System.nanoTime();
-            // Measure BI
-            for (int i = 0; i < trials; i++)
-                sink = BA.multiply(BB);
-            long t2 = System.nanoTime();
-            System.out.println("Chunks tried: " + k);
-            System.out.println("Avg. LargeInteger time: " + (t1 - t0) / (1e9 * trials) + " seconds/trial");
-            System.out.println("Avg. BigInteger time: " + (t2 - t1) / (1e9 * trials) + " seconds/trial");
-            double ratio = (t1 - t0) * 1.0 / (t2 - t1);
-            if(ratio < 1.0) LI_Wins++;
-            else BI_Wins++;
-            System.out.println("Ratio: " + ratio);
+            Arrays.sort(sizeRatios);
+            System.out.println("Median for size: " + (sizeRatios[sizeRatios.length/2-1] + sizeRatios[sizeRatios.length/2])/2.0);
             System.out.println();
-            ratios[k/5] = ratio;
         }
         System.out.println("Times LargeInteger won: " + LI_Wins);
         System.out.println("Times BigInteger won: " + BI_Wins);
         Arrays.sort(ratios);
-        System.out.println("Median ratio: " + ratios[ratios.length/2]);
+        System.out.println("Median ratio: " + (ratios[ratios.length/2-1] + ratios[ratios.length/2])/2.0);
     }
     static void testPrimeExponents(){
         long startTime = System.nanoTime();
@@ -174,19 +226,19 @@ public class DevPlayground {
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
     static void benchmarkPowMod(){
-        for(int k: new int[]{1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2000}){
+        for(int k: new int[]{1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
             long LI_time = 0;
             long BI_time = 0;
             int trials = 4000/k;
             for(int j = 0; j < 100; j++){
-                LargeInteger base = LargeInteger.randomChunks(10);
-                LargeInteger exponent = LargeInteger.basePower(k);
-                LargeInteger modulus = LargeInteger.randomChunks(10).or(LargeInteger.ONE);
+                LargeInteger base = LargeInteger.randomChunks(k);
+                LargeInteger exponent = LargeInteger.randomChunks(k);
+                LargeInteger modulus = LargeInteger.randomChunks(k);
                 BigInteger bigBase = base.toBigInteger();
                 BigInteger bigExponent = exponent.toBigInteger();
                 BigInteger bigModulus = modulus.toBigInteger();
                 if(!base.powMod(exponent, modulus).toBigInteger().equals(bigBase.modPow(bigExponent, bigModulus)))
-                    throw new AssertionError("PowMod is wrong");
+                    throw new AssertionError("PowMod for base=" + base + ", exponent=" + exponent + ", and modulus=" + modulus + " is wrong");
                 //warmup
                 for(int i = 0; i < 20; i++){
                     sink = base.powMod(exponent, modulus);
@@ -203,17 +255,34 @@ public class DevPlayground {
                 LI_time += t1 - t0;
                 BI_time += t2 - t1;
             }
-            System.out.println("Chunks tried: " + k);
             System.out.println("Average LI time: " + LI_time/1e9/(100.0*trials) + " seconds/trial");
             System.out.println("Average BI time: " + BI_time/1e9/(100.0*trials) + " seconds/trial");
             System.out.println("LI/BI = " + LI_time*1.0/BI_time);
             System.out.println();
         }
     }
+    record FactorBoss(String value, String origin, String notes) {}
+    @SuppressWarnings("unused")
+    static final List<FactorBoss> factorBosses = List.of(
+            new FactorBoss(
+                    "6428380277058512877402805374285161923129703426793563359435194951116582476919717925450545523629758567927222158921007107167940393067361029334463486674570492299456886839634573238186015211",
+                    "10^303 + 1",
+                    "Extremely difficult factorization with ECM"
+            ),
+            new FactorBoss(
+                    "18748342930951187059699050387401582462321458294019614481729930646671266182084358057158477154583753264703849269569462288159923316207103194097051657281",
+                    "10^280 + 1",
+                    "Extremely difficult factorization"
+            ),
+            new FactorBoss(
+                    "92556179448994367391887834053878562534782033760810527051075248738484727059555245899601591",
+                    "10^97-1",
+                    "Might require higher bounds than the first one on this list"
+            )
+    );
     static void main() {
-        LargeInteger N = new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139");
         long startTime = System.nanoTime();
-        System.out.println(N.quadraticSieveWithoutConstraints());
+        System.out.println(new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139").quadraticSieveWithoutConstraints());
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }

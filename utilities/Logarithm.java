@@ -23,13 +23,9 @@ public class Logarithm extends ScalarAtom {
     @Override
     public boolean isAlgebraic() {return argument instanceof Exp;}
     @Override
-    public ScalarAtom realPart() {
-        return null;
-    }
+    public ScalarAtom realPart() {return null;}
     @Override
-    public ScalarAtom imagPart() {
-        return null;
-    }
+    public ScalarAtom imagPart() {return null;}
     @Override
     public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
