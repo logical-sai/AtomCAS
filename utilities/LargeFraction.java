@@ -74,9 +74,9 @@ public class LargeFraction extends ScalarAtom {
     @Override
     public int compareMagnitudes(ScalarAtom other) {
         if (other instanceof LargeInteger I)
-            return LargeInteger.compareArray(numerator.limbs, LargeInteger.multiplyMagnitudes(denominator.limbs, I.limbs));
+            return numerator.compareMagnitudes(I.multiply(denominator));
         else if (other instanceof LargeFraction F)
-            return LargeInteger.compareArray(LargeInteger.multiplyMagnitudes(numerator.limbs, F.denominator.limbs), LargeInteger.multiplyMagnitudes(denominator.limbs, F.numerator.limbs));
+            return numerator.multiply(F.denominator).compareMagnitudes(F.numerator.multiply(denominator));
         else if(other instanceof LargePowerMonomial LPM){
             LargeFraction f = this.power(LPM.exponent.denominator);
             LargeFraction o = LPM.power(new LargeFraction(LPM.exponent.denominator, LargeInteger.ONE)).base;

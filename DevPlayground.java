@@ -261,6 +261,67 @@ public class DevPlayground {
             System.out.println();
         }
     }
+
+    static void testPower() {
+        for (int size : new int[]{1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}) {
+            long LI_time = 0;
+            long BI_time = 0;
+            int trials;
+            if (size <= 16)       trials = 5000;
+            else if (size <= 64)  trials = 2000;
+            else if (size <= 256) trials = 500;
+            else if (size <= 512) trials = 200;
+            else if (size <= 1024) trials = 50;
+            else                  trials = 20;
+            System.out.println("Chunk size: " + size);
+            for (int k = 0; k < 100; k++) {
+                LargeInteger L5 = LargeInteger.randomChunks(size);
+                LargeInteger L6 = LargeInteger.randomChunks(size);
+                if(L5.lessThan(L6)){
+                    LargeInteger temp =  L5;
+                    L5 = L6;
+                    L6 = temp;
+                }
+                BigInteger B5 = L5.toBigInteger();
+                BigInteger B6 = L6.toBigInteger();
+                if(!L5.remainder(L6).toBigInteger().equals(B5.remainder(B6)))
+                    throw new AssertionError("toString is wrong");
+                if ((k & 1) == 1) {
+                    for (int i = 0; i < trials / 2; i++) {
+                        sink = L5.toString();
+                        sink = B5.toString();
+                    }
+                    long t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = L5.toString();
+                    long t1 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = B5.toString();
+                    long t2 = System.nanoTime();
+                    LI_time += t1 - t0;
+                    BI_time += t2 - t1;
+                } else {
+                    for (int i = 0; i < trials / 2; i++) {
+                        sink = B5.toString();
+                        sink = L5.toString();
+                    }
+                    long t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = B5.toString();
+                    long t1 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = L5.toString();
+                    long t2 = System.nanoTime();
+                    LI_time += t2 - t1;
+                    BI_time += t1 - t0;
+                }
+            }
+            System.out.println("LI time: " + LI_time / 1e9 / (trials * 100) + " seconds/trial");
+            System.out.println("BI time: " + BI_time / 1e9 / (trials * 100) + " seconds/trial");
+            System.out.println("Ratio: " + LI_time * 1.0 / BI_time);
+            System.out.println();
+        }
+    }
     record FactorBoss(String value, String origin, String notes) {}
     @SuppressWarnings("unused")
     static final List<FactorBoss> factorBosses = List.of(
@@ -277,14 +338,11 @@ public class DevPlayground {
             new FactorBoss(
                     "92556179448994367391887834053878562534782033760810527051075248738484727059555245899601591",
                     "10^97-1",
-                    "Might require higher bounds than the first one on this list"
+                    "Might require higher bounds or more curves than the first one on this list"
             )
     );
     static void main() {
-        long startTime = System.nanoTime();
         System.out.println(new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139").quadraticSieveWithoutConstraints());
-        long elapsedTime = System.nanoTime() - startTime;
-        System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");

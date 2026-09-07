@@ -6,7 +6,8 @@ public final class CASTrace {
     private static boolean enabled = false;
     private static LogNode root;
     private static final Deque<LogNode> stack = new ArrayDeque<>();
-    private CASTrace() {throw new UnsupportedOperationException("You haven't learned your lesson, have you? If not, why do you still code?");}
+    private CASTrace() {
+        throw new UnsupportedOperationException("Why are you doing this?");}
     public static void enable() {
         enabled = true;
         root = null;

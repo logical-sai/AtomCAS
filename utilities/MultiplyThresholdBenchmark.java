@@ -5,11 +5,11 @@ import java.util.SplittableRandom;
 
 public class MultiplyThresholdBenchmark {
     private static volatile long sink;
-
     private static final int SAMPLES = 7;
     private static final long SAMPLE_TIME_NS = 50_000_000L; // 50 ms/sample
     private static final long WARMUP_TIME_NS = 100_000_000L;
 
+    private MultiplyThresholdBenchmark() {}
     private static long[] randomMagnitude(int limbs, SplittableRandom rng) {
         long[] x = new long[limbs];
 
