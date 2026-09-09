@@ -54,7 +54,7 @@ public abstract class Atom {
     public final boolean equals(Object other) {
         if (other instanceof Atom A)
             return equals(A);
-        return hashCode() == other.hashCode();
+        return false;
     }
     public abstract boolean equals(Atom other);
     public boolean doesntEqual(Object other){return !equals(other);}

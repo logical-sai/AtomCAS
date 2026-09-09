@@ -216,7 +216,7 @@ public class LargePolynomial{
                 if(expTemp.equals(LargeInteger.ONE)) break;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.longDivision(LargeInteger.TWO);
+            expTemp = expTemp.shiftRight(1);
         }
         return P;
     }
@@ -266,7 +266,7 @@ public class LargePolynomial{
         }
         // Φ_2m(x) = Φ_m(-x), m odd
         if (n.isEven()) {
-            LargeInteger m = n.longDivision(LargeInteger.TWO);
+            LargeInteger m = n.shiftRight(1);
             if (m.isOdd())
                 return cyclotomic(m).compose(x().negate());
         }
@@ -332,7 +332,7 @@ public class LargePolynomial{
                 //x = (-1)^(p/q) * b^(r/s)
                 LargeInteger I = L.exponent2.denominator.lcm(L.exponent.denominator);
                 P = P.monomialPower(I);
-                LargePowerMonomial M = L.power(new LargeFraction(I, LargeInteger.ONE));
+                LargePowerMonomial M = L.power(I);
                 if (M.exponent2.equals(LargeInteger.ONE)) P = P.add(M.base);
                 else P = P.add(M.base.negate());
                 return P.primitivePart();
@@ -806,7 +806,6 @@ class ModPolynomial {
                 new ModPolynomial(rem, p)
         };
     }
-    public ModPolynomial longDivision(ModPolynomial divisor) throws CloneNotSupportedException {return divideAndRemainder(divisor)[0];}
     public ModPolynomial remainder(ModPolynomial divisor) throws CloneNotSupportedException {return divideAndRemainder(divisor)[1];}
     ModPolynomial derivative() {
         LargeList<LargeInteger> out = new LargeList<>();

@@ -224,7 +224,7 @@ public class RadicalTermSum extends ScalarAtom{
             LargeFraction ceilSum = LargeFraction.ZERO;
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(floors.size()); i = i.add(1)){
                 LargeFraction mediant = new LargeFraction((LargeInteger) floors.get(i).numerator.add(ceilings.get(i).numerator), (LargeInteger) floors.get(i).denominator.add(ceilings.get(i).denominator));
-                if(mediant.compareTo(sum.keyAtIndex(i).multiply(sum.get(sum.keyAtIndex(i)))) == -1) floors.set(i, mediant);
+                if(mediant.compareTo(sum.keyAtIndex(i).multiply(sum.get(sum.keyAtIndex(i)))) < 0) floors.set(i, mediant);
                 else ceilings.set(i, mediant);
                 floorSum = (LargeFraction) floorSum.add(floors.get(i));
                 ceilSum = (LargeFraction) ceilSum.add(ceilings.get(i));
@@ -353,7 +353,7 @@ public class RadicalTermSum extends ScalarAtom{
                 if(expTemp.equals(LargeInteger.ONE)) break;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.longDivision(LargeInteger.TWO);
+            expTemp = expTemp.shiftRight(1);
         }
         return res;
     }

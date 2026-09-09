@@ -35,7 +35,7 @@ public class ScalarList{
             sortRangeWithArrayList(bottom, top);
             return;
         }
-        LargeInteger mid = ((LargeInteger) bottom.add(top)).longDivision(LargeInteger.TWO);
+        LargeInteger mid = ((LargeInteger) bottom.add(top)).shiftRight(1);
         mergeSort(bottom, mid);
         mergeSort(mid, top);
         //merge step
@@ -87,8 +87,8 @@ public class ScalarList{
         requireReal("median");
         sort();
         if (list.intSize() == 0) throw new IllegalArgumentException("Cannot calculate median of empty list");
-        if (list.size().isOdd()) return list.get(list.size().longDivision(LargeInteger.TWO));
-        else return list.get(list.size().longDivision(LargeInteger.TWO)).add(list.get((LargeInteger) list.size().longDivision(LargeInteger.TWO).subtract(LargeInteger.ONE))).divide(LargeInteger.TWO);
+        if (list.size().isOdd()) return list.get(list.size().shiftRight(1));
+        else return list.get(list.size().shiftRight(1)).add(list.get((LargeInteger) list.size().shiftRight(1).subtract(LargeInteger.ONE))).divide(LargeInteger.TWO);
     }
     public ScalarAtom mean() {
         ScalarAtom result = LargeInteger.ZERO;
@@ -106,10 +106,10 @@ public class ScalarList{
             throw new IllegalArgumentException("Need at least 2 values in list");
         sort();
         LargeList<ScalarAtom> copy = new LargeList<>();
-        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(list.size().longDivision(LargeInteger.TWO)); i = (LargeInteger) i.add(LargeInteger.ONE))
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(list.size().shiftRight(1)); i = (LargeInteger) i.add(LargeInteger.ONE))
             copy.add(list.get(i));
         LargeList<ScalarAtom> copy2 = new LargeList<>();
-        for (LargeInteger i = (LargeInteger) list.size().longDivision(LargeInteger.TWO).add(LargeInteger.ONE); i.lessThan(list.size()); i = (LargeInteger) i.add(LargeInteger.ONE))
+        for (LargeInteger i = (LargeInteger) list.size().shiftRight(1).add(LargeInteger.ONE); i.lessThan(list.size()); i = (LargeInteger) i.add(LargeInteger.ONE))
             copy2.add(list.get(i));
         return new ScalarList(copy2).median().subtract(new ScalarList(copy).median());
     }

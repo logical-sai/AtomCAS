@@ -6,7 +6,7 @@ import java.util.*;
 public class DevPlayground {
     private static void testReciprocal(String input) {
         ScalarAtom x = Parser.parse(input);
-        System.out.println("1/(" + x + ") = " + x.reciprocal());
+        x.reciprocal();
     }
     static volatile Object sink = new Object();
     static void benchmarkModMagnitudes() {
@@ -394,7 +394,7 @@ public class DevPlayground {
         System.out.println();
     }
     private static void demoRadicalReciprocals(){
-        System.out.println("=== Advanced reciprocal Demo ===");
+        //System.out.println("=== Advanced reciprocal Demo ===");
         // Rational-only
         testReciprocal("2");
         testReciprocal("-3/7");
@@ -448,7 +448,7 @@ public class DevPlayground {
         testReciprocal("1+√-1");
         testReciprocal("(-1)^(1/3) - (-1)^(1/4)");
         testReciprocal("(-1)^(1/5) - (-1)^(4/5)");
-        System.out.println();
+        //System.out.println();
     }
     private static void demoVectorsMatrices() {
         System.out.println("=== Vector / Matrix Demo ===");

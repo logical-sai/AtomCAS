@@ -6,6 +6,15 @@ public class LargeMap<K, V>{
         keys = new LargeList<>();
         values = new LargeList<>();
     }
+    private LargeMap(LargeList<K> keys, LargeList<V> values){
+        if(keys.size().doesntEqual(values.size()))
+            throw new IllegalArgumentException();
+        this.keys = keys;
+        this.values = values;
+    }
+    public LargeMap<K, V> copy(){
+        return new LargeMap<>(keys, values);
+    }
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("{");

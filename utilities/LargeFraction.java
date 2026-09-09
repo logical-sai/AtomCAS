@@ -79,7 +79,7 @@ public class LargeFraction extends ScalarAtom {
             return numerator.multiply(F.denominator).compareMagnitudes(F.numerator.multiply(denominator));
         else if(other instanceof LargePowerMonomial LPM){
             LargeFraction f = this.power(LPM.exponent.denominator);
-            LargeFraction o = LPM.power(new LargeFraction(LPM.exponent.denominator, LargeInteger.ONE)).base;
+            LargeFraction o = LPM.power(LPM.exponent.denominator).base;
             return f.compareTo(o);
         }else if(other instanceof RadicalTerm RT)
             return this.subtract(RT.rationalPart).divide(RT.coefficient).compareMagnitudes(RT.exponent);

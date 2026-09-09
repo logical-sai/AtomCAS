@@ -198,8 +198,7 @@ public class LargeInteger extends ScalarAtom{
         StringBuilder sb = new StringBuilder();
         sb.append(left);
         sb.repeat('0', Math.toIntExact(Math.max(m-right.length(), 0)));
-        sb.append(right);
-        return sb.toString();
+        return sb.append(right).toString();
     }
     @Override
     public String toString() {
@@ -230,16 +229,14 @@ public class LargeInteger extends ScalarAtom{
     @Override
     public boolean equals(Atom other) {
         if (!(other instanceof ScalarAtom)) return false;
-        else if (other instanceof LargeInteger I)
-            return equalsArray(limbs, I.limbs) && negative == I.negative;
-        else if(other instanceof LargeFraction F)
-            return equals(F.numerator) && isOneArray(F.denominator.limbs);
-        else if(other instanceof LargePowerMonomial LPM){
-            if(LPM.exponent2.equals(ONE) != negative) return false;
-            return LPM.base.equals(this) && LPM.exponent.equals(ONE);
-        }else if(other instanceof RadicalTerm RT)
-            return RT.rationalPart.equals(this) && RT.exponent.equals(ZERO);
-        return compareTo((ScalarAtom) other) == 0;
+        return switch (other) {
+            case LargeInteger I -> equalsArray(limbs, I.limbs) && negative == I.negative;
+            case LargeFraction F -> equals(F.numerator) && isOneArray(F.denominator.limbs);
+            case LargePowerMonomial LPM ->
+                    LPM.exponent2.equals(ONE) == negative && LPM.base.equals(this) && LPM.exponent.equals(ONE);
+            case RadicalTerm RT -> RT.rationalPart.equals(this) && RT.exponent.equals(ZERO);
+            default -> compareTo((ScalarAtom) other) == 0;
+        };
     }
     public LargeInteger sign() {
         if (negative) return NEGATIVE_ONE;
@@ -362,6 +359,23 @@ public class LargeInteger extends ScalarAtom{
         while (res[res.length - 1] == 0) res[res.length - 1] = SECURE_RNG.nextLong();
         return new LargeInteger(res, false);
     }
+    public static LargeInteger randomBits(long bits) {
+        if (bits < 0)
+            throw new IllegalArgumentException("Bits must be nonnegative");
+        if (bits == 0) return ZERO;
+        if (bits > MAX_BITS) reportOverflow();
+        int chunks = Math.toIntExact((bits + 63) >>> 6);
+        long[] value = new long[chunks];
+        for (int i = 0; i < chunks; i++)
+            value[i] = SECURE_RNG.nextLong();
+        int topBit = Math.toIntExact((bits - 1) & 63);
+        // Remove bits above the requested bit length.
+        if (topBit != 63)
+            value[chunks - 1] &= (1L << (topBit + 1)) - 1;
+        // Force exact bit length.
+        value[chunks - 1] |= 1L << topBit;
+        return new LargeInteger(value, false);
+    }
     static int compareArray(long[] a, long[] b) {
         int alen = a.length;
         while (alen > 1 && a[alen - 1] == 0L) alen--;
@@ -376,7 +390,9 @@ public class LargeInteger extends ScalarAtom{
         return 0;
     }
     private static int compareSmall(long[] a, long b){
-        if(a.length > 1) return 1;
+        int alen = a.length;
+        while (alen > 1 && a[alen - 1] == 0L) alen--;
+        if(alen > 1) return 1;
         return Long.compareUnsigned(a[0], b);
     }
     static boolean equalsArray(long[] a, long[] b) {
@@ -1521,7 +1537,7 @@ public class LargeInteger extends ScalarAtom{
     public static LargeInteger productRange(LargeInteger left, LargeInteger right) {
         if (left.equals(right)) return left;
         if (right.subtract(left).equals(ONE)) return (LargeInteger) left.multiply(right);
-        LargeInteger mid = ((LargeInteger) left.add(right)).longDivision(TWO);
+        LargeInteger mid = ((LargeInteger) left.add(right)).shiftRight(1);
         return (LargeInteger) productRange(left, mid).multiply(productRange(mid.add(1), right));
     }
     public LargeInteger factorial() {
@@ -1532,21 +1548,20 @@ public class LargeInteger extends ScalarAtom{
     public LargeInteger nCr(LargeInteger l) {
         if (lessThan(l)) return ZERO;
         else if (isZeroArray(l.limbs)) return ONE;
-        return productRange((LargeInteger) subtract(l).add(ONE), this).longDivision(l.factorial());
+        return productRange((LargeInteger) subtract(l.add(1)), this).longDivision(l.factorial());
     }
     public LargeFraction nPr(LargeInteger l) {
         LargeInteger temp = (LargeInteger) subtract(l);
         if (temp.negative) return LargeFraction.ZERO;
         return new LargeFraction(factorial(), temp.factorial());
     }
-    public LargeInteger triangular() {return ((LargeInteger) multiply(add(1))).longDivision(TWO);}
+    public LargeInteger triangular() {return ((LargeInteger) multiply(add(1))).shiftRight(1);}
     public LargeInteger tetrahedral() {return add(2).nCr(THREE);}
     public static LargeInteger figurate(LargeInteger l, LargeInteger k) {
         return ((LargeInteger) k.subtract(1).add(l)).nCr(k);}
     private static final long U32_MASK = 0xFFFF_FFFFL;
     private static final long U32_BASE = 1L << 32;
     private record DivRem3By2(int quotient, int remHigh, int remLow) {}
-
     private static DivRem3By2 divideThreeByTwo(int a1, int a2, int a3, int b1, int b2) {
         long A1 = Integer.toUnsignedLong(a1);
         long A2 = Integer.toUnsignedLong(a2);
@@ -1634,6 +1649,7 @@ public class LargeInteger extends ScalarAtom{
         }
         return new DivRem(trimLeadingZeros(q), rem);
     }
+    private record DivRem(long[] quotient, long remainder) {}
     private static void divideMagExactInPlace(long[] a, long divisor) {
         if (divisor == 0L)
             throw new ArithmeticException("divide by zero");
@@ -1682,7 +1698,6 @@ public class LargeInteger extends ScalarAtom{
         if (carry != 0L)
             throw new ArithmeticException("not exactly divisible by " + Long.toUnsignedString(divisor));
     }
-    private record DivRem(long[] quotient, long remainder) {}
     static long[][] divideMagnitudes(long[] dividend, long[] divisor){
         dividend = trimLeadingZeros(dividend);
         divisor  = trimLeadingZeros(divisor);
@@ -2009,7 +2024,7 @@ public class LargeInteger extends ScalarAtom{
         System.arraycopy(r, 0, rFull, m, Math.min(r.length, m + 1));
         int corrections = 0;
         while (compareArray(rFull, d) < 0) {
-            rFull = addMagnitudes(rFull, divisor);
+            addMagnitudeInPlace(rFull, divisor, 0);
             subtractMagnitudeInPlace(q, ONE_MAG);
             if (++corrections > 2)
                 throw new AssertionError("BZ divide3nBy2n required too many corrections");
@@ -2017,7 +2032,7 @@ public class LargeInteger extends ScalarAtom{
         subtractMagnitudeInPlace(rFull, d);
         return new long[][]{trimLeadingZeros(q), trimLeadingZeros(rFull)};
     }
-    private static long[] divideExactMag(long[] n, long[] d) {
+    private static long[] divideMagnitudesExact(long[] n, long[] d) {
         long[][] DR = divideMagnitudes(n, d);
         if(!isZeroArray(DR[1]))
             throw new ArithmeticException("Division was not exact");
@@ -2036,17 +2051,46 @@ public class LargeInteger extends ScalarAtom{
         long[] r = modMagnitudes(limbs, other.limbs);
         return new LargeInteger(r, negative, true);
     }
+    private static long remainder128By64(long high, long low, long divisor) {
+        if (divisor == 0L)
+            throw new ArithmeticException("divide by zero");
+        // Required by this specialized routine.
+        // modSmall maintains this invariant.
+        assert Long.compareUnsigned(high, divisor) < 0;
+        if (high == 0L)
+            return Long.remainderUnsigned(low, divisor);
+        int shift = Long.numberOfLeadingZeros(divisor);
+        long d;
+        long nHigh;
+        long nLow;
+        if (shift == 0) {
+            d = divisor;
+            nHigh = high;
+            nLow = low;
+        } else {
+            d = divisor << shift;
+            nHigh = (high << shift) | (low >>> (64 - shift));
+            nLow = low << shift;
+        }
+        int u3 = (int) (nHigh >>> 32);
+        int u2 = (int) nHigh;
+        int u1 = (int) (nLow >>> 32);
+        int u0 = (int) nLow;
+        int v1 = (int) (d >>> 32);
+        int v0 = (int) d;
+        DivRem3By2 first = divideThreeByTwo(u3, u2, u1, v1, v0);
+        DivRem3By2 second = divideThreeByTwo(first.remHigh, first.remLow, u0, v1, v0);
+        long rNormalized = (Integer.toUnsignedLong(second.remHigh) << 32) | Integer.toUnsignedLong(second.remLow);
+        return shift == 0 ? rNormalized : rNormalized >>> shift;
+    }
     private static long modSmall(long[] a, long d) {
-        if (d == 0L)
-            throw new ArithmeticException("Cannot divide by 0");
-        if (a.length == 1)
-            return Long.remainderUnsigned(a[0], d);
+        if (d == 0L) throw new ArithmeticException("Cannot divide by 0");
+        if (a.length == 1) return Long.remainderUnsigned(a[0], d);
         if ((d & (d - 1)) == 0) return a[0] & (d - 1);
         if(Long.compareUnsigned(d, Integer.MAX_VALUE) < 0)
             return modSmallInt(a, a.length, (int) d, Long.divideUnsigned(-1L, d));
         long r = 0L;
-        for (int i = a.length - 1; i >= 0; i--)
-            r = new LongPair(r, a[i]).divideByLong(d).remainder;
+        for (int i = a.length - 1; i >= 0; i--) r = remainder128By64(r, a[i], d);
         return r;
     }
     private static int modSmallInt(long[] a, int len, int p, long reciprocal) {
@@ -2078,9 +2122,7 @@ public class LargeInteger extends ScalarAtom{
         return r == 0 ? 0 : p - r;
     }
     private static final int MOD_BZ_BLOCK_THRESHOLD = 192;
-    private static long[] modMagnitudes(long[] dividend, long[] divisor){
-        return modMagnitudesWithThresholds(dividend, divisor, MOD_BZ_BLOCK_THRESHOLD);}
-    public static long[] modMagnitudesWithThresholds(long[] dividend, long[] divisor, int MOD_BZ_BLOCK_THRESHOLD) {
+    private static long[] modMagnitudes(long[] dividend, long[] divisor) {
         dividend = trimLeadingZeros(dividend);
         divisor  = trimLeadingZeros(divisor);
         if (isZeroArray(divisor))
@@ -2090,7 +2132,7 @@ public class LargeInteger extends ScalarAtom{
         if (cmp == 0) return ZERO_MAG;
         if (divisor.length == 1)
             return new long[]{modSmall(dividend, divisor[0])};
-        if (divisor.length < MOD_BZ_BLOCK_THRESHOLD || dividend.length >= divisor.length * 2)
+        if (divisor.length < LargeInteger.MOD_BZ_BLOCK_THRESHOLD || dividend.length >= divisor.length * 2)
             return modMagnitudesKnuth(dividend, divisor);
         return modMagnitudesBurnikelZiegler(dividend, divisor);
     }
@@ -2329,7 +2371,7 @@ public class LargeInteger extends ScalarAtom{
                 if (expTemp.equals(ONE)) break;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.longDivision(TWO);
+            expTemp = expTemp.shiftRight(1);
         }
         if (other.negative) return result.reciprocal();
         return result;
@@ -2971,61 +3013,31 @@ public class LargeInteger extends ScalarAtom{
             out[len - 1] &= (1L << rem) - 1;
         return out;
     }
-    private static long powMod64(long[] base, long[] exponent, long modulus) { //Assumes 0 < modulus < 2^64
+    private static long powMod64(long[] base, long[] exponent, long modulus){
         if (modulus == 1) return 0;
         if (isZeroArray(exponent)) return 1L;
         if (modulus == 2)
             return isEvenMag(base) ? 0 : 1;
         long baseTemp = modSmall(base, modulus);
-        long result = 1;
+        long result = baseTemp;
         int top = exponent.length - 1;
-
         long limb = exponent[top];
         int firstBit = 63 - Long.numberOfLeadingZeros(limb);
+
         for (int bit = firstBit; bit >= 0; bit--) {
-            result = mulMod64(result, result, modulus);
+            result = remainder128By64(Math.unsignedMultiplyHigh(result, result), result*result, modulus);
             if (((limb >>> bit) & 1L) != 0)
-                result = mulMod64(result, baseTemp, modulus);
+                result = remainder128By64(Math.unsignedMultiplyHigh(result, baseTemp), baseTemp*result, modulus);
         }
         for (int i = top - 1; i >= 0; i--) {
             limb = exponent[i];
             for (int bit = 63; bit >= 0; bit--) {
-                result = mulMod64(result, result, modulus);
+                result = remainder128By64(Math.unsignedMultiplyHigh(result, result), result*result, modulus);
                 if (((limb >>> bit) & 1L) != 0)
-                    result = mulMod64(result, baseTemp, modulus);
+                    result = remainder128By64(Math.unsignedMultiplyHigh(result, baseTemp), baseTemp*result, modulus);
             }
         }
         return result;
-    }
-    private static long mulMod64(long a, long b, long modulus) {
-        // Preconditions: 0 <= a,b < modulus < 2^64 (unsigned).
-        // Therefore, a*b/modulus < modulus < 2^64, so the quotient
-        // of the 128-by-64 division fits in one unsigned 64-bit word.
-        LongPair p = LongPair.multiply64(a, b);
-        if (p.high == 0) return Long.remainderUnsigned(p.low, modulus);
-        int shift = Long.numberOfLeadingZeros(modulus);
-        long d;
-        long nHigh;
-        long nLow;
-        if (shift == 0) {
-            d = modulus;
-            nHigh = p.high;
-            nLow = p.low;
-        } else {
-            d = modulus << shift;
-            nHigh = (p.high << shift) | (p.low >>> (64 - shift));
-            nLow = p.low << shift;
-        }
-        int u3 = (int) (nHigh >>> 32);
-        int u2 = (int) nHigh;
-        int u1 = (int) (nLow >>> 32);
-        int u0 = (int) nLow;
-        int v1 = (int) (d >>> 32);
-        int v0 = (int) d;
-        DivRem3By2 first = divideThreeByTwo(u3, u2, u1, v1, v0);
-        DivRem3By2 second = divideThreeByTwo(first.remHigh, first.remLow, u0, v1, v0);
-        long r = (Integer.toUnsignedLong(second.remHigh) << 32) | Integer.toUnsignedLong(second.remLow);
-        return shift == 0 ? r : r >>> shift;
     }
     private static int powMod(long base, long exp, int mod, long reciprocal) {
         long res = 1;
@@ -3878,10 +3890,10 @@ public class LargeInteger extends ScalarAtom{
             throw new IllegalArgumentException("Jacobi denominator must be positive and odd");
         LargeInteger a = (LargeInteger) mod(n);
         int result = 1;
-        while (a.doesntEqual(ZERO)) {
+        while (!isZeroArray(a.limbs)) {
             while (a.isEven()) {
-                a = a.longDivision(TWO);
-                int nMod8 = (int)modSmall(n.limbs, 8);
+                a = a.shiftRight(1);
+                int nMod8 = (int)n.mod(8);
                 if (nMod8 == 3 || nMod8 == 5)
                     result = -result;
             }
@@ -4095,7 +4107,7 @@ public class LargeInteger extends ScalarAtom{
     private static void splitAndQueue(ArrayDeque<FactorJob> work, FactorJob parent, long[] candidate) {
         if (!isNontrivialFactor(candidate, parent.n))
             throw new IllegalArgumentException("Invalid factor returned by factoring algorithm");
-        long[] h = divideExactMag(parent.n, candidate);
+        long[] h = divideMagnitudesExact(parent.n, candidate);
         if (!equalsArray(multiplyMagnitudes(candidate, h), parent.n))
             throw new AssertionError("Factor split does not reconstruct parent");
         FactorJob gJob = parent.child(candidate);
@@ -4123,9 +4135,9 @@ public class LargeInteger extends ScalarAtom{
     private interface FactorCall { long[] run();}
     private record TimedFactorResult(long[] factor, long elapsedNanos){}
     private static TimedFactorResult timeFactorCall(FactorCall call) {
-        long start = System.nanoTime();
+        long start = TMX.getCurrentThreadCpuTime();
         long[] factor = call.run();
-        return new TimedFactorResult(factor, System.nanoTime() - start);
+        return new TimedFactorResult(factor, TMX.getCurrentThreadCpuTime() - start);
     }
     /**
      * Factors a limbs into multiplicative components. Usually this means prime factors.
@@ -4164,11 +4176,11 @@ public class LargeInteger extends ScalarAtom{
                     long[] factor2 = addSmall(addMagnitudes(
                             shiftLeftBits(DR.quotient, 1), shiftLeftBits(sqrtM, 1)), 1);
                     if (isNontrivialFactor(factor1, copy) && isNontrivialFactor(factor2, copy)) {
-                        copy = divideExactMag(copy, factor1);
+                        copy = divideMagnitudesExact(copy, factor1);
                         LargeMap<MagKey, Long> F1 = factorMag(factor1);
                         for (MagKey K : F1.keys())
                             addFactor(factorMap, K, F1.get(K));
-                        copy = divideExactMag(copy, factor2);
+                        copy = divideMagnitudesExact(copy, factor2);
                         LargeMap<MagKey, Long> F2 = factorMag(factor2);
                         for (MagKey K : F2.keys())
                             addFactor(factorMap, K, F2.get(K));
@@ -4186,7 +4198,7 @@ public class LargeInteger extends ScalarAtom{
                                     .evaluateAt(new LargeInteger(minusForm.base, false))).limbs;
                     if (isOneArray(value)) continue;
                     if (equalsArray(value, copy)) break;
-                    copy = divideExactMag(copy, value);
+                    copy = divideMagnitudesExact(copy, value);
                     LargeMap<MagKey, Long> subFactors = factorMag(value);
                     for (MagKey base : subFactors.keys())
                         addFactor(factorMap, base, subFactors.get(base));
@@ -4199,11 +4211,11 @@ public class LargeInteger extends ScalarAtom{
                 LargeList<LargeInteger> divisors = n.divisors();
                 for (LargeInteger d : divisors) {
                     long[] value = ((LargeInteger)
-                            LargePolynomial.cyclotomic(d.multiply(2))
+                            LargePolynomial.cyclotomic(d.shiftLeft(1))
                                     .evaluateAt(new LargeInteger(plusForm.base, false))).limbs;
                     if (isOneArray(value)) continue;
                     if (equalsArray(value, copy)) break;
-                    copy = divideExactMag(copy, value);
+                    copy = divideMagnitudesExact(copy, value);
                     LargeMap<MagKey, Long> subFactors = factorMag(value);
                     for (MagKey base : subFactors.keys())
                         addFactor(factorMap, base, subFactors.get(base));
@@ -4367,7 +4379,7 @@ public class LargeInteger extends ScalarAtom{
         LargeInteger result = ZERO;
         for (LargeInteger I : divisors())
             result = (LargeInteger) result.add(I);
-        return multiply(2).equals(result);
+        return shiftLeft(1).equals(result);
     }
     //the inverse of the factor method
     public static LargeInteger buildFromFactors(LargeMap<LargeInteger, LargeFraction> pr) {
@@ -4383,7 +4395,7 @@ public class LargeInteger extends ScalarAtom{
                     if (isOneArray(expTemp.limbs)) break;
                 }
                 basTemp = basTemp.square();
-                expTemp = expTemp.longDivision(TWO);
+                expTemp = expTemp.shiftRight(1);
             }
         }
         return result;
@@ -4742,7 +4754,7 @@ public class LargeInteger extends ScalarAtom{
         private MontgomeryPoint doublePointCanonical(MontgomeryPoint P, ECMStats stats) {
             long t0 = 0;
             if (stage2)
-                t0 = System.nanoTime();
+                t0 = TMX.getCurrentThreadCpuTime();
 
             // s0 = X + Z
             reducer.addInto(P.X, P.Z, s0);
@@ -4775,7 +4787,7 @@ public class LargeInteger extends ScalarAtom{
             reducer.multiplyInto(s2, s3, Z2);
 
             if (stage2){
-                stats.stage2DoublingTime += System.nanoTime() - t0;
+                stats.stage2DoublingTime += TMX.getCurrentThreadCpuTime() - t0;
                 stats.stage2MontMultiplications += 2;
             }
 
@@ -4791,7 +4803,7 @@ public class LargeInteger extends ScalarAtom{
                 ECMStats stats) {
             long t0 = 0;
             if (stage2)
-                t0 = System.nanoTime();
+                t0 = TMX.getCurrentThreadCpuTime();
             // s0 = Xp + Zp
             reducer.addInto(P.X, P.Z, s0);
             // s1 = Xp - Zp
@@ -4819,7 +4831,7 @@ public class LargeInteger extends ScalarAtom{
             reducer.multiplyInto(PMinusQ.Z, s0, X);
             reducer.multiplyInto(PMinusQ.X, s1, Z);
             if (stage2){
-                stats.stage2DifferentialAdditionTime += System.nanoTime() - t0;
+                stats.stage2DiffAdditionTime += TMX.getCurrentThreadCpuTime() - t0;
                 stats.stage2MontMultiplications += 4;
             }
             return new MontgomeryPoint(X, Z);
@@ -5133,7 +5145,7 @@ public class LargeInteger extends ScalarAtom{
     }
     private static final class ECMStats {
         final ECMPlan plan;
-        final long planStartNanos = System.nanoTime();
+        final long planStartNanos = TMX.getCurrentThreadCpuTime();
 
         int usableCurves;
         long curveCreateNanos;
@@ -5149,7 +5161,7 @@ public class LargeInteger extends ScalarAtom{
         long stage2TermCount = 0;
         long stage2BlockCount = 0;
         long stage2DoublingTime = 0;
-        long stage2DifferentialAdditionTime = 0;
+        long stage2DiffAdditionTime = 0;
         long blockProcessTime = 0;
         long blockTermCount = 0;
         long stage2MontMultiplications = 0;
@@ -5165,7 +5177,7 @@ public class LargeInteger extends ScalarAtom{
                 System.out.println("During replay, found found due to prime " + replayPrime);
             System.out.println();
         }
-        long totalPlanNanos() {return System.nanoTime() - planStartNanos;}
+        long totalPlanNanos() {return TMX.getCurrentThreadCpuTime() - planStartNanos;}
     }
     private static final ECMPlan[] ECM_EXTREME_PLANS = {
             new ECMPlan(2_000L, 200_000L, 64),
@@ -5312,31 +5324,31 @@ public class LargeInteger extends ScalarAtom{
         } catch(FactorFoundException e){return e.factor;}
         System.out.println("32 curves tried with bounds " + plan.B1 + " and " + plan.B2 + "; "
                 + stats.usableCurves + " being useful");
-        System.out.println("Time for creating all the curves: " + stats.curveCreateNanos / 1e9 + " seconds");
-        System.out.println("Stage 1 sieve time: " + stats.stage1SieveNanos / 1e9 + " seconds");
-        System.out.println("Stage 1 chain build time: " + stats.stage1ChainBuildNanos / 1e9 + " seconds");
-        System.out.println("Stage 1 chain application time: " + stats.stage1ApplyNanos / 1e9 + " seconds");
-        System.out.println("Stage 1 gcd time: " + stats.gcdStage1Nanos / 1e9 + " seconds");
-        System.out.println("Total Stage 1 time: " + stats.stage1Nanos / 1e9 + " seconds");
+        System.out.println("Time for creating all the curves: " + formatSeconds(stats.curveCreateNanos));
+        System.out.println("Stage 1 sieve time: " + formatSeconds(stats.stage1SieveNanos));
+        System.out.println("Stage 1 chain build time: " + formatSeconds(stats.stage1ChainBuildNanos));
+        System.out.println("Stage 1 chain application time: " + formatSeconds(stats.stage1ApplyNanos));
+        System.out.println("Stage 1 gcd time: " + formatSeconds(stats.gcdStage1Nanos));
+        System.out.println("Total Stage 1 time: " + formatSeconds(stats.stage1Nanos));
         System.out.println("Stage 2 terms: " + stats.stage2TermCount);
         System.out.println("Stage 2 blocks: " + stats.stage2BlockCount);
-        System.out.println("Stage 2 point doubling time: " + stats.stage2DoublingTime / 1e9 + " seconds");
+        System.out.println("Stage 2 point doubling time: " + formatSeconds(stats.stage2DoublingTime));
         System.out.println("Stage 2 point differential addition time: " +
-                stats.stage2DifferentialAdditionTime / 1e9 + " seconds");
+                formatSeconds(stats.stage2DiffAdditionTime));
         System.out.println("Stage 2 block process time: " + stats.blockProcessTime / 1e9 + " seconds over "
                 + stats.blockTermCount + " terms");
         System.out.println("Stage 2 Montgomery multiplications: " + stats.stage2MontMultiplications);
-        System.out.println("Stage 2 gcd time: " + stats.stage2GcdTime / 1e9 + " seconds");
-        System.out.println("Total stage 2 time: " + stats.stage2Nanos / 1e9 + " seconds");
+        System.out.println("Stage 2 gcd time: " + formatSeconds(stats.stage2GcdTime));
+        System.out.println("Total stage 2 time: " + formatSeconds(stats.stage2Nanos));
         long completedPlanNanos = stats.totalPlanNanos();
-        System.out.println("Total time for this batch: " + completedPlanNanos / 1e9 + " seconds");
+        System.out.println("Total time for this batch: " + formatSeconds(completedPlanNanos));
         System.out.println();
         ECM_RUNTIME.observe(n, plan, completedPlanNanos);
         return ONE_MAG;
     }
     private static void ecmCurveCreation(long[] n, MontgomeryReducer reducer, ECMModulusContext context,
                                          ECMCurveWork[] works, ECMStats stats){
-        long t0 = System.nanoTime();
+        long t0 = TMX.getCurrentThreadCpuTime();
         int curveCount = 0;
         while (curveCount < works.length) {
             long[] sigma = randomMagnitudeBetween(SIX_MAG, n);
@@ -5353,7 +5365,7 @@ public class LargeInteger extends ScalarAtom{
             long[] denominator = modMagnitudes(shiftLeftBits(multiplyMagnitudes(cubeMagnitude(u), v), 2L), n);
             GcdInverseMag eg = gcdInverseMagnitudes(denominator, n);
             if (isNontrivialFactor(eg.gcd, n)) {
-                stats.curveCreateNanos = System.nanoTime() - t0;
+                stats.curveCreateNanos = TMX.getCurrentThreadCpuTime() - t0;
                 stats.found(eg.gcd, "Curve construction denominator GCD", curveCount + 1,
                         -1, -1);
                 throw new FactorFoundException(eg.gcd);
@@ -5371,20 +5383,20 @@ public class LargeInteger extends ScalarAtom{
             works[curveCount] = new ECMCurveWork(curve, point);
             curveCount++;
         }
-        stats.curveCreateNanos = System.nanoTime() - t0;
+        stats.curveCreateNanos = TMX.getCurrentThreadCpuTime() - t0;
     }
     private static void ecmStage1(FactorJob job, long[] n, ECMCurveWork[] works, ECMPlan plan, ECMStats stats){
         long t0;
-        long t1 = System.nanoTime();
+        long t1 = TMX.getCurrentThreadCpuTime();
         stage2 = false;
         long lower = 2L;
         long upperExclusive = plan.B1 + 1L;
         while (lower < upperExclusive) {
             long upper = upperExclusive - lower <= 1048576 ? upperExclusive : lower + 1048576;
-            t0 = System.nanoTime();
+            t0 = TMX.getCurrentThreadCpuTime();
             long[] primes = sievePrimeBlock(lower, upper, SMALL_PRIMES);
-            stats.stage1SieveNanos += System.nanoTime() - t0;
-            t0 = System.nanoTime();
+            stats.stage1SieveNanos += TMX.getCurrentThreadCpuTime() - t0;
+            t0 = TMX.getCurrentThreadCpuTime();
             ByteArrayOutputStream operations = new ByteArrayOutputStream();
 
             int[] offsets = new int[primes.length + 1];
@@ -5458,29 +5470,29 @@ public class LargeInteger extends ScalarAtom{
             offsets = Arrays.copyOf(offsets, chainCount + 1);
             trailingDoubling = Arrays.copyOf(trailingDoubling, chainCount);
             byte[] ops = operations.toByteArray();
-            stats.stage1ChainBuildNanos += System.nanoTime() - t0;
+            stats.stage1ChainBuildNanos += TMX.getCurrentThreadCpuTime() - t0;
             //apply the Prac block
             applyECMStage1Chains(works, powerOfTwoDoubling, ops, offsets, trailingDoubling, stats);
             lower = upper;
         }
-        t0 = System.nanoTime();
+        t0 = TMX.getCurrentThreadCpuTime();
         for (int k = 0; k < works.length; k++) {
             ECMCurveWork state = works[k];
             long[] g = gcdMagnitudes(state.point.Z, n);
             if (isNontrivialFactor(g, n)) {
-                stats.stage1Nanos = System.nanoTime() - t1;
+                stats.stage1Nanos = TMX.getCurrentThreadCpuTime() - t1;
                 stats.found(g, "Stage 1 final GCD", job.nextECMCurve + k + 1, -1, -1);
                 throw new FactorFoundException(g);
             }
             if (equalsArray(g, n)) state.usable = false;
             else stats.usableCurves++;
         }
-        stats.gcdStage1Nanos += System.nanoTime() - t0;
-        stats.stage1Nanos += System.nanoTime() - t1;
+        stats.gcdStage1Nanos += TMX.getCurrentThreadCpuTime() - t0;
+        stats.stage1Nanos += TMX.getCurrentThreadCpuTime() - t1;
     }
     private static void applyECMStage1Chains(ECMCurveWork[] works, int powerOfTwoDoubling, byte[] ops,
             int[] offsets, byte[] trailingDoubling, ECMStats stats) {
-        long t0 = System.nanoTime();
+        long t0 = TMX.getCurrentThreadCpuTime();
         for (ECMCurveWork state : works) {
             for (int i = 0; i < powerOfTwoDoubling; i++)
                 state.point = state.curve.doublePoint(state.point, stats);
@@ -5493,11 +5505,11 @@ public class LargeInteger extends ScalarAtom{
                 state.point = state.curve.multiplyPrac(
                         state.point, ops, from, to, doubling, stats);
         }
-        stats.stage1ApplyNanos = System.nanoTime() - t0;
+        stats.stage1ApplyNanos = TMX.getCurrentThreadCpuTime() - t0;
     }
     private static void ecmStage2(FactorJob job, MontgomeryReducer reducer,
                                   ECMPlan plan, ECMCurveWork[] works, ECMStats stats){
-        long t2 = System.nanoTime();
+        long t2 = TMX.getCurrentThreadCpuTime();
         stage2 = true;
         long lower = plan.B1 + 1L;
         long upperExclusive = plan.B2 + 1L;
@@ -5529,23 +5541,23 @@ public class LargeInteger extends ScalarAtom{
                 s2.blockStartPrevious = s2.previous;
                 s2.blockStartCurrent = s2.current;
                 s2.blockStartM = s2.currentM;
-                long blockStart = System.nanoTime();
+                long blockStart = TMX.getCurrentThreadCpuTime();
                 processStage2Terms(s2, primes, stats, left, right, out);
-                stats.blockProcessTime += System.nanoTime() - blockStart;
+                stats.blockProcessTime += TMX.getCurrentThreadCpuTime() - blockStart;
                 if (s2.blockTermCount == 0) {
                     s2.clearStage2Block();
                     continue;
                 }
-                long t0 = System.nanoTime();
+                long t0 = TMX.getCurrentThreadCpuTime();
                 /*
                  * Do not overwrite blockProduct with the normal residue.
                  */
                 long[] g = gcdMagnitudes(s2.curve.reducer.reduce(s2.blockProduct),
                         s2.curve.n);
-                stats.stage2GcdTime += System.nanoTime() - t0;
+                stats.stage2GcdTime += TMX.getCurrentThreadCpuTime() - t0;
                 if (isNontrivialFactor(g, s2.curve.n)) {
                     s2.clearStage2Block();
-                    stats.stage2Nanos = System.nanoTime() - t2;
+                    stats.stage2Nanos = TMX.getCurrentThreadCpuTime() - t2;
                     stats.found(g, "Stage 2 GCD", job.nextECMCurve + k + 1,
                             blockLower, blockUpper);
                     throw new FactorFoundException(g);
@@ -5567,13 +5579,13 @@ public class LargeInteger extends ScalarAtom{
                     for (long q : primes) {
                         long[] term = s2.stage2Term(q, stats, left, right, out);
                         if (term == null) continue;
-                        t0 = System.nanoTime();
+                        t0 = TMX.getCurrentThreadCpuTime();
                         g = gcdMagnitudes(term, s2.curve.n);
-                        stats.stage2GcdTime += System.nanoTime() - t0;
+                        stats.stage2GcdTime += TMX.getCurrentThreadCpuTime() - t0;
                         if (isNontrivialFactor(g, s2.curve.n)) {
                             stats.replayPrime = q;
                             s2.clearStage2Block();
-                            stats.stage2Nanos = System.nanoTime() - t2;
+                            stats.stage2Nanos = TMX.getCurrentThreadCpuTime() - t2;
                             stats.found(g, "Stage 2 individual-term replay",
                                     job.nextECMCurve + k + 1, blockLower, blockUpper);
                             throw new FactorFoundException(g);
@@ -5591,7 +5603,7 @@ public class LargeInteger extends ScalarAtom{
                  */
             blockLower = blockUpper;
         }
-        stats.stage2Nanos = System.nanoTime() - t2;
+        stats.stage2Nanos = TMX.getCurrentThreadCpuTime() - t2;
     }
     private static void processStage2Terms(Stage2State s2, long[] primes, ECMStats stats,
                                            long[] left, long[] right,
@@ -5734,7 +5746,7 @@ public class LargeInteger extends ScalarAtom{
                 logPrimes[out] = (int) logRound;
                 root1[out] = r;
                 root2[out] = p - r;
-                reciprocals[out] = Long.divideUnsigned(-1L, p);
+                reciprocals[out] = reciprocal;
                 out++;
             }
         }
@@ -6150,11 +6162,11 @@ public class LargeInteger extends ScalarAtom{
         if (maxNextPrimeMag.length > 1) return last;
         long max = maxNextPrimeMag[0];
         if (Long.compareUnsigned(max, factorBase.primes[last]) >= 0) return last;
-        int idx = Arrays.binarySearch(factorBase.primes, (int)max);
-        if(idx < 0) return -idx-2;
-        return idx;
+        int maxIdx = Arrays.binarySearch(factorBase.primes, (int)max);
+        if(maxIdx < 0) maxIdx = -maxIdx-2;
+        return maxIdx;
     }
-    private record ACoefficient(long[] A, int[] factors, long[] halfMag) {}
+    private record ACoefficient(long[] A, int[] factors, long half) {}
     private record ACandidateResult(ACoefficient coefficient, String failure) {
         static ACandidateResult ok(ACoefficient c) {return new ACandidateResult(c, null);}
         static ACandidateResult fail(String reason) {return new ACandidateResult(null, reason);}
@@ -6162,15 +6174,11 @@ public class LargeInteger extends ScalarAtom{
     private static ACoefficient chooseAByScoring(long[] sqrt2N, QSFactorBase factorBase, int aFactorCount, SplittableRandom rng) {
         ACoefficient best = null;
         double bestYield = -1.0;
-
         ACoefficient fallback = null;
         long fallbackHalf = 0L;
-
-        int pMax = factorBase.primes[factorBase.size - 1];
         int attempts = 2048;
         int genFail = 0;
         int zeroHalf = 0;
-        int hugeHalf = 0;
         int badYield = 0;
         int accepted = 0;
         int halfOverInt = 0;
@@ -6188,19 +6196,16 @@ public class LargeInteger extends ScalarAtom{
             ACandidateResult result = randomSquarefreeAResult(sqrt2N, factorBase, aFactorCount, logTargetA, rng);
             if (result.coefficient == null) {
                 genFail++;
-                if (firstGenFailure == null) firstGenFailure = result.failure;
+                if (firstGenFailure == null)
+                    firstGenFailure = result.failure;
                 continue;
             }
             ACoefficient candidate = result.coefficient;
-            if (isZeroArray(candidate.halfMag)) {
+            if (candidate.half == 0) {
                 zeroHalf++;
                 continue;
             }
-            if (candidate.halfMag.length > 1) {
-                hugeHalf++;
-                continue;
-            }
-            long half = candidate.halfMag[0];
+            long half = candidate.half;
             if (Long.compareUnsigned(half, Integer.MAX_VALUE) > 0) {
                 halfOverInt++;
                 continue;
@@ -6218,7 +6223,7 @@ public class LargeInteger extends ScalarAtom{
                 fallback = candidate;
                 fallbackHalf = half;
             }
-            double yield = estimatedRelationsPerPolynomial(candidate.A, half, pMax);
+            double yield = estimatedRelationsPerPolynomial(candidate.A, half, factorBase.globalPMax);
             if (!Double.isFinite(yield) || yield <= 0.0) {
                 badYield++;
                 continue;
@@ -6236,19 +6241,18 @@ public class LargeInteger extends ScalarAtom{
          * still return a fallback so you can print stats and learn what happened.
          */
         if (fallback != null) {
-            System.out.println("SIQS A warning: using fallback A because strict scoring rejected all candidates. "
-                    + "aFactorCount=" + aFactorCount + " attempts=" + attempts + " genFail=" + genFail +
-                    " zeroHalf=" + zeroHalf + " hugeHalf=" + hugeHalf + " halfOverInt" +
-                    halfOverInt + " halfTooLarge" + halfTooLarge + "halfTooSmall" + halfTooSmall +
-                    " badYield=" + badYield + " accepted=" + accepted +
+            System.out.println("SIQS A warning: using fallback A because strict scoring rejected all candidates."
+                    + " aFactorCount=" + aFactorCount + " attempts=" + attempts + " genFail=" + genFail +
+                    " zeroHalf=" + zeroHalf + " halfOverInt" + halfOverInt + " halfTooLarge" + halfTooLarge
+                    + "halfTooSmall" + halfTooSmall + " badYield=" + badYield + " accepted=" + accepted +
                     " fallbackHalf=" + Long.toUnsignedString(fallbackHalf));
             return fallback;
         }
         throw new IllegalStateException("Could not find usable SIQS A: "
                 + "aFactorCount=" + aFactorCount + " attempts=" + attempts +
-                " genFail=" + genFail + " zeroHalf=" + zeroHalf + " hugeHalf=" + hugeHalf +
-                " halfOverInt=" + halfOverInt + " halfTooLarge=" + halfTooLarge + "halfTooSmall=" + halfTooSmall
-                + " badYield=" + badYield + " accepted=" + accepted + " firstGenFailure=[" + firstGenFailure + "]");
+                " genFail=" + genFail + " zeroHalf=" + zeroHalf + " halfOverInt=" + halfOverInt
+                + " halfTooLarge=" + halfTooLarge + "halfTooSmall=" + halfTooSmall + " badYield=" + badYield
+                + " accepted=" + accepted + " firstGenFailure=[" + firstGenFailure + "]");
     }
     private static ACandidateResult randomSquarefreeAResult(long[] sqrt2N, QSFactorBase factorBase,
             int aFactorCount, double logTargetA, SplittableRandom rng) {
@@ -6266,9 +6270,9 @@ public class LargeInteger extends ScalarAtom{
             double desiredLogP = remainingLogBudget / remaining;
             // halfMag is already floor(sqrt2N / A).
             int maxIdx = maxFactorBaseIndexAtMost(factorBase, halfMag);
-            if (maxIdx < 1) return ACandidateResult.fail("maxIdx<1");
+            if (maxIdx < 1) return ACandidateResult.fail("maxIdx < 1");
             int idx = chooseUnusedPrimeNearLogBounded(factorBase, chosen, chosenCount, desiredLogP, maxIdx, rng);
-            if (idx < 0) return ACandidateResult.fail("noUnusedPrime");
+            if (idx < 0) return ACandidateResult.fail("no unused prime");
             int p = factorBase.primes[idx];
             multiplySmallInto(A, p, A);
             // Exact identity:
@@ -6279,7 +6283,8 @@ public class LargeInteger extends ScalarAtom{
             chosen[chosenCount++] = (idx << 1) | (secondRoot ? 1 : 0);
             logA += factorBase.logPrimes[idx] / LOG_SCALE;
         }
-        return ACandidateResult.ok(new ACoefficient(trimLeadingZeros(A), chosen, halfMag));
+        if(halfMag.length > 1) return ACandidateResult.fail("half too large");
+        return ACandidateResult.ok(new ACoefficient(trimLeadingZeros(A), chosen, halfMag[0]));
     }
     private static int chooseUnusedPrimeNearLogBounded(QSFactorBase factorBase, int[] chosen, int chosenCount,
             double desiredLogP, int maxIdx, SplittableRandom rng) {
@@ -6327,7 +6332,8 @@ public class LargeInteger extends ScalarAtom{
             case double v when v < 0.0 -> 0.0;
             case double v when v <= 1.0 -> 1.0;
             case double v when v <= 2.0 -> 1.0 - Math.log(u);
-            default -> Math.exp(-u * (Math.log(u) + Math.log(Math.log(u)) - 1.0)); // Crude but useful ranking approximation.
+            // Crude but useful ranking approximation.
+            default -> Math.exp(-u * (Math.log(u) + Math.log(Math.log(u)) - 1.0));
         };
     }
     private static double estimatedRelationsPerPolynomial(long[] A, long half, int pMax) {
@@ -6551,15 +6557,17 @@ public class LargeInteger extends ScalarAtom{
                                             PartialGraph partialGraph, SplittableRandom rng) {
         int[] primes = factorBase.primes;
         int[] logPrimes = factorBase.logPrimes;
+        long[] reciprocals = factorBase.reciprocals;
         int fbSize = factorBase.size;
         long precomputation = TMX.getCurrentThreadCpuTime();
         ACoefficient AR = chooseAByScoring(sqrt2N, factorBase, factorBase.aPrimeCount, rng);
         long[] A = AR.A;
         int[] aFactors = AR.factors;
-        int half = (int)AR.halfMag[0];
+        int half = (int)AR.half;
         int startT = -half;
         int interval = 2 * half;
-        RelationYieldEstimate estimate = RelationYieldEstimate.estimateRelationYieldPerPolynomial(A, half, factorBase.globalPMax, factorBase.largePrimeBound);
+        RelationYieldEstimate estimate = RelationYieldEstimate
+                .estimateRelationYieldPerPolynomial(A, half, factorBase.globalPMax, factorBase.largePrimeBound);
         AStats plan = new AStats(A, half, factorBase, estimate);
         // Precompute values depending only on A.
         int[] invAModP = new int[fbSize];
@@ -6591,8 +6599,7 @@ public class LargeInteger extends ScalarAtom{
             int root = (packed & 1) != 1 ? factorBase.root1[index] : factorBase.root2[index];
             long[] Ai = A.clone();
             divideMagExactInPlace(Ai, q);
-            long coefficient =
-                    (long) inverseModSmall(modSmallInt(Ai, Ai.length, q, factorBase.reciprocals[index]), q)
+            long coefficient = (long) inverseModSmall(modSmallInt(Ai, Ai.length, q, reciprocals[index]), q)
                             * root % q;
             long[] bTerm = multiplySmall(Ai, coefficient);
             twoTerms[i] = multiplySmall(bTerm, 2);
@@ -6606,7 +6613,8 @@ public class LargeInteger extends ScalarAtom{
         int[] pos1 = new int[fbSize];
         int[] pos2 = new int[fbSize];
         long root0 = TMX.getCurrentThreadCpuTime();
-        computeInitialRoots(pos1, pos2, inactive, A, invAModP, B, factorBase, startT);
+        computeInitialRoots(pos1, pos2, inactive, A, invAModP, B, startT, primes, factorBase.root1,
+                factorBase.root2, reciprocals, fbSize);
         long rootCalcTime = TMX.getCurrentThreadCpuTime() - root0;
         plan.rootCalcTime += rootCalcTime;
         short[] dense = new short[factorBase.columnCount];
@@ -6618,8 +6626,7 @@ public class LargeInteger extends ScalarAtom{
             aCount[i] = 1;
         }
         int cachedBits = aFactors.length - 1;
-        int activeCount = fbSize - inactive.length;
-        int[][] grayDelta = new int[cachedBits][activeCount];
+        int[][] grayDelta = new int[cachedBits][fbSize - inactive.length];
         for (int bit = 0; bit < cachedBits; bit++) {
             long[] step = twoTerms[bit + 1];
             int[] deltaRow = grayDelta[bit];
@@ -6628,7 +6635,7 @@ public class LargeInteger extends ScalarAtom{
             for (int hi : inactive) {
                 for (int j = lo; j < hi; j++) {
                     int p = primes[j];
-                    long reciprocal = factorBase.reciprocals[j];
+                    long reciprocal = reciprocals[j];
                     long stepMod = modSmallInt(step, step.length, p, reciprocal);
                     long z = stepMod * invAModP[j];
                     deltaRow[d++] = (int) (z - Math.multiplyHigh(z, reciprocal) * p);
@@ -6637,15 +6644,13 @@ public class LargeInteger extends ScalarAtom{
             }
             for (int j = lo; j < fbSize; j++) {
                 int p = primes[j];
-                long reciprocal = factorBase.reciprocals[j];
+                long reciprocal = reciprocals[j];
                 long stepMod = modSmallInt(step, step.length, p, reciprocal);
                 long z = stepMod * invAModP[j];
                 deltaRow[d++] = (int) (z - Math.multiplyHigh(z, reciprocal) * p);
             }
-            assert d == activeCount;
         }
-        precomputation = TMX.getCurrentThreadCpuTime() - precomputation;
-        plan.precomputation = precomputation;
+        plan.precomputation = TMX.getCurrentThreadCpuTime() - precomputation;
         int[] hitHead = new int[interval];
         long[] hitData = new long[2*(fbSize - largeStart)];
         int[] candidateIndices = new int[interval];
@@ -6690,11 +6695,11 @@ public class LargeInteger extends ScalarAtom{
             boolean cNegative;
             if (compareArray(b2, N) >= 0) {
                 subtractMagnitudeInPlace(b2, N);
-                cMag = divideExactMag(b2, A);
+                cMag = divideMagnitudesExact(b2, A);
                 cNegative = false;
             } else {
                 b2 = subtractMagnitudes(N, b2);
-                cMag = divideExactMag(b2, A);
+                cMag = divideMagnitudesExact(b2, A);
                 cNegative = true;
             }
             long[] twoB = shiftLeftBits(B, 1);
@@ -6702,15 +6707,15 @@ public class LargeInteger extends ScalarAtom{
             //log sieve
             long cpuSieve = TMX.getCurrentThreadCpuTime();
             Arrays.fill(score, 0);
-            long smallSieve = System.nanoTime();
+            long smallSieve = TMX.getCurrentThreadCpuTime();
             // ---------------- SMALL SIEVE ----------------
             markSmallRoots(inactive, largeStart, pos1, pos2, interval, score, primes, logPrimes);
-            plan.smallLogSieveNs += System.nanoTime() - smallSieve;
+            plan.smallLogSieveNs += TMX.getCurrentThreadCpuTime() - smallSieve;
             // ---------------- LARGE SIEVE ----------------
-            long largeSieve = System.nanoTime();
+            long largeSieve = TMX.getCurrentThreadCpuTime();
             int hitCount = markLargeRoots(inactive, largeStart, pos1, pos2, interval, score, logPrimes, hitData,
                     inactivePos, fbSize);
-            plan.largeLogSieveNs += System.nanoTime() - largeSieve;
+            plan.largeLogSieveNs += TMX.getCurrentThreadCpuTime() - largeSieve;
             long totalSieveTime = TMX.getCurrentThreadCpuTime() - cpuSieve;
             //attempt after sieve
             plan.scanned += interval;
@@ -6723,18 +6728,17 @@ public class LargeInteger extends ScalarAtom{
                     candidateIndices[candidateCount++] = idx;
             }
             Arrays.fill(hitHead, -1);
-            int keptHitCount = 0;
             for (int h = 0; h < hitCount; h++) {
                 long raw = hitData[h];
                 int x = (int) (raw >>> 32);
                 int j = (int) raw;
-                hitData[keptHitCount] = ((long) hitHead[x] << 32) | (j & U32_MASK);
-                hitHead[x] = keptHitCount++;
+                hitData[h] = ((long) hitHead[x] << 32) | (j & U32_MASK);
+                hitHead[x] = h;
             }
             plan.scanTime += TMX.getCurrentThreadCpuTime() - scanStart;
             collectQSRelations(N, A, B, twoB, cMag, cNegative, candidateIndices, candidateCount, startT, factorBase,
-                    fbIndex, score, largeStart, inactiveLarge, hitHead, hitData, dense, aIndex, aCount, smallDivResult,
-                    relations, partials, partialGraph, plan);
+                    fbIndex, score, largeStart, inactiveLarge, hitHead, hitData, dense, aIndex, aCount,
+                    smallDivResult, relations, partials, partialGraph, plan);
             relationTime = TMX.getCurrentThreadCpuTime() - relationTime;
             plan.finishPolynomial(totalSieveTime, relationTime, polyGenTime);
         }
@@ -6749,7 +6753,7 @@ public class LargeInteger extends ScalarAtom{
                 plan.singlePartialStored,
                 plan.singlePartialMerged + plan.doublePartialMerged + plan.mixedPartialMerged,
 
-                precomputation/1e6,
+                plan.precomputation/1e6,
                 plan.rootCalcTime / 1e6,
                 plan.smallLogSieveNs / 1e6,
                 plan.largeLogSieveNs / 1e6,
@@ -6773,25 +6777,20 @@ public class LargeInteger extends ScalarAtom{
         return (first * firstWeight + second * secondWeight) / totalWeight;
     }
     private static void computeInitialRoots(int[] pos1, int[] pos2, int[] inactive, long[] A,
-                                            int[] invAModP, long[] B, QSFactorBase factorBase, int startT) {
+                                            int[] invAModP, long[] B, int startT, int[] primes, int[] root1,
+                                            int[] root2, long[] reciprocals, int fbSize) {
         int lo = 0;
         for (int hi : inactive) {
             for (int j = lo; j < hi; j++) {
-                long reciprocal = factorBase.reciprocals[j];
-                int p = factorBase.primes[j];
-
-                int aModP = modSmallInt(A, A.length, p, reciprocal);
-                int invA = inverseModSmall(aModP, p);
+                long reciprocal = reciprocals[j];
+                int p = primes[j];
+                int invA = inverseModSmall(modSmallInt(A, A.length, p, reciprocal), p);
                 invAModP[j] = invA;
-
                 int bMod = modSmallInt(B, B.length, p, reciprocal);
-
-                int d1 = factorBase.root1[j] - bMod;
+                int d1 = root1[j] - bMod;
                 if (d1 < 0) d1 += p;
-
-                int d2 = factorBase.root2[j] - bMod;
+                int d2 = root2[j] - bMod;
                 if (d2 < 0) d2 += p;
-
                 long x1 = (long) d1 * invA;
                 int r1 = (int) (x1 - Math.multiplyHigh(x1, reciprocal) * p);
                 if (r1 >= p) r1 -= p;
@@ -6799,29 +6798,24 @@ public class LargeInteger extends ScalarAtom{
                 int r2 = (int) (x2 - Math.multiplyHigh(x2, reciprocal) * p);
                 if (r2 >= p) r2 -= p;
                 int startMod = reduceSignedIntModP(startT, p, reciprocal);
-
                 x1 = r1 - startMod;
                 if (x1 < 0) x1 += p;
-
                 x2 = r2 - startMod;
                 if (x2 < 0) x2 += p;
-
                 pos1[j] = (int)x1;
                 pos2[j] = (int)x2;
             }
             lo = hi + 1;
         }
-        for (int j = lo; j < factorBase.size; j++) {
-            long reciprocal = factorBase.reciprocals[j];
-            int p = factorBase.primes[j];
-
-            int aModP = modSmallInt(A, A.length, p, reciprocal);
-            int invA = inverseModSmall(aModP, p);
+        for (int j = lo; j < fbSize; j++) {
+            long reciprocal = reciprocals[j];
+            int p = primes[j];
+            int invA = inverseModSmall(modSmallInt(A, A.length, p, reciprocal), p);
             invAModP[j] = invA;
             int bMod = modSmallInt(B, B.length, p, reciprocal);
-            int d1 = factorBase.root1[j] - bMod;
+            int d1 = root1[j] - bMod;
             if (d1 < 0) d1 += p;
-            int d2 = factorBase.root2[j] - bMod;
+            int d2 = root2[j] - bMod;
             if (d2 < 0) d2 += p;
             long x1 = (long) d1 * invA;
             int r1 = (int) (x1 - Math.multiplyHigh(x1, reciprocal) * p);
@@ -7014,7 +7008,6 @@ public class LargeInteger extends ScalarAtom{
                     score[x1] += logP;
                     hitData[hitCount++] = ((long) x1 << 32) | (j & U32_MASK);
                 }
-
                 if (x2 < interval) {
                     score[x2] += logP;
                     hitData[hitCount++] = ((long) x2 << 32) | (j & U32_MASK);
@@ -7068,32 +7061,20 @@ public class LargeInteger extends ScalarAtom{
         result[1] = usedCount;
         result[2] = remLength;
     }
-    private static void performInactiveLargeDivisions(
-            long[] remaining,
-            int remLength,
-            int[] inactiveLarge,
-            int[] primes,
-            long[] reciprocals,
-            short[] dense,
-            int[] used,
-            int usedCount,
-            int[] result) {
+    private static void performInactiveLargeDivisions(long[] remaining, int remLength, int[] inactiveLarge,
+            int[] primes, long[] reciprocals, short[] dense, int[] used, int usedCount, int[] result) {
         int tested = 0;
         for (int j : inactiveLarge) {
             tested++;
             int p = primes[j];
             long reciprocal = reciprocals[j];
             int column = j + 1;
-
             while (modSmallInt(remaining, remLength, p, reciprocal) == 0) {
                 if (dense[column] == 0)
                     used[usedCount++] = column;
-
                 incExp(dense, column);
                 divideMagExactInPlace(remaining, p);
-
-                while (remLength > 1 &&
-                        remaining[remLength - 1] == 0)
+                while (remLength > 1 && remaining[remLength - 1] == 0)
                     remLength--;
             }
             if (remLength == 1) {
@@ -7107,17 +7088,8 @@ public class LargeInteger extends ScalarAtom{
         result[1] = usedCount;
         result[2] = remLength;
     }
-    private static void performHitLargeDivisions(
-            long[] remaining,
-            int remLength,
-            int idx,
-            int[] hitHead,
-            long[] hitData,
-            int[] primes,
-            long[] reciprocals,
-            short[] dense,
-            int[] used,
-            int usedCount,
+    private static void performHitLargeDivisions(long[] remaining, int remLength, int idx, int[] hitHead,
+            long[] hitData, int[] primes, long[] reciprocals, short[] dense, int[] used, int usedCount,
             int[] result) {
         int tested = 0;
         for (int h = hitHead[idx]; h != -1;) {
@@ -7128,20 +7100,13 @@ public class LargeInteger extends ScalarAtom{
             int p = primes[j];
             long reciprocal = reciprocals[j];
             int column = j + 1;
-
             if (dense[column] == 0)
                 used[usedCount++] = column;
-
             do {
                 incExp(dense, column);
                 divideMagExactInPlace(remaining, p);
-
-                while (remLength > 1 &&
-                        remaining[remLength - 1] == 0)
-                    remLength--;
-
-            } while (modSmallInt(
-                    remaining, remLength, p, reciprocal) == 0);
+                while (remLength > 1 && remaining[remLength - 1] == 0) remLength--;
+            } while (modSmallInt(remaining, remLength, p, reciprocal) == 0);
         }
         result[0] = tested;
         result[1] = usedCount;
@@ -7157,7 +7122,6 @@ public class LargeInteger extends ScalarAtom{
         int[] used = new int[factorBase.columnCount];
         for (int k = 0; k < candidateCount; k++) {
             int idx = candidateIndices[k];
-            double value = score[idx] / LOG_SCALE + factorBase.filterAllowance;
             long t = startT + idx;
             boolean tNegative = t < 0;
             long absT = tNegative ? -t : t;
@@ -7193,8 +7157,7 @@ public class LargeInteger extends ScalarAtom{
                 }
                 if (isZeroArray(qMag)) qNegative = false;
             }
-            double actualLogQ = logMag(qMag);
-            if (value < actualLogQ) continue;
+            if (score[idx] / LOG_SCALE + factorBase.filterAllowance < logMag(qMag)) continue;
             plan.secondFilterHits++;
             long[] currentX;
             if (!tNegative) currentX = modAdd(B, atMag, N);
@@ -7238,6 +7201,7 @@ public class LargeInteger extends ScalarAtom{
                     factorBase.reciprocals, dense, used, usedCount, divResult);
             tested += divResult[0];
             usedCount = divResult[1];
+            remLength = divResult[2];
             plan.observeFactorTests(tested);
             long[][] xValues = {currentX};
             long classifyTime = TMX.getCurrentThreadCpuTime();
@@ -7246,7 +7210,7 @@ public class LargeInteger extends ScalarAtom{
              * incorporate it before compressing the exponent vector.
              */
             remaining = trimLeadingZeros(remaining);
-            if (remaining.length == 1) {
+            if (remLength == 1) {
                 int index = factorBaseIndexOf(fbIndex, remaining[0]);
                 if (index >= 0) {
                     if(dense[index+1] == 0) used[usedCount++] = index+1;
@@ -7264,7 +7228,7 @@ public class LargeInteger extends ScalarAtom{
             short[] count = new short[mergedLength];
             mergeExponents(localIndex, localCount, aIndex, aCount, index, count);
             clearUsed(dense, used, usedCount);
-            plan.observeRelationAdd(classifyRelation(remaining, index, count, xValues, relations, partials,
+            plan.observeRelationAdd(classifyRelation(trimLeadingZeros(remaining), index, count, xValues, relations, partials,
                     partialGraph, factorBase));
             plan.relationClassifyNs += TMX.getCurrentThreadCpuTime() - classifyTime;
         }
@@ -7327,7 +7291,7 @@ public class LargeInteger extends ScalarAtom{
             if (!isNontrivialFactor(factor, remaining))
                 return RelationAddKind.NONE;
         }
-        long[] otherFactor = divideExactMag(remaining, factor);
+        long[] otherFactor = divideMagnitudesExact(remaining, factor);
         /*
          * The unified partial graph currently stores vertices as unsigned longs,
          * so both factors must be single-limb.
@@ -7492,18 +7456,10 @@ public class LargeInteger extends ScalarAtom{
             int[] bIndex = partials.expIdx[id];
             short[] bCount = partials.expCount[id];
 
-            int len = mergedExponentLength(
-                    mergedIndex, mergedCount,
-                    bIndex, bCount);
-
+            int len = mergedExponentLength(mergedIndex, mergedCount, bIndex, bCount);
             int[] nextIndex = new int[len];
             short[] nextCount = new short[len];
-
-            mergeExponents(
-                    mergedIndex, mergedCount,
-                    bIndex, bCount,
-                    nextIndex, nextCount);
-
+            mergeExponents(mergedIndex, mergedCount, bIndex, bCount, nextIndex, nextCount);
             mergedIndex = nextIndex;
             mergedCount = nextCount;
         }
@@ -7709,8 +7665,7 @@ public class LargeInteger extends ScalarAtom{
         for (IntList list : incidence) if (list != null) nonNullColumns++;
         System.out.println("aliveRows=" + aliveRows + " incidences=" + incidences +
                 " nonNullColumns=" + nonNullColumns);
-        boolean changed;
-        do {
+        for (boolean changed = true; changed;){
             changed = false;
             // Singleton elimination.
             for (int c = 0; c < columnCount; c++) {
@@ -7755,7 +7710,7 @@ public class LargeInteger extends ScalarAtom{
                         throw new FactorFoundException(g);
                 }
             }
-        } while (changed);
+        }
         ArrayList<SparseMatrixRow> survivors = new ArrayList<>();
         for (SparseMatrixRow row : rows)
             if (row.alive)
@@ -7779,7 +7734,7 @@ public class LargeInteger extends ScalarAtom{
     }
     private static SparseMatrixSetup buildQSMatrix(QSFullRelationPool relations, QSFactorBase factorBase,
                                                    long[] N){
-        long t0 = System.nanoTime();
+        long t0 = TMX.getCurrentThreadCpuTime();
         ArrayList<SparseMatrixRow> sparseRows = new ArrayList<>(relations.size);
         for (int i = 0, size = relations.size; i < size; i++) {
             int[] index = relations.exponentIndex[i];
@@ -7793,20 +7748,19 @@ public class LargeInteger extends ScalarAtom{
                     cols[out++] = index[k];
             sparseRows.add(new SparseMatrixRow(cols, i));
         }
-        long sparseRowNanos = System.nanoTime()-t0;
-        t0 = System.nanoTime();
+        long sparseRowNanos = TMX.getCurrentThreadCpuTime()-t0;
+        t0 = TMX.getCurrentThreadCpuTime();
         sparseRows = singletonFilter(sparseRows, factorBase.columnCount, relations, factorBase, N);
-        long singleton1Nanos = System.nanoTime()-t0;
-        t0 = System.nanoTime();
+        long singleton1Nanos = TMX.getCurrentThreadCpuTime()-t0;
+        t0 = TMX.getCurrentThreadCpuTime();
         sparseRows = degreeTwoMergeFilter(sparseRows, factorBase.columnCount, relations, factorBase, N);
-        long doubletonNanos = System.nanoTime()-t0;
-        t0 = System.nanoTime();
+        long doubletonNanos = TMX.getCurrentThreadCpuTime()-t0;
+        t0 = TMX.getCurrentThreadCpuTime();
         sparseRows = singletonFilter(sparseRows, factorBase.columnCount, relations, factorBase, N);
-        long singleton2Nanos = System.nanoTime()-t0;
+        long singleton2Nanos = TMX.getCurrentThreadCpuTime()-t0;
         int rowCount = sparseRows.size();
         int[][] rowColumns = new int[rowCount][];
         int[][] rowDeps = new int[rowCount][];
-
         for (int i = 0; i < rowCount; i++) {
             SparseMatrixRow row = sparseRows.get(i);
             rowColumns[i] = row.cols;
@@ -7820,11 +7774,20 @@ public class LargeInteger extends ScalarAtom{
         return new SparseMatrixSetup(matrix, rowDeps);
     }
     private record SparseMatrixSetup(GF2SparseMatrix matrix, int[][] rowDeps) {}
-    private record GF2SparseMatrix(int rowCount, int columnCount, int[][] rowColumns) {
+    private static final class GF2SparseMatrix{
+        int rowCount;
+        int columnCount;
+        int[][] rowColumns;
+        GF2SparseMatrix(int rowCount, int columnCount, int[][] rowColumns){
+            this.rowCount = rowCount;
+            this.columnCount = columnCount;
+            this.rowColumns = rowColumns;
+        }
         long[] multiplyTransposeVector(long[] packedRows) {
             int expectedLength = (rowCount + 63) >>> 6;
             if (packedRows.length != expectedLength)
-                throw new IllegalArgumentException("Expected packed row vector length " + expectedLength + ", got " + packedRows.length);
+                throw new IllegalArgumentException("Expected packed row vector length " + expectedLength
+                        + ", got " + packedRows.length);
             long[] packedColumns = new long[(columnCount + 63) >>> 6];
             for (int wordIndex = 0;
                  wordIndex < packedRows.length;
@@ -7841,159 +7804,181 @@ public class LargeInteger extends ScalarAtom{
             }
             return packedColumns;
         }
-        long[] multiplyMMtBlock64(long[] rowBlock) {return multiplyBlock64(multiplyTransposeBlock64(rowBlock));}
-        // out = A^T * x
-        // x.length == rows
-        // out.length == cols
-        long[] multiplyTransposeBlock64(long[] rowBlock) {
+        void multiplyMMtBlock64(long[] rowBlock, long[] colScratch, long[] out) {
+            // out = A^T * x
+            // x.length == rows
+            // out.length == cols
             if (rowBlock.length != rowCount)
-                throw new IllegalArgumentException("Expected block length " + rowCount + ", got " + rowBlock.length);
-            long[] colBlock = new long[columnCount];
+                throw new IllegalArgumentException("Expected block length " + rowCount +
+                        ", got " + rowBlock.length);
+            if(colScratch.length != columnCount)
+                throw new IllegalArgumentException("Expected block width " + columnCount +
+                        ", got " + colScratch.length);
+            if (out.length != rowCount)
+                throw new IllegalArgumentException("Expected output length " + rowCount + ", got " + out.length);
+            long t0 = TMX.getCurrentThreadCpuTime();
+            Arrays.fill(colScratch, 0L);
+            multiplyTransposeBlock(rowBlock, colScratch);
+            long t1 = TMX.getCurrentThreadCpuTime();
+            multiplyBlock(colScratch, out);
+            long t2 = TMX.getCurrentThreadCpuTime();
+            transposeBlockTime += t1 - t0;
+            blockTime += t2 - t1;
+        }
+        private void multiplyTransposeBlock(long[] rowBlock, long[] colScratch) {
             for (int r = 0; r < rowCount; r++) {
                 long lanes = rowBlock[r];
                 for (int c : rowColumns[r])
-                    colBlock[c] ^= lanes;
+                    colScratch[c] ^= lanes;
             }
-            return colBlock;
         }
-
-        long[] multiplyBlock64(long[] colBlock) {
-            if (colBlock.length != columnCount)
-                throw new IllegalArgumentException("Expected block length " + columnCount + ", got " + colBlock.length);
-            long[] rowBlock = new long[rowCount];
+        private void multiplyBlock(long[] colScratch, long[] out) {
             for (int r = 0; r < rowCount; r++) {
-                long laneParities = 0L;
-                for (int c : rowColumns[r]) laneParities ^= colBlock[c];
-                rowBlock[r] = laneParities;
+                long lanes = 0L;
+                for (int c : rowColumns[r])
+                    lanes ^= colScratch[c];
+                out[r] = lanes;
             }
-            return rowBlock;
         }
-
-        static long[] randomRowBlock(int rowCount, SplittableRandom rng) {
-            long[] block = new long[rowCount];
-            for (int r = 0; r < rowCount; r++)
-                block[r] = rng.nextLong();
-            return block;
-        }
-        static final class RightMulTable64 {
-            final long[][] table = new long[8][256];
-            RightMulTable64(GF2Matrix64 matrix) {
-                for (int byteIndex = 0; byteIndex < 8; byteIndex++) {
-                    int base = byteIndex << 3;
-                    for (int value = 1; value < 256; value++) {
-                        int lowBit = Integer.numberOfTrailingZeros(value);
-                        int without = value & (value - 1);
-                        table[byteIndex][value] = table[byteIndex][without] ^ matrix.rows[base + lowBit];
-                    }
+        private static void buildRightMulTable64(long[] matrix, long[] table) {
+            long t0 = TMX.getCurrentThreadCpuTime();
+            for (int byteIndex = 0; byteIndex < 8; byteIndex++) {
+                int tableBase = byteIndex << 8;
+                int matrixBase = byteIndex << 3;
+                table[tableBase] = 0L;
+                for (int value = 1; value < 256; value++) {
+                    int bit = Integer.numberOfTrailingZeros(value);
+                    int without = value & (value - 1);
+                    table[tableBase + value] = table[tableBase + without] ^ matrix[matrixBase + bit];
                 }
             }
+            tableBuildTime += TMX.getCurrentThreadCpuTime() - t0;
         }
-        static long[] rightMultiplyBlock64(long[] block, GF2Matrix64 matrix) {
-            RightMulTable64 t = new RightMulTable64(matrix);
-            long[] result = new long[block.length];
-            for (int i = 0; i < block.length; i++) {
-                long x = block[i];
-                result[i] = t.table[0][(int)(x & 0xff)]
-                                ^ t.table[1][(int)((x >>>  8) & 0xff)]
-                                ^ t.table[2][(int)((x >>> 16) & 0xff)]
-                                ^ t.table[3][(int)((x >>> 24) & 0xff)]
-                                ^ t.table[4][(int)((x >>> 32) & 0xff)]
-                                ^ t.table[5][(int)((x >>> 40) & 0xff)]
-                                ^ t.table[6][(int)((x >>> 48) & 0xff)]
-                                ^ t.table[7][(int)((x >>> 56) & 0xff)];
-            }
-            return result;
-        }
-        static void rightMultiplyBlock64XorInto(long[] dst, long[] block, GF2Matrix64 matrix) {
-            RightMulTable64 t = new RightMulTable64(matrix);
-            for (int i = 0; i < block.length; i++) {
-                long x = block[i];
-                dst[i] ^= t.table[0][(int)(x&0xff)]
-                                ^ t.table[1][(int)((x >>>  8) & 0xff)]
-                                ^ t.table[2][(int)((x >>> 16) & 0xff)]
-                                ^ t.table[3][(int)((x >>> 24) & 0xff)]
-                                ^ t.table[4][(int)((x >>> 32) & 0xff)]
-                                ^ t.table[5][(int)((x >>> 40) & 0xff)]
-                                ^ t.table[6][(int)((x >>> 48) & 0xff)]
-                                ^ t.table[7][(int)((x >>> 56) & 0xff)];
-            }
+        static long rightMultiplyLookup(long x, long[] table) {
+            return    table[        (int) ( x         & 0xFF)]
+                    ^ table[  256 + (int) ((x >>>  8) & 0xFF)]
+                    ^ table[  512 + (int) ((x >>> 16) & 0xFF)]
+                    ^ table[  768 + (int) ((x >>> 24) & 0xFF)]
+                    ^ table[ 1024 + (int) ((x >>> 32) & 0xFF)]
+                    ^ table[ 1280 + (int) ((x >>> 40) & 0xFF)]
+                    ^ table[ 1536 + (int) ((x >>> 48) & 0xFF)]
+                    ^ table[ 1792 + (int) ((x >>> 56) & 0xFF)];
         }
         BlockLanczosResult blockLanczos(SplittableRandom rng) {
-            long[] RIGHT = randomRowBlock(rowCount, rng);
-            long[] initialV = multiplyMMtBlock64(RIGHT);
-            long[] v0 = initialV.clone();
             long[] LEFT = new long[rowCount];
+            long[] RIGHT = new long[rowCount];
+            for(int k = 0; k < RIGHT.length; k++)
+                RIGHT[k] = rng.nextLong();
+            long[] dTable = new long[2048];
+            long[] eTable = new long[2048];
+            long[] fTable = new long[2048];
+            long[] rightMulTable = new long[2048];
+            long[] colScratch = new long[columnCount];
+            long[] initialV = new long[rowCount];
+            multiplyMMtBlock64(RIGHT, colScratch, initialV);
             BlockLanczosState state = new BlockLanczosState(initialV);
+            long[][] bucket = new long[8][256];
+            long[] av = new long[rowCount];
+            long[] overlap = new long[64];
+            long[] coefficients = new long[64];
             for (int iter = 0; true; iter++) {
-                long[] av = multiplyMMtBlock64(state.v);
-                GF2Matrix64 gram = blockDot(state.v, av);
-                if (gram.isZero())
+                multiplyMMtBlock64(state.v, colScratch, av);
+                long[] gram = new long[64];
+                GF2Matrix64.blockDot(state.v, av, bucket, gram);
+                if (isZeroArray(gram))
                     return new BlockLanczosResult(LEFT, RIGHT, state.v, iter);
-                GF2Elim64 elimination = gram.eliminate64(activeLaneMask(state.v) & ~state.selectedMaskPrev);
-                GF2Matrix64 wInv = elimination.embeddedInverse;
-                GF2Matrix64 overlap = blockDot(state.v, v0);
-                GF2Matrix64 coefficients = wInv.multiply(overlap);
-                xorInto(LEFT, rightMultiplyBlock64(state.v, coefficients));
-                GF2Matrix64 identity = GF2Matrix64.identity();
-                long selectedMask = elimination.selectedMask;
-                GF2Matrix64 p = GF2Matrix64.diagonal(selectedMask);
-                GF2Matrix64 h = blockDot(av, av);
-                GF2Matrix64 q = h.multiply(p).xor(gram);
-                GF2Matrix64 d = identity.xor(wInv.multiply(q));
-                GF2Matrix64 e = state.wInvPrev.multiply(gram).multiply(p);
-                GF2Matrix64 f = state.wInvPrev2.multiply(identity.xor(state.gPrev.multiply(state.wInvPrev)))
-                        .multiply(state.qPrev).multiply(p);
-                /*
-                 * Build the complete V_{i+1}.
-                 */
-                long[] nextV = BlockLanczosState.projectBlock(av, selectedMask);
-                rightMultiplyBlock64XorInto(nextV, state.v, d);
-                rightMultiplyBlock64XorInto(nextV, state.vPrev, e);
-                rightMultiplyBlock64XorInto(nextV, state.vPrev2, f);
-                state.vPrev2 = state.vPrev;
-                state.vPrev = state.v;
-                state.v = nextV;
-
-                state.wInvPrev2 = state.wInvPrev;
-                state.wInvPrev = wInv;
-
-                state.gPrev = gram;
-                state.qPrev = q;
-                state.selectedMaskPrev = selectedMask;
+                if (VERIFY_BLOCK_LANCZOS) {
+                    long[] transposed = GF2Matrix64.transpose(gram);
+                    if (!Arrays.equals(gram, transposed))
+                        throw new AssertionError("Gram matrix is not symmetric");
+                }
+                GF2Elim64 elimination = GF2Matrix64.eliminate64(gram, activeMask(state.v)
+                        & ~state.selectedMaskPrev);
+                long[] wInv = elimination.embeddedInverse;
+                GF2Matrix64.blockDot(state.v, initialV, bucket, overlap);
+                GF2Matrix64.multiplyInto(wInv, overlap, coefficients);
+                buildRightMulTable64(coefficients, rightMulTable);
+                for (int i = 0; i < state.v.length; i++)
+                    LEFT[i] = rightMultiplyLookup(state.v[i], rightMulTable);
+                updateLanczosState(elimination.selectedMask, av, gram, wInv, state, dTable, eTable, fTable,
+                        bucket);
                 if (iter > rowCount + 64)
                     throw new IllegalStateException("Block Lanczos did not terminate");
             }
         }
-        private Block128 multiplyTransposeBlock128(long[] lowBlock, long[] highBlock) {
-            if (lowBlock.length != rowCount || highBlock.length != rowCount)
-                throw new IllegalArgumentException("Row-block dimension mismatch");
-            Block128 result = new Block128(columnCount);
-            for (int row = 0; row < rowCount; row++) {
-                long low = lowBlock[row];
-                long high = highBlock[row];
-                for (int col : rowColumns[row]) {
-                    result.low[col] ^= low;
-                    result.high[col] ^= high;
-                }
-            }
-
-            return result;
+        private static final long[] scratchA = new long[64];
+        private static final long[] scratchB = new long[64];
+        private static void updateLanczosState(long selectedMask, long[] av, long[] gram, long[] wInv,
+                                               BlockLanczosState state, long[] dTable, long[] eTable,
+                                               long[] fTable, long[][] bucket) {
+            // qRows = (h * P) XOR gram where h = av^T av
+            long[] qRows = new long[64];
+            GF2Matrix64.blockDot(av, av, bucket, qRows);
+            for (int i = 0; i < 64; i++)
+                qRows[i] = (qRows[i] & selectedMask) ^ gram[i];
+            // d = I XOR wInv*q
+            GF2Matrix64.multiplyInto(wInv, qRows, scratchA);
+            for (int i = 0; i < 64; i++)
+                scratchA[i] ^= 1L << i;
+            buildRightMulTable64(scratchA, dTable);
+            // e = (wInvPrev * gram) * P
+            GF2Matrix64.multiplyInto(state.wInvPrev, gram, scratchA);
+            for (int i = 0; i < 64; i++)
+                scratchA[i] &= selectedMask;
+            buildRightMulTable64(scratchA, eTable);
+            // f
+            GF2Matrix64.multiplyInto(state.gPrev, state.wInvPrev, scratchA);
+            for (int i = 0; i < 64; i++)
+                scratchA[i] ^= 1L << i;
+            GF2Matrix64.multiplyInto(state.wInvPrev2, scratchA, scratchB);
+            GF2Matrix64.multiplyInto(scratchB, state.qPrev, scratchA);
+            for (int i = 0; i < 64; i++)
+                scratchA[i] &= selectedMask;
+            buildRightMulTable64(scratchA, fTable);
+            long[] nextV = new long[av.length];
+            long t0 = TMX.getCurrentThreadCpuTime();
+            for (int i = 0; i < nextV.length; i++)
+                nextV[i] = (av[i] & selectedMask)
+                        ^ rightMultiplyLookup(state.v[i], dTable)
+                        ^ rightMultiplyLookup(state.vPrev[i], eTable)
+                        ^ rightMultiplyLookup(state.vPrev2[i], fTable);
+            tableApplyTime += TMX.getCurrentThreadCpuTime() - t0;
+            state.vPrev2 = state.vPrev;
+            state.vPrev = state.v;
+            state.v = nextV;
+            state.wInvPrev2 = state.wInvPrev;
+            state.wInvPrev = wInv;
+            state.gPrev = gram;
+            state.qPrev = qRows;
+            state.selectedMaskPrev = selectedMask;
         }
         long[][] extractLanczosDependencies(long[] d, long[] terminalV) {
-            Block128 mtz = multiplyTransposeBlock128(d, terminalV);
+            long[] low = new long[columnCount];
+            long[] high = new long[columnCount];
+            for (int row = 0; row < rowCount; row++) {
+                long lo = d[row];
+                long hi = terminalV[row];
+                for (int col : rowColumns[row]) {
+                    low[col] ^= lo;
+                    high[col] ^= hi;
+                }
+            }
             ArrayList<long[]> dependencies = new ArrayList<>();
-            Combination128[] combinations = Combination128.eliminate128Columns(mtz.low, mtz.high);
+            Combination128[] combinations = Combination128.eliminate128Columns(low, high);
             for (Combination128 combination : combinations) {
                 long[] dependency = combineCandidateBlocksPacked(d, terminalV, combination.low, combination.high);
-                long[] check = multiplyTransposeVector(dependency);
-                for (long word : check)
-                    if (word != 0L) throw new AssertionError("Invalid Block Lanczos dependency");
+                if (VERIFY_BLOCK_LANCZOS) {
+                    long[] check = multiplyTransposeVector(dependency);
+                    for (long word : check)
+                        if (word != 0L)
+                            throw new AssertionError("Invalid Block Lanczos dependency");
+                }
                 dependencies.add(dependency);
             }
             return dependencies.toArray(long[][]::new);
         }
     }
-    private static long activeLaneMask(long[] block) {
+    private static long activeMask(long[] block){
         long mask = 0L;
         for (long row : block)
             mask |= row;
@@ -8004,11 +7989,11 @@ public class LargeInteger extends ScalarAtom{
         long[] vPrev;
         long[] vPrev2;
 
-        GF2Matrix64 wInvPrev;
-        GF2Matrix64 wInvPrev2;
+        long[] wInvPrev;
+        long[] wInvPrev2;
 
-        GF2Matrix64 gPrev;
-        GF2Matrix64 qPrev;
+        long[] gPrev;
+        long[] qPrev;
 
         long selectedMaskPrev;
 
@@ -8019,21 +8004,16 @@ public class LargeInteger extends ScalarAtom{
             vPrev = new long[dimension];
             vPrev2 = new long[dimension];
 
-            wInvPrev = GF2Matrix64.zero();
-            wInvPrev2 = GF2Matrix64.zero();
+            wInvPrev = new long[64];
+            wInvPrev2 = new long[64];
 
-            gPrev = GF2Matrix64.zero();
-            qPrev = GF2Matrix64.zero();
+            gPrev = new long[64];
+            qPrev = new long[64];
 
             selectedMaskPrev = -1L;
         }
-        static long[] projectBlock(long[] block, long selectedMask) {
-            long[] result = new long[block.length];
-            for (int i = 0; i < block.length; i++)
-                result[i] = block[i] & selectedMask;
-            return result;
-        }
     }
+    private static final boolean VERIFY_BLOCK_LANCZOS = false;
     private record BlockLanczosResult(long[] LEFT, long[] RIGHT, long[] terminalV, int iterations) {}
     /**
      * @param selectedMask    Indices selected for S_i. Bit j is set when Gram column/row j is active.
@@ -8041,36 +8021,17 @@ public class LargeInteger extends ScalarAtom{
      * @param embeddedInverse S_i * (S_i^T Q S_i)^-1 * S_i^T. Always defined; zero matrix when rank == 0.
      * @param reduced         Optional but useful for debugging.
      */
-    private record GF2Elim64(int rank, long selectedMask, GF2Matrix64 inverse, GF2Matrix64 embeddedInverse,
-                             GF2Matrix64 reduced) {}
-    private record GF2Matrix64(long[] rows) {
-        public static GF2Matrix64 zero(){return new GF2Matrix64(new long[64]);}
-        static GF2Matrix64 diagonal(long mask) {
-            GF2Matrix64 result = zero();
-            for (long bits = mask; bits != 0L; bits &= bits - 1) {
-                int lane = Long.numberOfTrailingZeros(bits);
-                result.rows[lane] = 1L << lane;
-            }
-            return result;
-        }
-        boolean isZero(){
-            for(long L: rows) if(L != 0) return false;
-            return true;
-        }
-        static GF2Matrix64 identity() {
-            long[] rows = new long[64];
-            for (int i = 0; i < 64; i++)
-                rows[i] = 1L << i;   // Must be 1L, not 1
-            return new GF2Matrix64(rows);
-        }
-        public GF2Matrix64 {if (rows.length != 64) throw new IllegalArgumentException("Expected 64 rows");}
-        GF2Matrix64 xor(GF2Matrix64 other) {
-            long[] result = new long[64];
-            for (int row = 0; row < 64; row++)
-                result[row] = rows[row] ^ other.rows[row];
-            return new GF2Matrix64(result);
-        }
-        GF2Elim64 eliminate64(long requiredMask) {
+    private record GF2Elim64(int rank, long selectedMask, long[] inverse, long[] embeddedInverse, long[] reduced) {}
+    private static long blockDotTime;
+    private static long eliminateTime;
+    private static long tableBuildTime;
+    private static long tableApplyTime;
+    private static long transposeBlockTime;
+    private static long blockTime;
+    private static final class GF2Matrix64{
+        private GF2Matrix64(){}
+        static GF2Elim64 eliminate64(long[] rows, long requiredMask) {
+            long t0 = TMX.getCurrentThreadCpuTime();
             long[] reducedRows = rows.clone();
             int[] columnOrder = new int[64];
             int orderLength = 0;
@@ -8100,16 +8061,19 @@ public class LargeInteger extends ScalarAtom{
                 selectedMask |= 1L << col;
                 rank++;
             }
-            if ((selectedMask & requiredMask) != requiredMask)
-                throw new BlockLanczosBreakdownException("Could not include required Lanczos lanes: " +
+            if(VERIFY_BLOCK_LANCZOS)
+                if ((selectedMask & requiredMask) != requiredMask)
+                    throw new AssertionError("Could not include required Lanczos lanes: " +
                         "required=" + Long.toHexString(requiredMask) + ", selected=" +
                         Long.toHexString(selectedMask));
-            GF2Matrix64 embeddedInverse = embeddedPrincipalInverse(selectedMask);
-            verifyEmbeddedInverse(selectedMask, embeddedInverse);
-            GF2Matrix64 inverse = rank == 64 ? embeddedInverse : null;
-            return new GF2Elim64(rank, selectedMask, inverse, embeddedInverse, new GF2Matrix64(reducedRows));
+            long[] embeddedInverse = embeddedPrincipalInverse(rows, selectedMask);
+            if(VERIFY_BLOCK_LANCZOS)
+                verifyEmbeddedInverse(selectedMask, embeddedInverse, rows);
+            long[] inverse = rank == 64 ? embeddedInverse : null;
+            eliminateTime += TMX.getCurrentThreadCpuTime() - t0;
+            return new GF2Elim64(rank, selectedMask, inverse, embeddedInverse, reducedRows);
         }
-        private GF2Matrix64 inverseFullRankDirect() {
+        private static long[] inverseFullRankDirect(long[] rows) {
             long[] left = rows.clone();
             long[] right = new long[64];
             for (int row = 0; row < 64; row++)
@@ -8134,11 +8098,11 @@ public class LargeInteger extends ScalarAtom{
                 rank++;
             }
             if (rank != 64) return null;
-            return new GF2Matrix64(right);
+            return right;
         }
-        GF2Matrix64 embeddedPrincipalInverse(long selectedMask) {
+        static long[] embeddedPrincipalInverse(long[] rows, long selectedMask) {
             int rank = Long.bitCount(selectedMask);
-            if (rank == 0) return zero();
+            if (rank == 0) return new long[64];
             int[] selected = new int[rank];
             int position = 0;
             for (long bits = selectedMask;
@@ -8166,15 +8130,14 @@ public class LargeInteger extends ScalarAtom{
             }
             for (int i = rank; i < 64; i++)
                 compactRows[i] = 1L << i;
-            GF2Matrix64 compact = new GF2Matrix64(compactRows);
-            GF2Matrix64 compactInverse = compact.inverseFullRankDirect();
+            long[] compactInverse = inverseFullRankDirect(compactRows);
             if (compactInverse == null)
                 throw new AssertionError("Selected principal submatrix is singular: "
                         + Long.toHexString(selectedMask));
             long[] embeddedRows = new long[64];
             for (int compactRow = 0; compactRow < rank; compactRow++) {
                 int originalRow = selected[compactRow];
-                long compactInverseRow = compactInverse.rows[compactRow];
+                long compactInverseRow = compactInverse[compactRow];
                 long destination = 0L;
                 for (int compactColumn = 0; compactColumn < rank; compactColumn++) {
                     if ((compactInverseRow & (1L << compactColumn)) != 0L)
@@ -8182,37 +8145,74 @@ public class LargeInteger extends ScalarAtom{
                 }
                 embeddedRows[originalRow] = destination;
             }
-            return new GF2Matrix64(embeddedRows);
+            return embeddedRows;
         }
-        boolean equals(GF2Matrix64 other) {
-            for(int i = 0; i < 64; i++) if(rows[i] != other.rows[i]) return false;
-            return true;
-        }
-        boolean doesntEqual(GF2Matrix64 other){return !equals(other);}
-        void verifyEmbeddedInverse(long selectedMask, GF2Matrix64 embeddedInverse) {
-            GF2Matrix64 projector = GF2Matrix64.diagonal(selectedMask);
-            GF2Matrix64 left = embeddedInverse.multiply(this).multiply(projector);
-            GF2Matrix64 right = projector.multiply(this).multiply(embeddedInverse);
-            if (left.doesntEqual(projector) || right.doesntEqual(projector))
+        static void verifyEmbeddedInverse(long selectedMask, long[] embeddedInverse, long[] rows) {
+            long[] projector = new long[64];
+            for (long bits = selectedMask; bits != 0L; bits &= bits - 1) {
+                int lane = Long.numberOfTrailingZeros(bits);
+                projector[lane] = 1L << lane;
+            }
+            long[] left = multiply(multiply(embeddedInverse, rows), projector);
+            long[] right = multiply(multiply(projector, rows), embeddedInverse);
+            if (!equalsArray(left, projector) || !equalsArray(right, projector))
                 throw new AssertionError("Invalid embedded inverse");
-            if (embeddedInverse.isNotSymmetric())
+            if (!equalsArray(embeddedInverse, transpose(embeddedInverse)))
                 throw new AssertionError("Embedded inverse of symmetric principal minor " + "is not symmetric");
         }
-        GF2Matrix64 multiply(GF2Matrix64 other) {
+        static long[] multiply(long[] rows, long[] other) {
             long[] out = new long[64];
+            multiplyInto(rows, other, out);
+            return out;
+        }
+        static void multiplyInto(long[] a, long[] b, long[] out) {
             for (int i = 0; i < 64; i++) {
-                long bits = rows[i];
+                long bits = a[i];
                 long r = 0L;
                 while (bits != 0L) {
                     int j = Long.numberOfTrailingZeros(bits);
-                    r ^= other.rows[j];
+                    r ^= b[j];
                     bits &= bits - 1;
                 }
                 out[i] = r;
             }
-            return new GF2Matrix64(out);
         }
-        GF2Matrix64 transpose() {
+        static void blockDot(long[] left, long[] right, long[][] bucket, long[] out) {
+            if (left.length != right.length)
+                throw new IllegalArgumentException("Block dimension mismatch");
+            long t0 = TMX.getCurrentThreadCpuTime();
+            for (long[] b : bucket)
+                Arrays.fill(b, 0L);
+            Arrays.fill(out, 0L);
+            for (int coordinate = 0; coordinate < left.length; coordinate++) {
+                long a = left[coordinate];
+                long b = right[coordinate];
+                bucket[0][(int)( a         & 0xFF)] ^= b;
+                bucket[1][(int)((a >>>  8) & 0xFF)] ^= b;
+                bucket[2][(int)((a >>> 16) & 0xFF)] ^= b;
+                bucket[3][(int)((a >>> 24) & 0xFF)] ^= b;
+                bucket[4][(int)((a >>> 32) & 0xFF)] ^= b;
+                bucket[5][(int)((a >>> 40) & 0xFF)] ^= b;
+                bucket[6][(int)((a >>> 48) & 0xFF)] ^= b;
+                bucket[7][(int)((a >>> 56) & 0xFF)] ^= b;
+            }
+            for (int byteIndex = 0; byteIndex < 8; byteIndex++) {
+                long[] t = bucket[byteIndex];
+                int base = byteIndex << 3;
+                for (int value = 1; value < 256; value++) {
+                    long x = t[value];
+                    if (x == 0L) continue;
+                    int mask = value;
+                    while (mask != 0) {
+                        int bit = Integer.numberOfTrailingZeros(mask);
+                        out[base + bit] ^= x;
+                        mask &= mask - 1;
+                    }
+                }
+            }
+            blockDotTime += TMX.getCurrentThreadCpuTime() - t0;
+        }
+        static long[] transpose(long[] rows) {
             long[] transposedRows = new long[64];
             for (int row = 0; row < 64; row++) {
                 long bits = rows[row];
@@ -8222,47 +8222,8 @@ public class LargeInteger extends ScalarAtom{
                     bits &= bits - 1;
                 }
             }
-            return new GF2Matrix64(transposedRows);
+            return transposedRows;
         }
-        boolean isNotSymmetric() {return doesntEqual(transpose());}
-    }
-    private static final class BlockLanczosBreakdownException extends RuntimeException{
-        BlockLanczosBreakdownException(String message){super(message);}}
-    private static GF2Matrix64 blockDot(long[] left, long[] right) {
-        if (left.length != right.length)
-            throw new IllegalArgumentException("Block dimension mismatch");
-
-        // 8 byte positions × 256 possible masks.
-        long[][] bucket = new long[8][256];
-
-        for (int coordinate = 0; coordinate < left.length; coordinate++) {
-            long a = left[coordinate];
-            long b = right[coordinate];
-            bucket[0][(int)( a         & 0xff)] ^= b;
-            bucket[1][(int)((a >>>  8) & 0xff)] ^= b;
-            bucket[2][(int)((a >>> 16) & 0xff)] ^= b;
-            bucket[3][(int)((a >>> 24) & 0xff)] ^= b;
-            bucket[4][(int)((a >>> 32) & 0xff)] ^= b;
-            bucket[5][(int)((a >>> 40) & 0xff)] ^= b;
-            bucket[6][(int)((a >>> 48) & 0xff)] ^= b;
-            bucket[7][(int)((a >>> 56) & 0xff)] ^= b;
-        }
-        long[] rows = new long[64];
-        for (int byteIndex = 0; byteIndex < 8; byteIndex++) {
-            long[] t = bucket[byteIndex];
-            int base = byteIndex << 3;
-            for (int value = 1; value < 256; value++) {
-                long x = t[value];
-                if (x == 0L) continue;
-                int mask = value;
-                while (mask != 0) {
-                    int bit = Integer.numberOfTrailingZeros(mask);
-                    rows[base + bit] ^= x;
-                    mask &= mask - 1;
-                }
-            }
-        }
-        return new GF2Matrix64(rows);
     }
     private static int firstSetBit(long[] packed) {
         for (int word = 0; word < packed.length; word++) {
@@ -8277,26 +8238,6 @@ public class LargeInteger extends ScalarAtom{
             throw new IllegalArgumentException("Block dimension mismatch");
         for (int i = 0; i < destination.length; i++)
             destination[i] ^= source[i];
-    }
-
-    private static long[] xorBlocks(long[] left, long[] right) {
-        if (left.length > right.length) {
-            long[] temp = left;
-            left = right;
-            right = temp;
-        }
-        long[] out = new long[right.length];
-        for (int i = 0; i < right.length; i++)
-            out[i] = i < left.length ? left[i] ^ right[i] : right[i];
-        return out;
-    }
-    private static final class Block128 {
-        final long[] low;
-        final long[] high;
-        Block128(int dimension) {
-            low = new long[dimension];
-            high = new long[dimension];
-        }
     }
     private record Combination128(long low, long high) {
         static Combination128[] eliminate128Columns(long[] lowRows, long[] highRows) {
@@ -8368,44 +8309,49 @@ public class LargeInteger extends ScalarAtom{
         GF2SparseMatrix matrix = setup.matrix;
         for (int attempt = 0; attempt < 8; attempt++) {
             SplittableRandom attemptRng = rng.split();
-            try {
-                BlockLanczosResult lanczos = matrix.blockLanczos(attemptRng);
-                long[] d = xorBlocks(lanczos.LEFT, lanczos.RIGHT);
-                long[][] filteredDependencies =
-                        matrix.extractLanczosDependencies(d, lanczos.terminalV);
-                if (filteredDependencies.length != 0)
-                    return expandFilteredDependencies(filteredDependencies, setup.rowDeps, originalRelationCount);
-            } catch (BlockLanczosBreakdownException _){}
+            long t0 = TMX.getCurrentThreadCpuTime();
+            BlockLanczosResult lanczos = matrix.blockLanczos(attemptRng);
+            System.out.println("Block Lanczos iterations: " + lanczos.iterations);
+            System.out.println("Lanczos core: " + formatSeconds(TMX.getCurrentThreadCpuTime()-t0));
+            System.out.println("Time spent on blockDot: " + formatSeconds(blockDotTime));
+            System.out.println("Time spent on eliminate64: " + formatSeconds(eliminateTime));
+            System.out.println("Time spent on buildRightMulTable: " + formatSeconds(tableBuildTime));
+            System.out.println("Time spent on rightMultiplyLookup: " + formatSeconds(tableApplyTime));
+            System.out.println("Time spent on A^T * block: " + formatSeconds(transposeBlockTime));
+            System.out.println("Time spent on A * block: " + formatSeconds(blockTime));
+            long[] d = new long[Math.max(lanczos.LEFT.length, lanczos.RIGHT.length)];
+            xorInto(d, lanczos.LEFT);
+            xorInto(d, lanczos.RIGHT);
+            t0 = TMX.getCurrentThreadCpuTime();
+            long[][] filteredDependencies = matrix.extractLanczosDependencies(d, lanczos.terminalV);
+            if (filteredDependencies.length == 0) continue;
+            System.out.println("Extracting dependencies: " + formatSeconds(TMX.getCurrentThreadCpuTime() - t0));
+            t0 = TMX.getCurrentThreadCpuTime();
+            long[][] expanded = new long[filteredDependencies.length][];
+            int expectedWords = (setup.rowDeps.length + 63) >>> 6;
+            for (int i = 0; i < filteredDependencies.length; i++) {
+                long[] packedFilteredRows = filteredDependencies[i];
+                if (packedFilteredRows.length != expectedWords)
+                    throw new IllegalArgumentException("Filtered dependency length mismatch");
+                long[] originalRelations = new long[(originalRelationCount + 63) >>> 6];
+                for (int wordIndex = 0; wordIndex < packedFilteredRows.length; wordIndex++) {
+                    long bits = packedFilteredRows[wordIndex];
+                    while (bits != 0L) {
+                        int offset = Long.numberOfTrailingZeros(bits);
+                        int filteredRow = (wordIndex << 6) + offset;
+                        bits &= bits - 1;
+                        if (filteredRow >= setup.rowDeps.length) break;
+                        for (int originalRelation : setup.rowDeps[filteredRow])
+                            originalRelations[originalRelation >>> 6] ^= 1L << (originalRelation & 63);
+                    }
+                }
+                expanded[i] = originalRelations;
+            }
+            System.out.println("Expanding dependencies: " + formatSeconds(TMX.getCurrentThreadCpuTime() - t0));
+            System.out.println();
+            return expanded;
         }
         throw new IllegalStateException("Block Lanczos repeatedly failed to find dependencies");
-    }
-    private static long[] expandFilteredDependency(long[] packedFilteredRows, int[][] rowDeps,
-                                                   int originalRelationCount) {
-        int expectedWords = (rowDeps.length + 63) >>> 6;
-        if (packedFilteredRows.length != expectedWords)
-            throw new IllegalArgumentException("Filtered dependency length mismatch");
-        long[] originalRelations = new long[(originalRelationCount + 63) >>> 6];
-        for (int wordIndex = 0;
-             wordIndex < packedFilteredRows.length;
-             wordIndex++) {
-            long bits = packedFilteredRows[wordIndex];
-            while (bits != 0L) {
-                int offset = Long.numberOfTrailingZeros(bits);
-                int filteredRow = (wordIndex << 6) + offset;
-                bits &= bits - 1;
-                if (filteredRow >= rowDeps.length) break;
-                for (int originalRelation : rowDeps[filteredRow])
-                    originalRelations[originalRelation >>> 6] ^= 1L << (originalRelation & 63);
-            }
-        }
-        return originalRelations;
-    }
-    private static long[][] expandFilteredDependencies(long[][] filteredDependencies, int[][] rowDeps,
-                                                       int originalRelationCount) {
-        long[][] expanded = new long[filteredDependencies.length][];
-        for (int i = 0; i < filteredDependencies.length; i++)
-            expanded[i] = expandFilteredDependency(filteredDependencies[i], rowDeps, originalRelationCount);
-        return expanded;
     }
     private static long[] reconstructFromSparseDependency(int[] deps, QSFullRelationPool relations,
                                                           QSFactorBase factorBase, long[] N) {
@@ -8521,10 +8467,10 @@ public class LargeInteger extends ScalarAtom{
         if (B > Integer.MAX_VALUE)
             throw new ArithmeticException("Unconstrained QS bound " + B + " exceeds supported int range");
         try {
-            long t0 = System.nanoTime();
+            long t0 = TMX.getCurrentThreadCpuTime();
             QSFactorBase factorBase = buildFactorBase(limbs, (int) B);
             int[] fbIndex = buildFactorBaseIndexMap(factorBase);
-            long factorBaseBuildTime = System.nanoTime() - t0;
+            long factorBaseBuildTime = TMX.getCurrentThreadCpuTime() - t0;
             String S = toString();
             System.out.println("Number entered unconstrained QS: " + S + "(" + S.length() + " digits)");
             System.out.println("Factor-base bound: " + B);
@@ -8540,7 +8486,7 @@ public class LargeInteger extends ScalarAtom{
             System.out.println("A RNG seed: " + Long.toUnsignedString(A_RNG_SEED));
             System.out.println();
             SplittableRandom A_RNG = new SplittableRandom(A_RNG_SEED);
-            long relationStart = System.nanoTime();
+            long relationStart = TMX.getCurrentThreadCpuTime();
             System.out.printf(
                     "%3s %50s %10s %12s %12s %10s %8s %20s %14s %11s %11s %16s %16s %14s %13s %14s %14s %12s %12s%n",
                     "#", "A", "int", "candidates", "full", "sing", "merge", "precomputation",
@@ -8554,28 +8500,24 @@ public class LargeInteger extends ScalarAtom{
 //                if(blocks % 16 == 0){
 //                    System.out.println("Total usable relations up to now: " + relations.size());
 //                    System.out.println("Total blocks up to now: " + blocks);
-//                    System.out.println("Time up to now: " + formatSeconds(System.nanoTime() - relationStart));
+//                    System.out.println("Time up to now: " + formatSeconds(TMX.getCurrentThreadCpuTime() - relationStart));
 //                    System.out.println();
 //                }
             }
             System.out.println();
-            long relationNanos = System.nanoTime() - relationStart;
+            long relationNanos = TMX.getCurrentThreadCpuTime() - relationStart;
             System.out.println("Total QS relation time: " + formatSeconds(relationNanos));
             System.out.println("Overall relation collection rate: " + relations.size * 1e9 / relationNanos + " relations/second");
             System.out.println();
             int originalRelationCount = relations.size;
-            long buildMatrixNanos = System.nanoTime();
+            long buildMatrixNanos = TMX.getCurrentThreadCpuTime();
             SparseMatrixSetup setup = buildQSMatrix(relations, factorBase, limbs);
-            buildMatrixNanos = System.nanoTime() - buildMatrixNanos;
+            buildMatrixNanos = TMX.getCurrentThreadCpuTime() - buildMatrixNanos;
             System.out.println("Matrix build time: " + formatSeconds(buildMatrixNanos));
             long matrixSeed = 6722688380560470180L;
-            System.out.println("Block Lanczos RNG seed: " + Long.toUnsignedString(matrixSeed));
             System.out.println();
-            long matrixSolveNanos = System.nanoTime();
-            long[][] dependencies = nullspaceDependencies(setup, new SplittableRandom(matrixSeed), originalRelationCount);
-            matrixSolveNanos = System.nanoTime() - matrixSolveNanos;
-            System.out.println("Matrix solve time: " + formatSeconds(matrixSolveNanos));
-            System.out.println();
+            long[][] dependencies = nullspaceDependencies(setup, new SplittableRandom(matrixSeed),
+                    originalRelationCount);
             for (long[] dependency : dependencies) {
                 long[] factor = reconstructFactor(dependency, relations, factorBase, limbs);
                 if (isNontrivialFactor(factor, limbs))
@@ -8593,7 +8535,7 @@ public class LargeInteger extends ScalarAtom{
          */
         double probeSeconds = Math.max(remainingECMSeconds * 0.05, 20.0);
         long probeBudgetNanos = Math.round(probeSeconds * 1e9);
-        long totalStart = System.nanoTime();
+        long totalStart = TMX.getCurrentThreadCpuTime();
         String numberText = new LargeInteger(task.n, false).toString();
         System.out.println("Number entering QS: " + numberText + "(" + numberText.length() + " digits)");
         /*
@@ -8615,7 +8557,7 @@ public class LargeInteger extends ScalarAtom{
             SplittableRandom rng = FAST_RNG.split();
             System.out.printf(
                     "%3s %50s %10s %12s %12s %10s %8s %20s %14s %11s %11s %16s %16s %14s %13s %14s %14s %12s %12s%n",
-                    "#", "A", "int", "candidates", "full", "sing", "merge", "precomputation",
+                    '#', 'A', "int", "candidates", "full", "sing", "merge", "precomputation",
                     "root", "small", "large", "scanning", "smallDiv", "class", "processing", "total", "rel/s",
                     "tests", "rel/poly"
             );
@@ -8623,14 +8565,15 @@ public class LargeInteger extends ScalarAtom{
             while (task.relations.size < requiredRelations) {
                 int relationsBefore = task.relations.size;
                 System.out.printf("%4d", blocks+1);
-                long blockStart = System.nanoTime();
-                sieve128Polynomials(task.n, sqrt2N, factorBase, fbIndex, task.relations, task.partials, task.partialGraph, rng);
-                long blockNanos = System.nanoTime() - blockStart;
+                long blockStart = TMX.getCurrentThreadCpuTime();
+                sieve128Polynomials(task.n, sqrt2N, factorBase, fbIndex, task.relations, task.partials,
+                        task.partialGraph, rng);
+                long blockNanos = TMX.getCurrentThreadCpuTime() - blockStart;
                 int relationsAdded = task.relations.size - relationsBefore;
                 double rate = blockNanos == 0L ? 0.0 : relationsAdded * 1e9 / blockNanos;
                 blockRates.add(rate);
                 blocks++;
-                long elapsedNanos = System.nanoTime() - totalStart;
+                long elapsedNanos = TMX.getCurrentThreadCpuTime() - totalStart;
                 boolean budgetExpired = elapsedNanos >= probeBudgetNanos;
                 if (!budgetExpired) continue;
                 /*
@@ -8666,16 +8609,17 @@ public class LargeInteger extends ScalarAtom{
              */
             while (task.relations.size < requiredRelations) {
                 System.out.printf("%4d", blocks+1);
-                sieve128Polynomials(task.n, sqrt2N, factorBase, fbIndex, task.relations, task.partials, task.partialGraph, rng);
+                sieve128Polynomials(task.n, sqrt2N, factorBase, fbIndex, task.relations, task.partials,
+                        task.partialGraph, rng);
                 blocks++;
             }
-            System.out.println("Total QS relation time: " + (System.nanoTime() - totalStart) / 1e9 + " seconds");
+            System.out.println("Total QS relation time: " + formatSeconds(TMX.getCurrentThreadCpuTime() - totalStart));
             int originalRelationCount = task.relations.size;
-            long matrixTime = System.nanoTime();
+            long matrixTime = TMX.getCurrentThreadCpuTime();
             SparseMatrixSetup setup = buildQSMatrix(task.relations, factorBase, task.n);
             long[][] dependencies = nullspaceDependencies(setup, FAST_RNG.split(), originalRelationCount);
-            matrixTime = System.nanoTime() - matrixTime;
-            System.out.println("Matrix build+solve time: " + matrixTime / 1e9 + " seconds");
+            matrixTime = TMX.getCurrentThreadCpuTime() - matrixTime;
+            System.out.println("Matrix build+solve time: " + formatSeconds(matrixTime));
             System.out.println();
             for (long[] dependency : dependencies) {
                 long[] factor = reconstructFactor(dependency, task.relations, factorBase, task.n);

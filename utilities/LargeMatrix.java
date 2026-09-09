@@ -360,7 +360,7 @@ public class LargeMatrix extends TensorAtom {
         LargeMatrix L = new LargeMatrix();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i = i.add(1)){
             LargeVector v = new LargeVector();
-            for(LargeInteger j = LargeInteger.ZERO; j.lessThan(M.cols().longDivision(LargeInteger.TWO)); j=j.add(1))
+            for(LargeInteger j = LargeInteger.ZERO; j.lessThan(M.cols().shiftRight(1)); j=j.add(1))
                 v.append(M.get(i, j));
             L.appendRow(v);
         }
@@ -369,7 +369,7 @@ public class LargeMatrix extends TensorAtom {
         LargeMatrix R = new LargeMatrix();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i = i.add(1)){
             LargeVector v = new LargeVector();
-            for(LargeInteger j = M.cols().longDivision(LargeInteger.TWO); j.lessThan(M.cols()); j=j.add(1))
+            for(LargeInteger j = M.cols().shiftRight(1); j.lessThan(M.cols()); j=j.add(1))
                 v.append(M.get(i, j));
             R.appendRow(v);
         }

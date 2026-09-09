@@ -196,7 +196,7 @@ public class GeneralPolynomial{
                 if(expTemp.equals(LargeInteger.ONE)) break;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.longDivision(LargeInteger.TWO);
+            expTemp = expTemp.shiftRight(1);
         }
         return P;
     }

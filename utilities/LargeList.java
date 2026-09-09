@@ -275,7 +275,7 @@ public class LargeList<T> implements Iterable<T>{
             for(int i = 0; i < this.sizeInt/2; i++)
                 swap(i, this.sizeInt-i-1);
         }else{
-            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size.longDivision(LargeInteger.TWO)); i = i.add(1))
+            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size.shiftRight(1)); i = i.add(1))
                 swap(i, (LargeInteger) size().subtract(i));
         }
     }

@@ -97,7 +97,7 @@ public class LargePowerNode extends ScalarAtom{
                 if(expTemp.equals(LargeInteger.ONE)) break;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.longDivision(LargeInteger.TWO);
+            expTemp = expTemp.shiftRight(1);
         }
         this.base = res;
         this.exponent = exponent.denominator.reciprocal();
@@ -221,7 +221,7 @@ public class LargePowerNode extends ScalarAtom{
                     if(expTemp.abs().equals(LargeInteger.ONE)) break;
                 }
                 basTemp = basTemp.square();
-                expTemp = expTemp.longDivision(LargeInteger.TWO);
+                expTemp = expTemp.shiftRight(1);
             }
             expTemp = ((LargeFraction)h.exponent.divide(GC)).numerator;
             basTemp = (ScalarAtom) h.base.clone();
@@ -233,7 +233,7 @@ public class LargePowerNode extends ScalarAtom{
                     if(expTemp.abs().equals(LargeInteger.ONE)) break;
                 }
                 basTemp = basTemp.square();
-                expTemp = expTemp.longDivision(LargeInteger.TWO);
+                expTemp = expTemp.shiftRight(1);
             }
             result = Parser.parse(result.toString());
             return new LargePowerNode(result, GC, signFactor.multiply(h.signFactor));
