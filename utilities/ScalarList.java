@@ -35,7 +35,7 @@ public class ScalarList{
             sortRangeWithArrayList(bottom, top);
             return;
         }
-        LargeInteger mid = ((LargeInteger) bottom.add(top)).shiftRight(1);
+        LargeInteger mid = bottom.add(top).shiftRight(1);
         mergeSort(bottom, mid);
         mergeSort(mid, top);
         //merge step
@@ -62,7 +62,7 @@ public class ScalarList{
             j = j.add(1);
         }
         for (LargeInteger k = LargeInteger.ZERO; k.lessThan(temp.size()); k = k.add(1))
-            list.set((LargeInteger) bottom.add(k), temp.get(k));
+            list.set(bottom.add(k), temp.get(k));
     }
     private void sortRangeWithArrayList(LargeInteger bottom, LargeInteger top) {
         int n = Integer.parseInt(top.subtract(bottom).toString());
@@ -88,7 +88,7 @@ public class ScalarList{
         sort();
         if (list.intSize() == 0) throw new IllegalArgumentException("Cannot calculate median of empty list");
         if (list.size().isOdd()) return list.get(list.size().shiftRight(1));
-        else return list.get(list.size().shiftRight(1)).add(list.get((LargeInteger) list.size().shiftRight(1).subtract(LargeInteger.ONE))).divide(LargeInteger.TWO);
+        else return list.get(list.size().shiftRight(1)).add(list.get(list.size().shiftRight(1).subtract(1))).divide(LargeInteger.TWO);
     }
     public ScalarAtom mean() {
         ScalarAtom result = LargeInteger.ZERO;
@@ -106,10 +106,10 @@ public class ScalarList{
             throw new IllegalArgumentException("Need at least 2 values in list");
         sort();
         LargeList<ScalarAtom> copy = new LargeList<>();
-        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(list.size().shiftRight(1)); i = (LargeInteger) i.add(LargeInteger.ONE))
-            copy.add(list.get(i));
+        for (ScalarAtom atom : list)
+            copy.add(atom);
         LargeList<ScalarAtom> copy2 = new LargeList<>();
-        for (LargeInteger i = (LargeInteger) list.size().shiftRight(1).add(LargeInteger.ONE); i.lessThan(list.size()); i = (LargeInteger) i.add(LargeInteger.ONE))
+        for (LargeInteger i = list.size().shiftRight(1).add(1); i.lessThan(list.size()); i = i.add(1))
             copy2.add(list.get(i));
         return new ScalarList(copy2).median().subtract(new ScalarList(copy).median());
     }
@@ -125,11 +125,11 @@ public class ScalarList{
         ScalarList copy = new ScalarList(list);
         LargeInteger frequency = LargeInteger.ONE;
         LargeList<LargeInteger> frequencies = new LargeList<>();
-        for (LargeInteger i = LargeInteger.ONE; i.lessThan(copy.list.size()); i = (LargeInteger) i.add(LargeInteger.ONE)){
-            if(copy.list.get(i).greaterThan(copy.list.get((LargeInteger) i.subtract(LargeInteger.ONE)))){
-                frequency = (LargeInteger) frequency.add(LargeInteger.ONE);
+        for (LargeInteger i = LargeInteger.ONE; i.lessThan(copy.list.size()); i = i.add(1)){
+            if(copy.list.get(i).greaterThan(copy.list.get(i.subtract(1)))){
+                frequency = frequency.add(1);
                 copy.list.remove(i);
-                i = (LargeInteger) i.subtract(LargeInteger.ONE);
+                i = i.subtract(1);
             }else{
                 frequencies.add(frequency);
                 frequency = LargeInteger.ONE;
@@ -137,7 +137,7 @@ public class ScalarList{
         }
         LargeInteger maxIndex = LargeInteger.ZERO;
         LargeInteger maxValue = frequencies.getFirst();
-        for (LargeInteger i = LargeInteger.ONE; i.lessThan(copy.list.size()); i = (LargeInteger) i.add(LargeInteger.ONE)){
+        for (LargeInteger i = LargeInteger.ONE; i.lessThan(copy.list.size()); i = i.add(1)){
             if (frequencies.get(i).greaterThan(maxValue)) {
                 maxIndex = i;
                 maxValue = frequencies.get(i);

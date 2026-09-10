@@ -76,30 +76,6 @@ public class DevPlayground {
         if (sink == 0x123456789ABCDEFL)
             System.out.println(sink);
     }
-    static void benchmarkMultiplyMagnitudes() {
-        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536};
-        int[] KThresholds = {32, 48, 64, 128, 192, 256, 384, 512, 768};
-        int[] TThresholds = {128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384};
-        for (int mLen : sizes) {
-            LargeInteger A = LargeInteger.randomChunks(mLen);
-            LargeInteger B = LargeInteger.randomChunks(mLen);
-            System.out.println("Chunks: " + mLen);
-            //warmup
-            for(int trial = 0; trial < 100; trial++)
-                sink = A.multiply(B);
-            for(int KT: KThresholds) {
-                if(KT > mLen) continue;
-                for(int TT: TThresholds) {
-                    if(TT > KT) continue;
-                    long start = System.nanoTime();
-                    for(int round = 0; round < mLen; round++)
-                        sink = LargeInteger.multiplyMagnitudesWithThresholds(A.limbs, B.limbs, KT, TT);
-                    long elapsed = System.nanoTime() - start;
-                    System.out.printf("%20.5f", elapsed/1e9/mLen);
-                }
-            }
-        }
-    }
     private static long[] randomBenchmarkMag(
             int limbs,
             SplittableRandom rng
@@ -129,7 +105,7 @@ public class DevPlayground {
                 LargeInteger B = LargeInteger.randomChunks(sizes[k]);
                 BigInteger BA = A.toBigInteger();
                 BigInteger BB = B.toBigInteger();
-                LargeInteger LResult = (LargeInteger) A.multiply(B);
+                LargeInteger LResult = A.multiply(B);
                 BigInteger BResult = BA.multiply(BB);
                 if (!LResult.toBigInteger().equals(BResult))
                     throw new AssertionError("Product is wrong");
@@ -342,7 +318,7 @@ public class DevPlayground {
             )
     );
     static void main() {
-        System.out.println(new LargeInteger("1056789109669864471763593655329859336296915214623458801219226050139").quadraticSieveWithoutConstraints());
+        testMultiply();
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
@@ -362,8 +338,8 @@ public class DevPlayground {
         System.out.println("c^3 = " + c.cube());
         System.out.println("gcd(a, b) = " + a.gcd(b));
         System.out.println("lcm(a, b) = " + a.lcm(b));
-        System.out.println("factor(-a*b+c) = " + ((LargeInteger)a.negate().multiply(b).add(c)).factor());
-        System.out.println("totient(a+b+c) = " + ((LargeInteger)a.add(b).add(c)).totient());
+        System.out.println("factor(-a*b+c) = " + a.negate().multiply(b).add(c).factor());
+        System.out.println("totient(a+b+c) = " + a.add(b).add(c).totient());
         System.out.println();
     }
 

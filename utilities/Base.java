@@ -15,7 +15,7 @@ public class Base{
         intPart = new LargeList<>();
         while(copy.greaterThan(LargeInteger.ZERO)){
             intPart.add(copy.mod(B));
-            copy = copy.longDivision(bigBase);
+            copy = copy.divide(bigBase);
         }
         intPart.reverse();
         LargeFraction copy2 = N.abs().fracPart();
@@ -34,7 +34,7 @@ public class Base{
         copy = copy2.intPart();
         for (long i = 0; i < terminatingDigits; i++) {
             terminatingPart.add(copy.mod(B));
-            copy = copy.longDivision(bigBase);
+            copy = copy.divide(bigBase);
         }
         terminatingPart.reverse();
         //repeating part
@@ -117,7 +117,7 @@ public class Base{
             LargeInteger basePowR = LargeInteger.ONE;
             for (LargeInteger i = LargeInteger.ZERO; i.lessThan(repeatingPart.size()); i = i.add(1))
                 basePowR = basePowR.multiply(base);
-            LargeInteger repeatDenominator = (LargeInteger) basePowT.multiply(basePowR.subtract(1));
+            LargeInteger repeatDenominator = basePowT.multiply(basePowR.subtract(1));
             result = (LargeFraction) result.add(new LargeFraction(repeatValue, repeatDenominator));
         }
         if (sign)

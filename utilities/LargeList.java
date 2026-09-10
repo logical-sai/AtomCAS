@@ -194,9 +194,9 @@ public class LargeList<T> implements Iterable<T>{
         }else{
             for(LargeInteger i = LargeInteger.valueOf(index); i.lessThan(size.subtract(1)); i = i.add(1))
                 this.set(i, this.get(i.add(1)));
-            this.set((LargeInteger) this.size().subtract(LargeInteger.ONE), null);
+            this.set(this.size().subtract(LargeInteger.ONE), null);
         }
-        size = (LargeInteger) size.subtract(LargeInteger.ONE);
+        size = size.subtract(1);
         if(intSized())
             sizeInt--;
         else
@@ -204,7 +204,7 @@ public class LargeList<T> implements Iterable<T>{
             sizeInt = 2147483647;
     }
     public void removeFirst(){remove(0);}
-    public void removeLast(){remove((LargeInteger) size.subtract(LargeInteger.ONE));}
+    public void removeLast(){remove(size.subtract(1));}
     public void clear(){
         size = LargeInteger.ZERO;
         sizeInt = 0;
@@ -221,7 +221,7 @@ public class LargeList<T> implements Iterable<T>{
         long base = 1000;
         while (copy.greaterThan(LargeInteger.ZERO)) {
             temp[count++] = Math.toIntExact(copy.mod(base));
-            copy = copy.longDivision(LargeInteger.THOUSAND);
+            copy = copy.divide(LargeInteger.THOUSAND);
         }
         int[] result = new int[count];
         for (int i = 0; i < count; i++)
@@ -276,7 +276,7 @@ public class LargeList<T> implements Iterable<T>{
                 swap(i, this.sizeInt-i-1);
         }else{
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size.shiftRight(1)); i = i.add(1))
-                swap(i, (LargeInteger) size().subtract(i));
+                swap(i, size().subtract(i));
         }
     }
     @Override

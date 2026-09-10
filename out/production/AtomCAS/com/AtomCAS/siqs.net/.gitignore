@@ -1,0 +1,39 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+*.user
+
+# Rider / VS / VS Code
+.idea/
+.vs/
+*.suo
+.vscode/*
+!.vscode/extensions.json
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Test results
+TestResults/
+*.trx
+
+# Self-contained command-line release artifacts
+artifacts/
+
+# Run workspaces produced by the pipeline/UI
+runs/
+
+# Published distributed sieve client served for download by the UI
+SIQS.UI/download/
+
+# Local scratch
+.tmp/
+
+# Disposable generated local performance spy suite
+SIQS.Pipeline.Tests/GeneratedPerformanceSpyTests.cs
+
+# BenchmarkDotNet generated reports
+BenchmarkDotNet.Artifacts/

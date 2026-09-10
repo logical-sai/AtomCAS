@@ -70,7 +70,7 @@ public class Time {
 
             if (month == 13) {
                 month = 1;
-                year = (LargeInteger) year.add(LargeInteger.ONE);
+                year = year.add(LargeInteger.ONE);
             }
         }
     }

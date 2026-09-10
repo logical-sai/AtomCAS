@@ -1,0 +1,141 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch/PR supersedes the first; don't keep both running.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # The sieve has AVX2 kernels with scalar fallbacks and the tooling is documented on both
+    # platforms, so build and test on each rather than trusting one to cover the other.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        sdk: ['10.0.100', '10.0.x']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: ${{ matrix.sdk }}
+      - run: dotnet restore SIQS.slnx
+      - run: dotnet build SIQS.slnx -c Release --no-restore
+      - name: Run and count the test suite
+        shell: pwsh
+        run: |
+          $output = @(dotnet test --solution SIQS.slnx -c Release --no-restore --no-ansi 2>&1)
+          $exitCode = $LASTEXITCODE
+          $output | ForEach-Object { Write-Host $_ }
+          if ($exitCode -ne 0) { throw "dotnet test failed with exit code $exitCode." }
+          $counts = @($output | ForEach-Object {
+            if ($_.ToString() -match '(?i)^\s*total:\s*([0-9]+)\s*$') { [int]$Matches[1] }
+          })
+          if (!$counts) { throw 'No Microsoft Testing Platform test total was reported.' }
+          $observed = ($counts | Measure-Object -Maximum).Maximum
+          Write-Host "Observed test count: $observed"
+          if ($observed -lt 700) { throw "Only $observed tests completed; expected at least 700." }
+
+  publish:
+    # Publish each command-line release artifact on its target operating system. Tests already ran
+    # in the matrix above.
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifactName: qs-linux-x64
+            artifactPath: artifacts/linux-x64/qs
+          - os: windows-latest
+            runtime: win-x64
+            artifactName: qs-windows-x64
+            artifactPath: artifacts/windows-x64/qs.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Run the release build script
+        shell: pwsh
+        run: ./build.ps1 -SkipTests -Runtimes ${{ matrix.runtime }}
+
+      - name: Verify the published command-line tool
+        shell: pwsh
+        run: |
+          $artifact = '${{ matrix.artifactPath }}'
+          if (-not (Test-Path $artifact)) { throw "Missing published artifact: $artifact" }
+          "{0,12:N0}  {1}" -f (Get-Item $artifact).Length, $artifact
+
+      - name: Upload the command-line tool
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifactName }}
+          path: ${{ matrix.artifactPath }}
+          if-no-files-found: error
+
+  release:
+    # Keep one easy-to-find release updated with the most recent successful main build.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: qs-linux-x64
+          path: release/linux-x64
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: qs-windows-x64
+          path: release/windows-x64
+
+      - name: Prepare release assets
+        shell: pwsh
+        run: |
+          Move-Item release/linux-x64/qs release/qs-linux-x64
+          Move-Item release/windows-x64/qs.exe release/qs-windows-x64.exe
+
+      - name: Update the continuous release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=continuous
+          notes="Self-contained Windows x64 and Linux x64 command-line tools built from commit ${GITHUB_SHA}."
+
+          git tag --force "$tag" "$GITHUB_SHA"
+          git push origin "refs/tags/$tag" --force
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" \
+              --title "Continuous build" \
+              --notes "$notes" \
+              --prerelease
+            gh release upload "$tag" \
+              release/qs-linux-x64 \
+              release/qs-windows-x64.exe \
+              --clobber
+          else
+            gh release create "$tag" \
+              release/qs-linux-x64 \
+              release/qs-windows-x64.exe \
+              --target "$GITHUB_SHA" \
+              --title "Continuous build" \
+              --notes "$notes" \
+              --prerelease
+          fi

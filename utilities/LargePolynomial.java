@@ -29,7 +29,7 @@ public class LargePolynomial{
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1)){
             LargeFraction c = coefficients.get(i);
             if(c.equals(LargeInteger.ZERO)) continue;
-            LargeInteger power = (LargeInteger) coefficients.size().subtract(1).subtract(i);
+            LargeInteger power = coefficients.size().subtract(1).subtract(i);
             if(i.equals(LargeInteger.ZERO)){
                 if(power.equals(LargeInteger.ZERO)){
                     str.append(c);
@@ -77,7 +77,7 @@ public class LargePolynomial{
         LargeInteger deg = degree();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1)) {
             if (coefficients.get(i).doesntEqual(LargeInteger.ZERO))
-                return (LargeInteger) deg.subtract(i);
+                return deg.subtract(i);
         }
         return LargeInteger.ZERO;
     }
@@ -113,7 +113,7 @@ public class LargePolynomial{
             P.add(f.negate());
         return new LargePolynomial(P);
     }
-    public LargeInteger degree(){return (LargeInteger) coefficients.size().subtract(LargeInteger.ONE);}
+    public LargeInteger degree(){return coefficients.size().subtract(1);}
     public LargePolynomial increaseDegree(LargeInteger i){
         if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Input means decreasing the degree");
         if(this.isZero()) return new LargePolynomial();
@@ -131,18 +131,18 @@ public class LargePolynomial{
     public LargePolynomial add(LargePolynomial other){
         LargeList<LargeFraction> out = new LargeList<>();
         if(this.coefficients.size().greaterThan(other.coefficients.size())){
-            LargeInteger diff = (LargeInteger) this.coefficients.size().subtract(other.coefficients.size());
+            LargeInteger diff = this.coefficients.size().subtract(other.coefficients.size());
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
-                    out.add((LargeFraction) this.coefficients.get(i).add(other.coefficients.get((LargeInteger) i.subtract(diff))));
+                    out.add((LargeFraction) this.coefficients.get(i).add(other.coefficients.get(i.subtract(diff))));
                 else out.add(this.coefficients.get(i));
             }
             return new LargePolynomial(out);
         }else if(other.coefficients.size().greaterThan(this.coefficients.size())){
-            LargeInteger diff = (LargeInteger) other.coefficients.size().subtract(this.coefficients.size());
+            LargeInteger diff = other.coefficients.size().subtract(this.coefficients.size());
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(other.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
-                    out.add((LargeFraction) other.coefficients.get(i).add(this.coefficients.get((LargeInteger) i.subtract(diff))));
+                    out.add((LargeFraction) other.coefficients.get(i).add(this.coefficients.get(i.subtract(diff))));
                 else out.add(other.coefficients.get(i));
             }
             return new LargePolynomial(out);
@@ -160,18 +160,18 @@ public class LargePolynomial{
     public LargePolynomial subtract(LargePolynomial other){
         LargeList<LargeFraction> out = new LargeList<>();
         if(this.coefficients.size().greaterThan(other.coefficients.size())){
-            LargeInteger diff = (LargeInteger) this.coefficients.size().subtract(other.coefficients.size());
+            LargeInteger diff = this.coefficients.size().subtract(other.coefficients.size());
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
-                    out.add((LargeFraction) this.coefficients.get(i).subtract(other.coefficients.get((LargeInteger) i.subtract(diff))));
+                    out.add((LargeFraction) this.coefficients.get(i).subtract(other.coefficients.get(i.subtract(diff))));
                 else out.add(this.coefficients.get(i));
             }
             return new LargePolynomial(out);
         }else if(other.coefficients.size().greaterThan(this.coefficients.size())){
-            LargeInteger diff = (LargeInteger) other.coefficients.size().subtract(this.coefficients.size());
+            LargeInteger diff = other.coefficients.size().subtract(this.coefficients.size());
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(other.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
-                    out.add((LargeFraction) this.coefficients.get((LargeInteger) i.subtract(diff)).subtract(other.coefficients.get(i)));
+                    out.add((LargeFraction) this.coefficients.get(i.subtract(diff)).subtract(other.coefficients.get(i)));
                 else out.add(other.coefficients.get(i).negate());
             }
             return new LargePolynomial(out);
@@ -196,7 +196,7 @@ public class LargePolynomial{
         // existing generic multiply
         LargeList<LargePolynomial> polys = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1))
-            polys.add(other.multiply(coefficients.get(i)).increaseDegree((LargeInteger) this.degree().subtract(i)));
+            polys.add(other.multiply(coefficients.get(i)).increaseDegree(this.degree().subtract(i)));
         LargePolynomial result = new LargePolynomial();
         for (LargePolynomial P : polys) result = result.add(P);
         return result;
@@ -229,7 +229,7 @@ public class LargePolynomial{
         LargeInteger divisorDegree = divisor.degree();
         LargeFraction divisorLead = divisor.coefficients.getFirst();
         while (!remainder.isZero() && remainder.degree().greaterThanOrEqualTo(divisorDegree)) {
-            LargeInteger degreeDiff = (LargeInteger) remainder.degree().subtract(divisorDegree);
+            LargeInteger degreeDiff = remainder.degree().subtract(divisorDegree);
             LargeFraction coefficient = (LargeFraction) remainder.coefficients.getFirst().divide(divisorLead);
             LargePolynomial term = LargePolynomial.monomial(coefficient, degreeDiff);
             quotient = quotient.add(term);
@@ -281,14 +281,15 @@ public class LargePolynomial{
             P = P.longDivision(cyclotomic(I));
         return P;
     }
-    private static LargePolynomial tryRepeatedPrimeShortcut(LargeInteger n, LargeMap<LargeInteger, LargeFraction> factors) {
+    private static LargePolynomial tryRepeatedPrimeShortcut(LargeInteger n,
+                                                            LargeMap<LargeInteger, LargeFraction> factors) {
         LargeInteger rad = LargeInteger.ONE;
         for (LargeInteger p : factors.keys()) {
             if (p.equals(LargeInteger.NEGATIVE_ONE)) continue;
-            rad = (LargeInteger) rad.multiply(p);
+            rad = rad.multiply(p);
         }
         if (rad.equals(n)) return null; // squarefree, no help
-        LargeInteger step = n.longDivision(rad);
+        LargeInteger step = n.divide(rad);
         return cyclotomic(rad).composeXPower(step);
     }
     public ScalarAtom evaluateAt(ScalarAtom s){
@@ -301,11 +302,11 @@ public class LargePolynomial{
         if (k.lesserThanOrEqualTo(LargeInteger.ZERO))
             throw new IllegalArgumentException("exponent must be positive");
         LargeList<LargeFraction> out = new LargeList<>();
-        LargeInteger newDegree = (LargeInteger) this.degree().multiply(k);
+        LargeInteger newDegree = this.degree().multiply(k);
         for (LargeInteger e = newDegree; e.greaterThanOrEqualTo(LargeInteger.ZERO); e = e.subtract(1)) {
             if (e.mod(k).equals(LargeInteger.ZERO)) {
-                LargeInteger oldPower = e.longDivision(k);
-                LargeInteger index = (LargeInteger) this.degree().subtract(oldPower);
+                LargeInteger oldPower = e.divide(k);
+                LargeInteger index = this.degree().subtract(oldPower);
                 out.add(this.coefficients.get(index));
             }else out.add(LargeFraction.ZERO);
             if (e.equals(LargeInteger.ZERO)) break;
@@ -356,7 +357,8 @@ public class LargePolynomial{
                     LargeInteger degree = q.multiply(2).totient();
                     LargeList<LargePowerMonomial> next = new LargeList<>();
                     for (LargeInteger i = LargeInteger.ZERO; i.lessThan(degree); i = i.add(1)) {
-                        LargePowerMonomial zetaPower = new LargePowerMonomial(LargeFraction.ONE, LargeFraction.ONE, (LargeFraction) i.divide(q));
+                        LargePowerMonomial zetaPower = new LargePowerMonomial(LargeFraction.ONE, LargeFraction.ONE,
+                                new LargeFraction(i, q));
                         boolean contains = false;
                         for(LargePowerMonomial m: next){
                             if(m.equals(zetaPower)){
@@ -426,7 +428,7 @@ public class LargePolynomial{
                     LargeInteger order = g.exponent.denominator;
                     for (LargePowerMonomial oldBasis : basis) {
                         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(order); i = i.add(1)) {
-                            LargePowerMonomial powerOfG = new LargePowerMonomial(g.base, (LargeFraction) i.divide(order));
+                            LargePowerMonomial powerOfG = new LargePowerMonomial(g.base, new LargeFraction(i, order));
                             LargePowerMonomial product = (LargePowerMonomial) oldBasis.multiply(powerOfG);
                             boolean contains = false;
                             for(LargePowerMonomial m: next){
@@ -674,7 +676,7 @@ class ModPolynomial {
     }
     private static LargeInteger mod(LargeInteger a, LargeInteger p) {
         LargeInteger r = (LargeInteger) a.mod(p);
-        return r.lessThan(LargeInteger.ZERO) ? (LargeInteger) r.add(p) : r;
+        return r.lessThan(LargeInteger.ZERO) ? r.add(p) : r;
     }
     private static LargeList<LargeInteger> trimNormalize(LargeList<LargeInteger> a, LargeInteger p) {
         LargeInteger start = LargeInteger.ZERO;
@@ -690,7 +692,7 @@ class ModPolynomial {
         LargeInteger inv = invMod(lead(), p);
         LargeList<LargeInteger> out = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i=i.add(1))
-            out.add(mod((LargeInteger) coefficients.get(i).multiply(inv), p));
+            out.add(mod(coefficients.get(i).multiply(inv), p));
         return new ModPolynomial(out, p);
     }
     public LargeInteger degree() {return coefficients.size().subtract(1);}
@@ -728,11 +730,11 @@ class ModPolynomial {
         LargeInteger r = p, newR = a;
 
         while (newR.doesntEqual(LargeInteger.ZERO)) {
-            LargeInteger q = r.longDivision(newR);
-            LargeInteger tempT = (LargeInteger) t.subtract(q.multiply(newT));
+            LargeInteger q = r.divide(newR);
+            LargeInteger tempT = t.subtract(q.multiply(newT));
             t = newT;
             newT = tempT;
-            LargeInteger tempR = (LargeInteger) r.subtract(q.multiply(newR));
+            LargeInteger tempR = r.subtract(q.multiply(newR));
             r = newR;
             newR = tempR;
         }
@@ -758,7 +760,7 @@ class ModPolynomial {
             out.add(LargeInteger.ZERO);
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i=i.add(1))
             for (LargeInteger j = LargeInteger.ZERO; j.lessThan(other.coefficients.size()); j=j.add(1))
-                out.set((LargeInteger) i.add(j), mod((LargeInteger) out.get((LargeInteger) i.add(j)).add(this.coefficients.get(i).multiply(other.coefficients.get(j))), p));
+                out.set(i.add(j), mod(out.get(i.add(j)).add(this.coefficients.get(i).multiply(other.coefficients.get(j))), p));
         return new ModPolynomial(out, p);
     }
     private ModPolynomial[] divideAndRemainder(ModPolynomial divisor) throws CloneNotSupportedException {
@@ -770,7 +772,7 @@ class ModPolynomial {
         LargeList<LargeInteger> rem = this.coefficients.copy();
         LargeList<LargeInteger> quo = new LargeList<>();
 
-        LargeInteger qSize = (LargeInteger) this.degree().subtract(divisor.degree()).add(LargeInteger.ONE);
+        LargeInteger qSize = this.degree().subtract(divisor.degree()).add(1);
         if (qSize.lesserThanOrEqualTo(LargeInteger.ZERO)) {
             quo.add(LargeInteger.ZERO);
             return new ModPolynomial[]{
@@ -789,15 +791,15 @@ class ModPolynomial {
                 && !(rem.size().equals(LargeInteger.ONE) && rem.getFirst().equals(LargeInteger.ZERO))) {
 
             LargeInteger remDeg = rem.size().subtract(1);
-            LargeInteger degreeDiff = (LargeInteger) remDeg.subtract(divisorDeg);
+            LargeInteger degreeDiff = remDeg.subtract(divisorDeg);
 
-            LargeInteger scale = mod((LargeInteger) rem.getFirst().multiply(divisorLeadInv), p);
+            LargeInteger scale = mod(rem.getFirst().multiply(divisorLeadInv), p);
 
-            LargeInteger qIndex = (LargeInteger) qSize.subtract(1).subtract(degreeDiff);
+            LargeInteger qIndex = qSize.subtract(1).subtract(degreeDiff);
             quo.set(qIndex, scale);
 
             for (LargeInteger i = LargeInteger.ZERO; i.lessThan(divisor.coefficients.size()); i = i.add(1)) {
-                rem.set(i, mod((LargeInteger) rem.get(i).subtract(scale.multiply(divisor.coefficients.get(i))), p));
+                rem.set(i, mod(rem.get(i).subtract(scale.multiply(divisor.coefficients.get(i))), p));
             }
             rem = trimNormalize(rem, p);
         }
@@ -815,8 +817,8 @@ class ModPolynomial {
             return new ModPolynomial(out, p);
         }
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i=i.add(1)){
-            LargeInteger power = (LargeInteger) n.subtract(i);
-            out.add(mod((LargeInteger) coefficients.get(i).multiply(power), p));
+            LargeInteger power = n.subtract(i);
+            out.add(mod(coefficients.get(i).multiply(power), p));
         }
         return new ModPolynomial(out, p);
     }
@@ -837,7 +839,7 @@ class ModPolynomial {
     LargeInteger evaluateAt(LargeInteger I){
         LargeInteger result = LargeInteger.ZERO;
         for(LargeInteger i: coefficients)
-            result = (LargeInteger) result.multiply(I).add(i);
+            result = result.multiply(I).add(i);
         return (LargeInteger) result.mod(p);
     }
 }
