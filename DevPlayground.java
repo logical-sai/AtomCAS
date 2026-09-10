@@ -192,7 +192,7 @@ public class DevPlayground {
     static void testPrimeExponents(){
         long startTime = System.nanoTime();
         for (int i: LargeInteger.sieve(10000)) {
-            LargeInteger n = LargeInteger.TWO.power(i).numerator.subtract(1);
+            LargeInteger n = (LargeInteger) LargeInteger.TWO.power(i).numerator.subtract(LargeInteger.ONE);
             BigInteger b = n.toBigInteger();
             for(int k = 0; k < 10000-i; k++){
                 sink = n.isProbablyPrime();
