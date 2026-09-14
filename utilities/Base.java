@@ -53,7 +53,7 @@ public class Base{
         if (digit < 0 || digit >= base)
             throw new IllegalArgumentException("Invalid digit " + digit + " for base " + base);
         if (base <= 62)
-            return Character.toString(chars[Math.toIntExact(digit)]);
+            return Character.toString(chars[(int) digit]);
         return Long.toString(digit);
     }
     private static final char[] chars = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B',

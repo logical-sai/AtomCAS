@@ -19,7 +19,7 @@ public class LargeVector extends TensorAtom {
         }
         this.factor = (LargeFraction) this.factor.multiply(lc);
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.list.size()); i = i.add(1))
-            this.list.set(i, this.list.get(i).longDivision(lc));
+            this.list.set(i, this.list.get(i).divide(lc));
     }
     public LargeVector(LargeList<LargeFraction> liste){
         this.list = new LargeList<>();

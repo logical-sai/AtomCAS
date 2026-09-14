@@ -34,13 +34,13 @@ public class DevPlayground {
 
                 // warmup
                 for (int i = 0; i < Math.min(50, reps); i++) {
-                    sink ^= LargeInteger.modMagnitudesKnuth(dividend, divisor)[0];
-                    sink ^= LargeInteger.modMagnitudesBurnikelZiegler(dividend, divisor)[0];
+                    sink ^= LargeInteger.knuthRemainder(dividend, divisor)[0];
+                    sink ^= LargeInteger.burnikelZieglerRemainder(dividend, divisor)[0];
                 }
 
                 // correctness once, outside timing
-                long[] rk = LargeInteger.modMagnitudesKnuth(dividend, divisor);
-                long[] rb = LargeInteger.modMagnitudesBurnikelZiegler(dividend, divisor);
+                long[] rk = LargeInteger.knuthRemainder(dividend, divisor);
+                long[] rb = LargeInteger.burnikelZieglerRemainder(dividend, divisor);
 
                 if (!Arrays.equals(rk, rb))
                     throw new AssertionError(
@@ -50,12 +50,12 @@ public class DevPlayground {
 
                 long t0 = System.nanoTime();
                 for (int i = 0; i < reps; i++)
-                    sink ^= LargeInteger.modMagnitudesKnuth(dividend, divisor)[0];
+                    sink ^= LargeInteger.knuthRemainder(dividend, divisor)[0];
                 long knuth = System.nanoTime() - t0;
 
                 t0 = System.nanoTime();
                 for (int i = 0; i < reps; i++)
-                    sink ^= LargeInteger.modMagnitudesBurnikelZiegler(dividend, divisor)[0];
+                    sink ^= LargeInteger.burnikelZieglerRemainder(dividend, divisor)[0];
                 long bz = System.nanoTime() - t0;
 
                 double kNs = (double)knuth / reps;
@@ -168,7 +168,7 @@ public class DevPlayground {
     static void testPrimeExponents(){
         long startTime = System.nanoTime();
         for (int i: LargeInteger.sieve(10000)) {
-            LargeInteger n = (LargeInteger) LargeInteger.TWO.power(i).numerator.subtract(LargeInteger.ONE);
+            LargeInteger n = LargeInteger.powerOfTwo(i).subtract(LargeInteger.ONE);
             BigInteger b = n.toBigInteger();
             for(int k = 0; k < 10000-i; k++){
                 sink = n.isProbablyPrime();
@@ -201,15 +201,16 @@ public class DevPlayground {
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
-    static void benchmarkPowMod(){
-        for(int k: new int[]{1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
+    static void testPowMod(){
+        for(int k: new int[]{64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
             long LI_time = 0;
             long BI_time = 0;
-            int trials = 4000/k;
+            int trials = 16384/k;
+            System.out.println("Bits tested: " + k);
             for(int j = 0; j < 100; j++){
-                LargeInteger base = LargeInteger.randomChunks(k);
-                LargeInteger exponent = LargeInteger.randomChunks(k);
-                LargeInteger modulus = LargeInteger.randomChunks(k);
+                LargeInteger base = LargeInteger.randomBits(k);
+                LargeInteger exponent = LargeInteger.randomBits(k);
+                LargeInteger modulus = LargeInteger.randomBits(k).or(LargeInteger.ONE);
                 BigInteger bigBase = base.toBigInteger();
                 BigInteger bigExponent = exponent.toBigInteger();
                 BigInteger bigModulus = modulus.toBigInteger();
@@ -298,6 +299,54 @@ public class DevPlayground {
             System.out.println();
         }
     }
+    static void testBinaryGCD(){
+        int trials = 150;
+        int total = 101;
+        long[] LI_times = new long[total];
+        long[] BI_times = new long[total];
+        for (int j = 0; j < total; j++) {
+            LargeInteger A = LargeInteger.randomChunks(150);
+            LargeInteger B = LargeInteger.randomChunks(75);
+            BigInteger BA = A.toBigInteger();
+            BigInteger BB = B.toBigInteger();
+            if(!A.gcd(B).toBigInteger().equals(BA.gcd(BB)))
+                throw new AssertionError("gcd is wrong");
+            //warmup
+            for (int k = 0; k < trials/2; k++) {
+                sink = A.gcd(B);
+                sink = BA.gcd(BB);
+            }
+            long t0 = System.nanoTime();
+            if ((j & 1) == 0) {
+                for (int i = 0; i < trials; i++)
+                    sink = A.gcd(B);
+                long t1 = System.nanoTime();
+                for (int i = 0; i < trials; i++)
+                    sink = BA.gcd(BB);
+                long t2 = System.nanoTime();
+                LI_times[j] = t1 - t0;
+                BI_times[j] = t2 - t1;
+            } else {
+                for (int i = 0; i < trials; i++)
+                    sink = BA.gcd(BB);
+                long t1 = System.nanoTime();
+                for (int i = 0; i < trials; i++)
+                    sink = A.gcd(B);
+                long t2 = System.nanoTime();
+                BI_times[j] = t1 - t0;
+                LI_times[j] = t2 - t1;
+            }
+        }
+        double[] ratios = new double[total];
+        for (int j = 0; j < total; j++)
+            ratios[j] = (double) LI_times[j] / BI_times[j];
+        Arrays.sort(ratios);
+        Arrays.sort(LI_times);
+        Arrays.sort(BI_times);
+        System.out.println("LI median: " + LI_times[LI_times.length / 2]/1e9/trials + " seconds/trial");
+        System.out.println("BI median: " + BI_times[BI_times.length / 2]/1e9/trials + " seconds/trial");
+        System.out.println("Median LI/BI ratio: " + ratios[total / 2]);
+    }
     record FactorBoss(String value, String origin, String notes) {}
     @SuppressWarnings("unused")
     static final List<FactorBoss> factorBosses = List.of(
@@ -317,7 +366,25 @@ public class DevPlayground {
                     "Might require higher bounds or more curves than the first one on this list"
             )
     );
+    static boolean hasFullDecimalPeriod(LargeInteger p) {
+        if (!p.isProbablyPrime())
+            return false;
+
+        LargeInteger phi = p.subtract(LargeInteger.ONE);
+        LargeMap<LargeInteger, LargeFraction> factors = phi.factor();
+
+        for (LargeInteger q : factors.keys()) {
+            if (q.equals(LargeInteger.NEGATIVE_ONE))
+                continue;
+            if (LargeInteger.TEN.powMod(phi.divide(q), p).equals(LargeInteger.ONE))
+                return false;
+        }
+        return true;
+    }
     static void main() {
+//        System.out.println(
+//                new LargeInteger("366228771818863144299753563917078548162208985250742844503471659472303")
+//                .quadraticSieveWithoutConstraints());
         testMultiply();
     }
     private static void demoIntegers() {

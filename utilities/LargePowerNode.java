@@ -1,8 +1,8 @@
 package com.AtomCAS.utilities;
 public class LargePowerNode extends ScalarAtom{
-    public final ScalarAtom signFactor; //MUST have abs 1
-    public final ScalarAtom base;
-    public final LargeFraction exponent;
+    final ScalarAtom signFactor; //MUST have magnitude 1
+    final ScalarAtom base;
+    final LargeFraction exponent;
     public LargePowerNode(ScalarAtom base, LargeFraction exponent, ScalarAtom signFactor){
         if(base instanceof LargeInteger || base instanceof LargeFraction){
             LargePowerMonomial L = new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.ONE), exponent);

@@ -1,8 +1,8 @@
 package com.AtomCAS.utilities;
 
 public class LargeFraction extends ScalarAtom {
-    public final LargeInteger numerator;
-    public final LargeInteger denominator;
+    final LargeInteger numerator;
+    final LargeInteger denominator;
     public static final LargeFraction NEGATIVE_ONE = new LargeFraction(-1L);
     public static final LargeFraction ZERO = new LargeFraction(0L);
     public static final LargeFraction HALF = new LargeFraction(LargeInteger.ONE, LargeInteger.TWO);

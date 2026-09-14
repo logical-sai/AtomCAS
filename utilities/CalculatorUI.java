@@ -274,7 +274,7 @@ class GraphPanel extends JPanel {
         g2.drawLine(centerX, 0, centerX, height);
     }
 
-    public static void main(String[] args) {
+    static void main(String[] args) {
         JFrame frame = new JFrame("2D Graph Grid");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(800, 600);

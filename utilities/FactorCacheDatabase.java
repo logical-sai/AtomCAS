@@ -96,14 +96,9 @@ public final class FactorCacheDatabase implements AutoCloseable {
                     }
                 }
             }
-
             return null;
-
         } catch (SQLException e) {
-            throw new IllegalStateException(
-                    "Could not query factor cache",
-                    e
-            );
+            throw new IllegalStateException("Could not query factor cache", e);
         }
     }
 
@@ -120,7 +115,7 @@ public final class FactorCacheDatabase implements AutoCloseable {
             );
         }
 
-        LargeInteger cofactor = n.longDivision(factor);
+        LargeInteger cofactor = n.divide(factor);
 
         // Store ONE canonical side of the split.
         if (cofactor.lessThan(factor))

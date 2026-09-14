@@ -288,20 +288,30 @@ public class LargeList<T> implements Iterable<T>{
                 public boolean hasNext() {return index < sizeInt;}
                 @Override
                 public T next() {
-                    if (!hasNext()) throw new NoSuchElementException();
+                    if (!hasNext()) throw new NoSuchElementException("You've reached the end of the list");
                     return get(index++);
                 }
+                @Override
+                public void remove() {
+                    LargeList.this.remove(index);
+                    index--;
+                }
             };
-        return new Iterator<>() {
+        else return new Iterator<>() {
             private LargeInteger index = LargeInteger.ZERO;
             @Override
             public boolean hasNext() {return index.lessThan(size);}
             @Override
             public T next() {
-                if (!hasNext()) throw new NoSuchElementException();
+                if (!hasNext()) throw new NoSuchElementException("You've reached the end of the list");
                 T value = get(index);
                 index = index.add(1);
                 return value;
+            }
+            @Override
+            public void remove() {
+                LargeList.this.remove(index);
+                index = index.subtract(1);
             }
         };
     }

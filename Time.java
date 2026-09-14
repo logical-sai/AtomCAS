@@ -28,10 +28,10 @@ public class Time {
         second = 30;
     }
     boolean isLeapYear() {
-        if (year.mod(4) != 0)
+        if (year.mod(LargeInteger.valueOf(4)).doesntEqual(LargeInteger.ZERO))
             return false;
-        if (year.mod(100) == 0)
-            return year.mod(400) == 0;
+        if (year.mod(LargeInteger.valueOf(100)).doesntEqual(LargeInteger.ZERO))
+            return year.mod(LargeInteger.valueOf(400)).equals(LargeInteger.ZERO);
         return true;
     }
     int daysInMonth() {

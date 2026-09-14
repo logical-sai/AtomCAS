@@ -207,7 +207,7 @@ public class Parser{
                             if (expTemp.equals(LargeInteger.ONE)) break;
                         }
                         basTemp = basTemp.square();
-                        expTemp = expTemp.longDivision(LargeInteger.TWO);
+                        expTemp = expTemp.divide(LargeInteger.TWO);
                     }
                     if (exp.lessThan(LargeInteger.ZERO)) return res.reciprocal();
                     return res;
@@ -240,7 +240,7 @@ public class Parser{
                 LargeInteger basTemp = LargeInteger.TEN;
                 while(true){
                     if(expTemp % 2 == 1){
-                        dem = (LargeInteger) dem.multiply(basTemp);
+                        dem = dem.multiply(basTemp);
                         if(expTemp == 1) break;
                     }
                     basTemp = basTemp.square();
@@ -250,17 +250,17 @@ public class Parser{
                 expTemp = nonRepeat.length();
                 basTemp = LargeInteger.TEN;
                 while(expTemp != 0) {
-                    if (expTemp % 2 == 1){
-                        dem = (LargeInteger) dem.multiply(basTemp);
+                    if ((expTemp & 1) == 1){
+                        dem = dem.multiply(basTemp);
                         if(expTemp == 1) break;
                     }
                     basTemp = basTemp.square();
-                    expTemp /= 2;
+                    expTemp >>>= 1;
                 }
                 if(nonRepeat.isEmpty()) nonRepeat += 0;
-                num = (LargeInteger) new LargeInteger(nonRepeat + repeat).subtract(new LargeInteger(nonRepeat));
+                num = new LargeInteger(nonRepeat + repeat).subtract(new LargeInteger(nonRepeat));
                 if(whole.charAt(0) == '-') num = num.multiply(-1);
-                num = (LargeInteger) num.add(new LargeInteger(whole).multiply(dem));
+                num = num.add(new LargeInteger(whole).multiply(dem));
             } else if (str.contains("}") && !str.contains("{"))
                 throw new IllegalArgumentException("Invalid Input");
             else{
@@ -271,17 +271,17 @@ public class Parser{
                 int expTemp = nonRepeat.length();
                 LargeInteger basTemp = LargeInteger.TEN;
                 while(expTemp != 0) {
-                    if (expTemp % 2 == 1){
-                        dem = (LargeInteger) dem.multiply(basTemp);
+                    if ((expTemp & 1) == 1){
+                        dem = dem.multiply(basTemp);
                         if(expTemp == 1) break;
                     }
                     basTemp = basTemp.square();
-                    expTemp /= 2;
+                    expTemp >>>= 1;
                 }
                 if (nonRepeat.isEmpty()) nonRepeat += 0;
                 if(whole.startsWith("-")) nonRepeat = "-" + nonRepeat;
                 if (whole.isEmpty()) whole += 0;
-                num = (LargeInteger) new LargeInteger(nonRepeat).add(new LargeInteger(whole).multiply(dem));
+                num = new LargeInteger(nonRepeat).add(new LargeInteger(whole).multiply(dem));
             }
         }else{
             if(str.contains("{") || str.contains("}"))

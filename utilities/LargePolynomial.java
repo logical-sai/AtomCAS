@@ -667,7 +667,7 @@ class ModPolynomial {
         this.p = p;
         this.coefficients = new LargeList<>();
         for (LargeInteger c : coefficients)
-            this.coefficients.add((LargeInteger) c.mod(p));
+            this.coefficients.add(c.mod(p));
         trimLeadingZeros();
     }
     private void trimLeadingZeros(){
@@ -675,7 +675,7 @@ class ModPolynomial {
             coefficients.removeFirst();
     }
     private static LargeInteger mod(LargeInteger a, LargeInteger p) {
-        LargeInteger r = (LargeInteger) a.mod(p);
+        LargeInteger r = a.mod(p);
         return r.lessThan(LargeInteger.ZERO) ? r.add(p) : r;
     }
     private static LargeList<LargeInteger> trimNormalize(LargeList<LargeInteger> a, LargeInteger p) {
@@ -840,6 +840,6 @@ class ModPolynomial {
         LargeInteger result = LargeInteger.ZERO;
         for(LargeInteger i: coefficients)
             result = result.multiply(I).add(i);
-        return (LargeInteger) result.mod(p);
+        return result.mod(p);
     }
 }

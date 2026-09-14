@@ -1,8 +1,8 @@
 package com.AtomCAS.utilities;
 public class RadicalTerm extends ScalarAtom{
-    public final LargeFraction rationalPart;
-    public final LargeFraction coefficient;
-    public final LargePowerMonomial exponent;
+    final LargeFraction rationalPart;
+    final LargeFraction coefficient;
+    final LargePowerMonomial exponent;
     public RadicalTerm(LargeFraction r, LargeFraction c, LargePowerMonomial E){
         if(c.equals(LargeFraction.ZERO) || E.equals(LargeFraction.ZERO)){
             rationalPart = r.clone();

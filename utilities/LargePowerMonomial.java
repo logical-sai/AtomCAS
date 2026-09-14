@@ -1,9 +1,9 @@
 package com.AtomCAS.utilities;
 public class LargePowerMonomial extends ScalarAtom{
     private final LargeMap<LargeInteger, LargeFraction> factors;
-    public final LargeFraction base;
-    public final LargeFraction exponent;
-    public final LargeFraction exponent2;
+    final LargeFraction base;
+    final LargeFraction exponent;
+    final LargeFraction exponent2;
 
     public static final LargePowerMonomial ZERO = new LargePowerMonomial(LargeFraction.ZERO, LargeFraction.ONE);
     public static final LargePowerMonomial ONE = new LargePowerMonomial(LargeFraction.ONE, LargeFraction.ONE);
