@@ -65,7 +65,7 @@ public class ScalarList{
             list.set(bottom.add(k), temp.get(k));
     }
     private void sortRangeWithArrayList(LargeInteger bottom, LargeInteger top) {
-        int n = Integer.parseInt(top.subtract(bottom).toString());
+        int n = top.subtract(bottom).intValue();
         ArrayList<ScalarAtom> copy = new ArrayList<>(n);
         for (int i = 0; i < n; i++)
             copy.add(list.get(bottom.add(i)));
@@ -73,7 +73,7 @@ public class ScalarList{
         for (int i = 0; i < n; i++)
             list.set(bottom.add(i), copy.get(i));
     }
-    private static int compareScalars(ScalarAtom a, ScalarAtom b) {return Math.toIntExact(a.compareTo(b));}
+    private static int compareScalars(ScalarAtom a, ScalarAtom b) {return a.compareTo(b);}
     public ScalarAtom range(){
         requireReal("range");
         return max().subtract(min());

@@ -97,8 +97,13 @@ public class LargeMap<K, V>{
             return defaultValue;
         return values.get(index);
     }
+    @SuppressWarnings("unused")
     public void swap(K key1, K key2){
         keys.swap(indexOfKey(key1), indexOfKey(key2));
         values.swap(indexOfKey(key2), indexOfKey(key1));
+    }
+    public void swapIndices(LargeInteger i, LargeInteger j) {
+        keys.swap(i, j);
+        values.swap(i, j);
     }
 }

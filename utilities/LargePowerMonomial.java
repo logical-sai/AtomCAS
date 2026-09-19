@@ -98,39 +98,35 @@ public class LargePowerMonomial extends ScalarAtom{
         factors = pr;
     }
     @Override
-    public LargePowerMonomial clone() {return new LargePowerMonomial(base, exponent, exponent2);}
+    public LargePowerMonomial clone() {
+        return new LargePowerMonomial(base.clone(), exponent.clone(), exponent2.clone());}
     @Override
     public String toString(){
         StringBuilder str = new StringBuilder();
-        if(exponent2.doesntEqual(LargeInteger.ZERO)){
-            if(exponent2.doesntEqual(LargeInteger.ONE))
+        if(exponent2.doesntEqual(LargeFraction.ZERO)){
+            if(exponent2.doesntEqual(LargeFraction.ONE))
                 str.append("(-1)^(").append(exponent2).append(")");
-            else
-                str.append("-");
+            else str.append("-");
         }
-        if(base.equals(LargeInteger.ONE)){
+        if(base.equals(LargeFraction.ONE)){
             if(str.isEmpty() || str.toString().equals("-")) str.append("1");
             return str.toString();
         }
         if(!str.toString().equals("-") && !str.isEmpty()) str.append("*");
-        if(base.denominator.doesntEqual(LargeInteger.ONE) && exponent.doesntEqual(LargeInteger.ONE))
+        if(base.denominator.doesntEqual(LargeInteger.ONE) && exponent.doesntEqual(LargeFraction.ONE))
             str.append("(").append(base).append(")");
-        else
-            str.append(base.abs());
-        if(exponent.doesntEqual(LargeFraction.ONE))
-            str.append("^(").append(exponent).append(")");
+        else str.append(base.abs());
+        if(exponent.doesntEqual(LargeFraction.ONE)) str.append("^(").append(exponent).append(")");
         return str.toString();
     }
     @Override
     public String toLatex() {
         StringBuilder str = new StringBuilder();
-        if (exponent2.doesntEqual(LargeInteger.ZERO)) {
-            if (exponent2.equals(LargeInteger.ONE))
-                str.append("-");
-            else
-                str.append("(-1)^{").append(exponent2.toLatex()).append("}");
+        if (exponent2.doesntEqual(LargeFraction.ZERO)) {
+            if (exponent2.equals(LargeFraction.ONE)) str.append("-");
+            else str.append("(-1)^{").append(exponent2.toLatex()).append("}");
         }
-        if (base.equals(LargeInteger.ONE)) {
+        if (base.equals(LargeFraction.ONE)) {
             if (str.isEmpty() || str.toString().equals("-")) str.append("1");
             return str.toString();
         }
@@ -151,7 +147,7 @@ public class LargePowerMonomial extends ScalarAtom{
         return switch (other) {
             case LargeInteger largeInteger -> {
                 boolean B = this.base.equals(largeInteger.abs()) && this.exponent.equals(LargeFraction.ONE);
-                if (largeInteger.lessThan(LargeInteger.ZERO))
+                if (largeInteger.negative)
                     yield B && this.exponent2.equals(LargeFraction.ONE);
                 else if (largeInteger.greaterThan(LargeInteger.ZERO))
                     yield B && this.exponent2.equals(LargeFraction.ZERO);
@@ -159,7 +155,7 @@ public class LargePowerMonomial extends ScalarAtom{
             }
             case LargeFraction largeFraction -> {
                 boolean B = this.base.equals(largeFraction.abs()) && this.exponent.equals(LargeFraction.ONE);
-                if (largeFraction.lessThan(LargeInteger.ZERO))
+                if (largeFraction.numerator.negative)
                     yield B && this.exponent2.equals(LargeFraction.ONE);
                 else if (largeFraction.greaterThan(LargeInteger.ZERO))
                     yield B && this.exponent2.equals(LargeFraction.ZERO);

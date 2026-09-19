@@ -29,7 +29,7 @@ public class LargeInteger extends ScalarAtom{
      * Internal magnitude constants + zero and one checkers
      */
     private static final long[] ZERO_MAG = {0L};
-    static boolean isZeroArray(long[] a){
+    static boolean isZeroArray(long[] a) {
         for (long limb : a)
             if (limb != 0L)
                 return false;
@@ -42,21 +42,22 @@ public class LargeInteger extends ScalarAtom{
     private static final long[] FOUR_MAG = {4L};
     private static final long[] FIVE_MAG = {5L};
     private static final long[] SIX_MAG = {6L};
+    private static final long[] SEVEN_MAG = {7L};
     private static final long[] TEN_MAG = {10L};
     private static final long[] HUNDRED_MAG = {100L};
     private static final long[] THOUSAND_MAG = {1000L};
     /**
      * LargeInteger constant -1
      */
-    public static final LargeInteger NEGATIVE_ONE = new LargeInteger(ONE_MAG, true, true);
+    public static final LargeInteger NEGATIVE_ONE;
     /**
      * LargeInteger constant 0
      */
-    public static final LargeInteger ZERO = new LargeInteger(ZERO_MAG, false, true);
+    public static final LargeInteger ZERO;
     /**
      * LargeInteger constant 1
      */
-    public static final LargeInteger ONE = new LargeInteger(ONE_MAG, false, true);
+    public static final LargeInteger ONE;
     /**
      * LargeInteger constant 2
      */
@@ -80,6 +81,11 @@ public class LargeInteger extends ScalarAtom{
     @SuppressWarnings("unused")
     public static final LargeInteger SIX = new LargeInteger(SIX_MAG, false, true);
     /**
+     * LargeInteger constant 7
+     */
+    @SuppressWarnings("unused")
+    public static final LargeInteger SEVEN = new LargeInteger(SEVEN_MAG, false, true);
+    /**
      * LargeInteger constant 10
      */
     public static final LargeInteger TEN = new LargeInteger(TEN_MAG, false, true);
@@ -97,61 +103,66 @@ public class LargeInteger extends ScalarAtom{
      * @param sign  The negative of the number
      */
     public LargeInteger(long[] limbs, boolean sign) {this(limbs, sign, false);}
-    private LargeInteger(long[] limbs, boolean sign, boolean trimmed){
+    private LargeInteger(long[] limbs, boolean sign, boolean trimmed) {
         if (limbs == null || limbs.length == 0)
             throw new IllegalArgumentException("limbs must be nonempty");
-        if(!trimmed) limbs = trimLeadingZeros(limbs);
-        this.limbs = limbs;
-        negative = !isZeroArray(limbs) && sign;
+        if(!trimmed) this.limbs = trimLeadingZeros(limbs);
+        else this.limbs = limbs;
+        negative = sign && !isZeroArray(limbs);
     }
-    private static final LargeInteger[] POS_SMALL = new LargeInteger[31];
-    private static final LargeInteger[] NEG_SMALL = new LargeInteger[31];
+    private static final int CACHE_COUNT = 31;
+    private static final LargeInteger[] POS_SMALL = new LargeInteger[CACHE_COUNT];
+    private static final LargeInteger[] NEG_SMALL = new LargeInteger[CACHE_COUNT];
     static {
-        for (int x = 1; x <= 30; x++) {
+        ZERO = new LargeInteger(ZERO_MAG, false, true);
+        POS_SMALL[1] = new LargeInteger(ONE_MAG, false, true);
+        ONE = POS_SMALL[1];
+        NEG_SMALL[1] = new LargeInteger(ONE_MAG, true, true);
+        NEGATIVE_ONE = NEG_SMALL[1];
+        for (int x = 2; x < CACHE_COUNT; x++) {
             POS_SMALL[x] = new LargeInteger(new long[]{x}, false, true);
             NEG_SMALL[x] = new LargeInteger(new long[]{x}, true, true);
         }
     }
     public static LargeInteger valueOf(long x) {
-        if (x == 0) return ZERO;
-        else if (x > 0 && x <= 30) return POS_SMALL[(int)x];
-        else if (x < 0 && x >= -30) return NEG_SMALL[(int)-x];
+        if(x == 0) return ZERO;
+        else if (x > 0 && x < CACHE_COUNT) return POS_SMALL[(int)x];
+        else if (x < 0 && x > -CACHE_COUNT) return NEG_SMALL[(int)-x];
         else if (x == 100) return HUNDRED;
         else if (x == 1000) return THOUSAND;
         boolean negative = x < 0;
         return new LargeInteger(new long[]{negative ? -x : x}, negative, true);
     }
     @SuppressWarnings("unused")
-    public byte byteValueExact() {
-        long v = longValueExact();
+    public byte byteValue() {
+        long v = longValue();
         if (v < Byte.MIN_VALUE || v > Byte.MAX_VALUE)
             throw new ArithmeticException("Does not fit in byte");
         return (byte) v;
     }
     @SuppressWarnings("unused")
-    public short shortValueExact() {
-        long v = longValueExact();
+    public short shortValue() {
+        long v = longValue();
         if (v < Short.MIN_VALUE || v > Short.MAX_VALUE)
             throw new ArithmeticException("Does not fit in short");
         return (short) v;
     }
-    @SuppressWarnings("unused")
-    public int intValueExact() {
-        long v = longValueExact();
+    public int intValue() {
+        long v = longValue();
         if (v < Integer.MIN_VALUE || v > Integer.MAX_VALUE)
             throw new ArithmeticException("Does not fit in int");
         return (int) v;
     }
-    public long longValueExact() {
+    public long longValue() {
         if (limbs.length > 1)
             throw new ArithmeticException("Does not fit in long");
-        long mag = limbs[0];
-        if (mag < 0) {
-            if (negative && mag == Long.MIN_VALUE)
+        long value = limbs[0];
+        if (value < 0) {
+            if (negative && value == Long.MIN_VALUE)
                 return Long.MIN_VALUE;
             throw new ArithmeticException("Does not fit in long");
         }
-        return negative ? -mag : mag;
+        return negative ? -value : value;
     }
     /**
      * @param s The string inputted into the constructor
@@ -215,30 +226,47 @@ public class LargeInteger extends ScalarAtom{
         return x;
     }
     private static long[] trimLeadingZeros(long[] a) {
-        int n = a.length;
-        while (n > 1 && a[n - 1] == 0L) n--;
+        int n = effectiveLength(a);
         return n == a.length ? a : Arrays.copyOf(a, n);
     }
     private static long bitLength(long[] x) {
         if (isZeroArray(x)) return 0;
-        int top = x.length - 1;
-        while(top > 0 && x[top] == 0L) top--;
+        int top = effectiveLength(x)-1;
         return top * 64L + 64L - Long.numberOfLeadingZeros(x[top]);
     }
     public long bitLength() {return bitLength(limbs);}
+    private static int compareArray(long[] a, long[] b) {
+        int aLen = effectiveLength(a), bLen = effectiveLength(b);
+        if (aLen != bLen) return Integer.compare(aLen, bLen);
+        for (int i = aLen - 1; i >= 0; i--) {
+            int cmp = Long.compareUnsigned(a[i], b[i]);
+            if (cmp != 0) return cmp;
+        }
+        return 0;
+    }
+    private static int compareSmall(long[] a, long b) {
+        if(effectiveLength(a) > 1) return 1;
+        return Long.compareUnsigned(a[0], b);
+    }
+    private static boolean equalsArray(long[] a, long[] b) {
+        if(a == b) return true;
+        int aLen = effectiveLength(a), bLen = effectiveLength(b);
+        if (aLen != bLen) return false;
+        for (int i = 0; i < aLen; i++)
+            if (a[i] != b[i]) return false;
+        return true;
+    }
     @Override
     public int hashCode() {return CASHash.rational(this, ONE);}
     @Override
     public LargeInteger clone() {return new LargeInteger(limbs.clone(), negative, true);}
-    private static String magToString(long[] mag){
+    private static String magnitudeToString(long[] mag) {
         if (mag.length == 1) return Long.toUnsignedString(mag[0]);
         long m = (bitLength(mag) * 1233L >>> 12) / 2;
-        long[] power = power(TEN_MAG, m);
-        long[][] DR = divideMagnitudes(mag, power);
-        String left = magToString(DR[0]);
-        String right = magToString(DR[1]);
+        long[][] DR = divideMagnitudes(mag, power(TEN_MAG, m));
         StringBuilder sb = new StringBuilder();
-        sb.append(left);
+        sb.append(magnitudeToString(DR[0]));
+        String right = magnitudeToString(DR[1]);
         sb.repeat('0', Math.toIntExact(Math.max(m-right.length(), 0)));
         return sb.append(right).toString();
     }
@@ -247,12 +275,15 @@ public class LargeInteger extends ScalarAtom{
         int chars = Math.toIntExact((bitLength() * 1233L >>> 12) + 1 + (negative ? 1 : 0));
         StringBuilder sb = new StringBuilder(chars);
         if (negative) sb.append('-');
-        return sb.append(magToString(limbs)).toString();
+        return sb.append(magnitudeToString(limbs)).toString();
     }
     public String toLatex() {return toString();}
     public BigInteger toBigInteger() {
         if(bitLength() > Integer.MAX_VALUE) return null;
         if (isZeroArray(limbs)) return BigInteger.ZERO;
+        /*
+        BigInteger exposes a byte[] constructor. Use it
+         */
         byte[] bytes = new byte[limbs.length * 8];
         for (int i = 0; i < limbs.length; i++) {
             long limb = limbs[i];
@@ -421,40 +452,15 @@ public class LargeInteger extends ScalarAtom{
         value[chunks - 1] |= 1L << topBit;
         return new LargeInteger(value, false, true);
     }
-    static int compareArray(long[] a, long[] b) {
-        int alen = a.length;
-        while (alen > 1 && a[alen - 1] == 0L) alen--;
-        int bLen = b.length;
-        while (bLen > 1 && b[bLen - 1] == 0L) bLen--;
-        if (alen != bLen)
-            return Integer.compare(alen, bLen);
-        for (int i = alen - 1; i >= 0; i--) {
-            int cmp = Long.compareUnsigned(a[i], b[i]);
-            if (cmp != 0) return cmp;
-        }
-        return 0;
-    }
-    private static int compareSmall(long[] a, long b){
-        int alen = a.length;
-        while (alen > 1 && a[alen - 1] == 0L) alen--;
-        if(alen > 1) return 1;
-        return Long.compareUnsigned(a[0], b);
-    }
-    static boolean equalsArray(long[] a, long[] b) {
-        if(a == b) return true;
-        int alen = a.length;
-        while (alen > 1 && a[alen - 1] == 0L) alen--;
-        int bLen = b.length;
-        while (bLen > 1 && b[bLen - 1] == 0L) bLen--;
-        if (alen != bLen)
-            return false;
-        for (int i = 0; i < alen; i++)
-            if (a[i] != b[i]) return false;
-        return true;
+    private static int effectiveLength(long[] mag) {
+        int len = mag.length;
+        while (len > 1 && mag[len-1] == 0)
+            len--;
+        return len;
     }
     @Override
     public int compareMagnitudes(ScalarAtom other) {
-        return switch(other){
+        return switch(other) {
             case LargeInteger I -> compareArray(limbs, I.limbs);
             case LargeFraction F -> multiply(F.denominator).compareMagnitudes(F.numerator);
             case LargePowerMonomial L -> {
@@ -479,13 +485,12 @@ public class LargeInteger extends ScalarAtom{
         if (other.isNotReal()) throw new IllegalStateException("Complex numbers cannot be compared");
         return switch (other) {
             case LargeInteger I -> {
-                if(negative == I.negative){
-                    yield switch(negative){
+                if(negative == I.negative)
+                    yield switch(negative) {
                         case false -> compareArray(limbs, I.limbs);
                         case true -> compareArray(I.limbs, limbs);
                     };
-                }
-                yield !negative ? 1 : -1;
+                else yield !negative ? 1 : -1;
             }case LargeFraction F -> multiply(F.denominator).compareTo(F.numerator);
             case LargePowerMonomial LPM -> {
                 LargeFraction f = power(LPM.exponent.denominator);
@@ -493,22 +498,22 @@ public class LargeInteger extends ScalarAtom{
                 int res = f.compareMagnitudes(o);
                 if (res == 1) {
                     if (negative) yield -1;
-                    yield 1;
+                    yield res;
                 } else if (res == -1) {
                     if (other.lessThan(ZERO)) yield 1;
-                    yield -1;
+                    yield res;
                 }
                 yield res;
             }default -> {
-                long B = compareMagnitudes(other);
+                int B = compareMagnitudes(other);
                 if (B == 1) {
                     if (negative) yield -1;
-                    yield 1;
+                    yield B;
                 } else if (B == -1) {
                     if (other.lessThan(ZERO)) yield 1;
-                    yield -1;
+                    yield B;
                 }
-                yield 0;
+                yield B;
             }
         };
     }
@@ -518,13 +523,10 @@ public class LargeInteger extends ScalarAtom{
     public boolean isReal() {return true;}
     @Override
     public boolean isAlgebraic() {return true;}
-    private static long[] divide128ByNormalized64(long high, long low, long divisor) {
-        // Preconditions:
-        // divisor has bit 63 set
-        // high < divisor unsigned
-        if(Long.compareUnsigned(high, divisor) >= 0)
-            throw new ArithmeticException("divide128ByNormalized64 requires high < divisor");
-
+    private static long divide128ByNormalized64Quotient(long high, long low, long divisor) {
+        // divisor normalized, high < divisor unsigned
+        if (Long.compareUnsigned(high, divisor) >= 0)
+            throw new IllegalArgumentException("divide128ByNormalized64 requires high < divisor");
         int u3 = (int) (high >>> 32);
         int u2 = (int) high;
         int u1 = (int) (low >>> 32);
@@ -532,21 +534,30 @@ public class LargeInteger extends ScalarAtom{
 
         int v1 = (int) (divisor >>> 32);
         int v0 = (int) divisor;
+        /*
+         * First 96/64 division.
+         */
+        long qHigh = divideThreeByTwo(u3, u2, u1, v1, v0);
+        /*
+         * Remainder after first division.
+         *
+         * Low 64 bits of [u3 u2 u1] are [u2 u1].
+         */
+        long firstLow = (Integer.toUnsignedLong(u2) << 32) | Integer.toUnsignedLong(u1);
+        long rem = firstLow - qHigh * divisor;
 
-        DivRem3By2 first = divideThreeByTwo(u3, u2, u1, v1, v0);
-        DivRem3By2 second = divideThreeByTwo(first.remHigh, first.remLow, u0, v1, v0);
-        long quotient = (Integer.toUnsignedLong(first.quotient) << 32) | Integer.toUnsignedLong(second.quotient);
-
-        long remainder = (Integer.toUnsignedLong(second.remHigh) << 32) | Integer.toUnsignedLong(second.remLow);
-        return new long[]{quotient, remainder};
+        /*
+         * Bring down u0 and get second quotient word.
+         */
+        long qLow = divideThreeByTwo((int) (rem >>> 32), (int) rem, u0, v1, v0);
+        return (qHigh << 32) | qLow;
     }
     private static long[] addSmall(long[] addend, long adder) {
-        addend = trimLeadingZeros(addend);
-        if (addend.length == 1) {
+        int n = effectiveLength(addend);
+        if (n == 1) {
             long low = addend[0] + adder;
             return Long.compareUnsigned(low, addend[0]) < 0 ? new long[]{low, 1L} : new long[]{low};
         }
-        int n = addend.length;
         long[] out = new long[n];
         long low = addend[0] + adder;
         out[0] = low;
@@ -569,21 +580,67 @@ public class LargeInteger extends ScalarAtom{
         return expanded;
     }
     private static long[] addMagnitudes(long[] a, long[] b) {
-        a = trimLeadingZeros(a);
-        b = trimLeadingZeros(b);
-        if (a.length == 1)
-            return addSmall(b, a[0]);
-        if (b.length == 1)
-            return addSmall(a, b[0]);
-        if (a.length < b.length) {
+        int an = effectiveLength(a);
+        int bn = effectiveLength(b);
+        if (an < bn) {
             long[] t = a;
             a = b;
             b = t;
+            int ti = an;
+            an = bn;
+            bn = ti;
         }
-        long[] res = new long[a.length + 1];
-        System.arraycopy(a, 0, res, 0, a.length);
-        addMagnitudeInPlace(res, b, 0);
-        return trimLeadingZeros(res);
+        if (bn == 1) {
+            long[] out = new long[an];
+            long a0 = a[0];
+            long low = a0 + b[0];
+            out[0] = low;
+            // No carry.
+            if (Long.compareUnsigned(low, a0) >= 0) {
+                if (an > 1) System.arraycopy(a, 1, out, 1, an - 1);
+                return out;
+            }
+            // Propagate carry.
+            for (int i = 1; i < an; i++) {
+                long x = a[i] + 1L;
+                out[i] = x;
+                if (x != 0L) {
+                    if (i + 1 < an) System.arraycopy(a, i + 1, out, i + 1, an - i - 1);
+                    return out;
+                }
+            }
+            long[] expanded = Arrays.copyOf(out, an + 1);
+            expanded[an] = 1L;
+            return expanded;
+        }
+        long[] out = new long[an];
+        long carry = 0L;
+        int i = 0;
+        for (; i < bn; i++) {
+            long ai = a[i];
+            long s = ai + b[i];
+            long c1 = Long.compareUnsigned(s, ai) < 0 ? 1L : 0L;
+
+            long r = s + carry;
+            long c2 = Long.compareUnsigned(r, s) < 0 ? 1L : 0L;
+
+            out[i] = r;
+            carry = c1 | c2;
+        }
+        // Propagate carry through the unmatched high part of A.
+        while (i < an && carry != 0L) {
+            long r = a[i] + 1L;
+            out[i++] = r;
+            carry = r == 0L ? 1L : 0L;
+        }
+        // Remaining limbs are unchanged.
+        if (i < an)
+            System.arraycopy(a, i, out, i, an - i);
+        if (carry != 0L) {
+            out = Arrays.copyOf(out, an + 1);
+            out[an] = 1L;
+        }
+        return out;
     }
     private static long[] addThreeMagnitudes(long[] a, long[] b, long[] c) {
         int n = Math.max(a.length, Math.max(b.length, c.length));
@@ -611,12 +668,44 @@ public class LargeInteger extends ScalarAtom{
         out[n] = carry;
         return out[n] == 0 ? Arrays.copyOf(out, n) : out;
     }
+    private static long[] addFourMagnitudes(long[] a, long[] b, long[] c, long[] d) {
+        int n = Math.max(
+                Math.max(a.length, b.length),
+                Math.max(c.length, d.length)
+        );
+        long[] out = new long[n + 1];
+
+        long carry = 0; // can be 0, 1, 2, or 3
+
+        for (int i = 0; i < n; i++) {
+            long w = i < a.length ? a[i] : 0L;
+            long x = i < b.length ? b[i] : 0L;
+            long y = i < c.length ? c[i] : 0L;
+            long z = i < d.length ? d[i] : 0L;
+
+            long s = w + x;
+            long c1 = Long.compareUnsigned(s, w) < 0 ? 1L : 0L;
+
+            long t = s + y;
+            long c2 = Long.compareUnsigned(t, s) < 0 ? 1L : 0L;
+
+            long u = t + z;
+            long c3 = Long.compareUnsigned(u, t) < 0 ? 1L : 0L;
+
+            long v = u + carry;
+            long c4 = Long.compareUnsigned(v, u) < 0 ? 1L : 0L;
+
+            out[i] = v;
+            carry = c1 + c2 + c3 + c4;
+        }
+        out[n] = carry;
+        return out[n] == 0L ? Arrays.copyOf(out, n) : out;
+    }
     private static void addMagnitudeInPlace(long[] out, long[] x, int offset) {
-        int xLen = x.length;
-        while (xLen > 1 && x[xLen - 1] == 0L) xLen--;
-        if (xLen == 1 && x[0] == 0L) return;
+        int xLen = effectiveLength(x);
+        if(xLen == 1 && x[0] == 0) return;
         if (offset + xLen > out.length)
-            throw new AssertionError("term does not fit: " + "offset=" + offset + ", xLen=" + xLen +
+            throw new AssertionError("term does not fit: offset=" + offset + ", xLen=" + xLen +
                     ", outLen=" + out.length);
         long carry = 0L;
         for (int i = 0; i < xLen; i++)
@@ -643,15 +732,9 @@ public class LargeInteger extends ScalarAtom{
         return c1 + c2;
     }
     private static long[] subtractMagnitudes(long[] a, long[] b) {
-        a = trimLeadingZeros(a);
-        b = trimLeadingZeros(b);
-        int cmp = compareArray(a, b);
-        if (cmp < 0)
-            throw new IllegalArgumentException("subtractMagnitudes requires a >= b");
-        if (cmp == 0)
-            return ZERO_MAG;
-        int n = a.length;
-        int m = b.length;
+        if(equalsArray(a, b)) return ZERO_MAG;
+        int n = effectiveLength(a);
+        int m = effectiveLength(b);
         long[] out = new long[n];
 
         long borrow = 0L;
@@ -684,37 +767,38 @@ public class LargeInteger extends ScalarAtom{
         return trimLeadingZeros(out);
     }
     private static long[] subtractSmall(long[] a, long small) {
-        a = trimLeadingZeros(a);
+        int len = effectiveLength(a);
         if (small == 0L) return a;
-        if (a.length == 1) {
-            int cmp = Long.compareUnsigned(a[0], small);
+        long a0 = a[0];
+        if (len == 1) {
+            int cmp = Long.compareUnsigned(a0, small);
             if (cmp < 0)
                 throw new ArithmeticException("subtractSmall requires a >= small");
             if (cmp == 0) return ZERO_MAG;
-            return new long[]{a[0] - small};
+            return new long[]{a0 - small};
         }
-        if (a.length == 2) {
-            long low = a[0] - small;
-            if (Long.compareUnsigned(a[0], small) >= 0)
+        if (len == 2) {
+            long low = a0 - small;
+            if (Long.compareUnsigned(a0, small) >= 0)
                 return new long[]{low, a[1]};
             long high = a[1] - 1L;
             if (high != 0L) return new long[]{low, high};
             // Result contracted from 2 limbs to 1.
             return new long[]{low};
         }
-        long[] out = new long[a.length];
-        long low = a[0] - small;
+        long[] out = new long[len];
+        long low = a0 - small;
         out[0] = low;
-        if (Long.compareUnsigned(a[0], small) >= 0) {
-            System.arraycopy(a, 1, out, 1, a.length - 1);
+        if (Long.compareUnsigned(a0, small) >= 0) {
+            System.arraycopy(a, 1, out, 1, len - 1);
             return out;
         }
-        for (int i = 1; i < a.length; i++) {
+        for (int i = 1; i < len; i++) {
             long x = a[i];
             if (x != 0L) {
                 out[i] = x - 1;
-                System.arraycopy(a, i + 1, out, i + 1, a.length - i - 1);
-                if (i == a.length - 1 && out[i] == 0L)
+                System.arraycopy(a, i + 1, out, i + 1, len - i - 1);
+                if (i == len - 1 && out[i] == 0L)
                     return trimLeadingZeros(out);
                 return out;
             }
@@ -723,14 +807,8 @@ public class LargeInteger extends ScalarAtom{
         return trimLeadingZeros(out);
     }
     private static void subtractMagnitudeInPlace(long[] a, long[] b) {
-        if (compareArray(a, b) < 0)
-            throw new IllegalArgumentException("subtractMagnitudeInPlace requires a >= b\n" +
-                    "a = " + new LargeInteger(trimLeadingZeros(a), false, true) + "\n" +
-                    "b = " + new LargeInteger(trimLeadingZeros(b), false, true));
 
-        int bLen = b.length;
-        while (bLen > 0 && b[bLen - 1] == 0L)
-            bLen--;
+        int bLen = effectiveLength(b);
 
         long borrow = 0L;
         int i = 0;
@@ -803,12 +881,12 @@ public class LargeInteger extends ScalarAtom{
             case LargeInteger I -> add(I);
             case LargeFraction F -> new LargeFraction(F.denominator.multiply(this)
                     .add(F.numerator), F.denominator);
-            case LargePowerMonomial LPM -> new RadicalTerm(new LargeFraction(this, ONE),
+            case LargePowerMonomial LPM -> new RadicalTerm(new LargeFraction(this),
                     LargeFraction.ONE, LPM);
             case RadicalTerm RT -> new RadicalTerm((LargeFraction) add(RT.rationalPart), RT.coefficient,
                     RT.exponent);
             case RadicalTermSum RTS -> new RadicalTermSum(RTS.sum, (LargeFraction) RTS.constant.add(this));
-            case LargePowerNode LPN -> new RadicalTermNode(new LargeFraction(this, ONE),
+            case LargePowerNode LPN -> new RadicalTermNode(new LargeFraction(this),
                     LargeFraction.ONE, LPN);
             default -> throw new UnsupportedOperationException(
                     "Operation with these types together not supported yet");
@@ -819,15 +897,15 @@ public class LargeInteger extends ScalarAtom{
         boolean otherSign = other < 0;
         // Caveat: Long.MIN_VALUE needs special handling because -Long.MIN_VALUE overflows.
         if (other == Long.MIN_VALUE)
-            return add(new LargeInteger(Long.toString(other)));
-        long[] otherMag = {Math.abs(other)};
+            return add(valueOf(other));
+        long otherAbs = Math.abs(other);
         if (negative == otherSign)
-            return new LargeInteger(addMagnitudes(limbs, otherMag), negative, true);
-        int cmp = compareArray(limbs, otherMag);
+            return new LargeInteger(addSmall(limbs, otherAbs), negative, true);
+        int cmp = compareSmall(limbs, otherAbs);
         if (cmp == 0) return ZERO;
         else if (cmp > 0)
-            return new LargeInteger(subtractMagnitudes(limbs, otherMag), negative, true);
-        return new LargeInteger(subtractMagnitudes(otherMag, limbs), otherSign, true);
+            return new LargeInteger(subtractSmall(limbs, otherAbs), negative, true);
+        return new LargeInteger(subtractMagnitudes(new long[]{otherAbs}, limbs), otherSign, true);
     }
     public LargeInteger subtract(LargeInteger other) {
         if (isZeroArray(limbs))
@@ -863,7 +941,7 @@ public class LargeInteger extends ScalarAtom{
         int limbShift = (int) shift >>> 6;
         int bitShift = (int) shift & 63;
         long[] out = new long[n.length + limbShift + 1];
-        if (bitShift == 0){
+        if (bitShift == 0) {
             System.arraycopy(n, 0, out, limbShift, n.length);
             return trimLeadingZeros(out);
         }
@@ -948,15 +1026,11 @@ public class LargeInteger extends ScalarAtom{
     private static void subtractShiftedLeftBitsInPlace(long[] a, long[] b, int shift, String where) {
         if (shift <= 0 || shift >= 64)
             throw new IllegalArgumentException();
-        int bLen = b.length;
-        while (bLen > 1 && b[bLen - 1] == 0L)
-            bLen--;
+        int bLen = effectiveLength(b);
         long[] bt = trimLeadingZeros(Arrays.copyOf(b, bLen));
         long[] shifted = shiftLeftBits(bt, shift);
-
         if (compareArray(a, shifted) < 0)
-            throw new AssertionError(where +
-                    " : a < (b << " + shift + "), a_Len=" +
+            throw new AssertionError(where + " : a < (b << " + shift + "), a_Len=" +
                     trimLeadingZeros(a).length + ", bLen=" + bt.length + ", shiftedLen=" + shifted.length);
         long borrow = 0L;
         long spill = 0L;
@@ -1000,14 +1074,14 @@ public class LargeInteger extends ScalarAtom{
     /**
      * Returns a LargeInteger whose value is {@code this << shift}
      */
-    public LargeInteger shiftLeft(long shift){
+    public LargeInteger shiftLeft(long shift) {
         if (shift == 0) return this;
         return new LargeInteger(shiftLeftBits(limbs, shift), negative, true);
     }
     /**
      * Returns a LargeInteger whose value is {@code this >> shift}
      */
-    public LargeInteger shiftRight(long shift){
+    public LargeInteger shiftRight(long shift) {
         if (shift == 0) return this;
         return new LargeInteger(shiftRightBits(limbs, shift), negative, true);
     }
@@ -1022,8 +1096,7 @@ public class LargeInteger extends ScalarAtom{
      * @param bit The specified bit tested
      * @return A boolean indicated if the bit is set
      */
-    @SuppressWarnings("unused")
-    public boolean testBit(long bit){return testBit(limbs, bit);}
+    public boolean testBit(long bit) {return testBit(limbs, bit);}
     public LargeInteger setBit(long bit) {
         if (bit < 0)
             throw new ArithmeticException("Negative bit address");
@@ -1099,6 +1172,7 @@ public class LargeInteger extends ScalarAtom{
         multiplySmallInto(a, m, out);
         return trimLeadingZeros(out);
     }
+
     /*
      * The following constants are multiplication dispatch thresholds.
      * These constants are intentionally implementation-specific. They are chosen
@@ -1114,21 +1188,27 @@ public class LargeInteger extends ScalarAtom{
 
     /**
      * Threshold for switching from grade-school to Karatsuba in regular multiply. If the number of limbs in the
-     * smaller operand is in the range from this to the Toom-Cook threshold, then the Karatsuba algorithm will
-     * be chosen. This value was found via experimental heatmaps to work well.
+     * smaller operand is in the range from this to the Toom-Cook 3 threshold, then the Karatsuba algorithm will
+     * be chosen. This value was found via threshold benchmarks to work well.
      */
-    private static final int KARATSUBA_THRESHOLD = 28;
+    private static final int KARATSUBA_THRESHOLD = 36;
     /**
-     * Threshold for switching from Karatsuba to the Toom-Cook 3 algorithm in regular multiply.If the
-     * number of limbs in the smaller operand is greater than or equal to this constant,hen the Toom
-     * algorithm will be chosen. This value was found via experimental heatmaps to work well.
+     * Threshold for switching from Karatsuba to the Toom-Cook 3 algorithm in regular multiply. If the
+     * number of limbs in the smaller operand is in the range from this to the Toom-Cook 4 threshold,
+     * then the Toom-3 algorithm will be chosen. This value was found via threshold benchmarks to work well.
      */
-    private static final int TOOM_COOK_3_THRESHOLD = 120;
-    static long[] multiplyMagnitudes(long[] a, long[] b){
-        if(Integer.compareUnsigned(a.length+b.length, Integer.MAX_VALUE) > 0) reportOverflow();
-        return multiplyMagnitudesWithThresholds(a, b, KARATSUBA_THRESHOLD, TOOM_COOK_3_THRESHOLD);
+    private static final int TOOM_COOK_3_THRESHOLD = 104;
+    /**
+     * Threshold for switching from Toom-Cook 3 to the Toom-Cook 4 algorithm in regular multiply. If the
+     * number of limbs in the smaller operand is greater than or equal to this threshold, then the Toom-4
+     * algorithm will be chosen. This value was found via threshold benchmarks to work well.
+     */
+    private static final int TOOM_COOK_4_THRESHOLD = 432;
+    private static long[] multiplyMagnitudes(long[] a, long[] b) {
+        return multiplyMagnitudesWithThresholds(a, b, KARATSUBA_THRESHOLD, TOOM_COOK_3_THRESHOLD,
+                TOOM_COOK_4_THRESHOLD);
     }
-    private static void multiplyInto(long[] a, long[] b, long[] out){
+    private static void multiplyInto(long[] a, long[] b, long[] out) {
         Arrays.fill(out, 0);
         if (out.length == 0 || isZeroArray(a) || isZeroArray(b)) return;
         // Put the longer operand in A.
@@ -1172,7 +1252,7 @@ public class LargeInteger extends ScalarAtom{
             }
         }
     }
-    public static long[] multiplyMagnitudesWithThresholds(long[] a, long[] b, int KT, int T3T) {
+    public static long[] multiplyMagnitudesWithThresholds(long[] a, long[] b, int KT, int T3T, int T4T) {
         a = trimLeadingZeros(a);
         b = trimLeadingZeros(b);
         if (isZeroArray(a) || isZeroArray(b)) return ZERO_MAG;
@@ -1188,7 +1268,7 @@ public class LargeInteger extends ScalarAtom{
         else if (min < KT) {
             multiplyInto(a, b, out);
             return trimLeadingZeros(out);
-        }else if (min < T3T){
+        } else if (min < T3T) {
             /*
               Karatsuba multiplication
 
@@ -1210,307 +1290,244 @@ public class LargeInteger extends ScalarAtom{
             long[] upper1 = slice(a, pivot, max);
             long[] lower2 = sliceFixed(b, 0, Math.min(pivot, b.length));
             long[] upper2 = pivot >= b.length ? ZERO_MAG : slice(b, pivot, b.length);
-            long[] z0 = multiplyMagnitudesWithThresholds(lower1, lower2, KT, T3T);
-            long[] z2 = multiplyMagnitudesWithThresholds(upper1, upper2, KT, T3T);
+            long[] z0 = multiplyMagnitudesWithThresholds(lower1, lower2, KT, T3T, T4T);
+            long[] z2 = multiplyMagnitudesWithThresholds(upper1, upper2, KT, T3T, T4T);
             long[] z1 = multiplyMagnitudesWithThresholds(addMagnitudes(lower1, upper1),
-                    addMagnitudes(lower2, upper2), KT, T3T);
+                    addMagnitudes(lower2, upper2), KT, T3T, T4T);
             subtractMagnitudeInPlace(z1, z0);
             subtractMagnitudeInPlace(z1, z2);
             addMagnitudeInPlace(out, z0, 0);
             addMagnitudeInPlace(out, z1, pivot);
             addMagnitudeInPlace(out, z2, pivot * 2);
             return trimLeadingZeros(out);
+        } else if (min < T4T) {
+            int pivot = (max + 2) / 3;
+
+            long[] a0 = sliceFixed(a, 0, pivot);
+            long[] a1 = sliceFixed(a, pivot, pivot);
+            long[] a2 = sliceFixed(a, 2 * pivot, pivot);
+            long[] b0 = sliceFixed(b, 0, pivot);
+            long[] b1 = sliceFixed(b, pivot, pivot);
+            long[] b2 = sliceFixed(b, 2 * pivot, pivot);
+
+            long[] p1 = addThreeMagnitudes(a0, a1, a2);
+            long[] pm1Magnitude = addMagnitudes(a0, a2);
+            boolean pm1Negative = compareArray(pm1Magnitude, a1) < 0;
+            if (!pm1Negative) subtractMagnitudeInPlace(pm1Magnitude, a1);
+            else pm1Magnitude = subtractMagnitudes(a1, pm1Magnitude);
+            long[] p2 = addThreeMagnitudes(a0, shiftLeftBits(a1, 1), shiftLeftBits(a2, 2));
+            long[] q1 = addThreeMagnitudes(b0, b1, b2);
+            long[] qm1Magnitude = addMagnitudes(b0, b2);
+            boolean qm1Negative = compareArray(qm1Magnitude, b1) < 0;
+            if (!qm1Negative) subtractMagnitudeInPlace(qm1Magnitude, b1);
+            else qm1Magnitude = subtractMagnitudes(b1, qm1Magnitude);
+            long[] q2 = addThreeMagnitudes(b0, shiftLeftBits(b1, 1), shiftLeftBits(b2, 2));
+
+            long[] v0 = multiplyMagnitudesWithThresholds(a0, b0, KT, T3T, T4T);
+            long[] v1 = multiplyMagnitudesWithThresholds(p1, q1, KT, T3T, T4T);
+            long[] vm1Magnitude = multiplyMagnitudesWithThresholds(pm1Magnitude, qm1Magnitude, KT, T3T, T4T);
+            boolean vm1Negative = pm1Negative ^ qm1Negative;
+            long[] v2 = multiplyMagnitudesWithThresholds(p2, q2, KT, T3T, T4T);
+            long[] vInf = multiplyMagnitudesWithThresholds(a2, b2, KT, T3T, T4T);
+
+            long[] r2;
+            long[] s;
+            if (vm1Negative) {
+                // v1 + vm1 = v1 - |vm1|
+                r2 = subtractMagnitudes(v1, vm1Magnitude);
+                // v1 - vm1 = v1 + |vm1|
+                s = addMagnitudes(v1, vm1Magnitude);
+            } else {
+                r2 = addMagnitudes(v1, vm1Magnitude);
+                s = subtractMagnitudes(v1, vm1Magnitude);
+            }
+            shiftRightBitsInPlace(r2, 1);
+            shiftRightBitsInPlace(s, 1);
+            // r2 = (v1 + vm1)/2 - v0 - vInf
+            subtractMagnitudeInPlace(r2, v0);
+            subtractMagnitudeInPlace(r2, vInf);
+            // v2 -> T
+            subtractMagnitudeInPlace(v2, v0);
+            subtractShiftedLeftBitsInPlace(v2, vInf, 4, "T: v2 -= 16*vInf");
+            shiftRightBitsInPlace(v2, 1);
+            // v2 -> r3
+            subtractMagnitudeInPlace(v2, s);
+            subtractShiftedLeftBitsInPlace(v2, r2, 1, "r3: T-s -= 2*r2");
+            divideMagnitudeExactInPlace(v2, 3);
+            // s -> r1
+            subtractMagnitudeInPlace(s, v2);
+
+            v0 = trimLeadingZeros(v0);
+            s = trimLeadingZeros(s);
+            r2 = trimLeadingZeros(r2);
+            v2 = trimLeadingZeros(v2);
+            vInf = trimLeadingZeros(vInf);
+            addMagnitudeInPlace(out, v0, 0);
+            addMagnitudeInPlace(out, s, pivot);
+            addMagnitudeInPlace(out, r2, 2 * pivot);
+            addMagnitudeInPlace(out, v2, 3 * pivot);
+            addMagnitudeInPlace(out, vInf, 4 * pivot);
+            return trimLeadingZeros(out);
         }
-/*
-Toom-Cook 3 Algorithm
-
----INITIALIZATION---
-
-Let beta = 2^64 be the limb base and let k = ceil(n/3), where n is
-the number of limbs in the larger operand. Then define X = beta^k.
-Split each operand into three approximately equal pieces:
-
-A = a2*X^2 + a1*X + a0
-B = b2*X^2 + b1*X + b0
-
-We can treat these as the polynomials
-
-p(x) = a2*x^2 + a1*x + a0
-q(x) = b2*x^2 + b1*x + b0
-
-The original integers are recovered by evaluating them at x = X:
-
-A = p(X)
-B = q(X)
-
-Therefore
-
-A*B = p(X)q(X)
-
-and it is sufficient to determine the product polynomial
-
-r(x) = p(x)q(x) = r4*x^4 + r3*x^3 + r2*x^2 + r1*x + r0.
-
----POINT EVALUATION---
-
-Karatsuba uses the points 0, 1, and infinity.
-Toom-Cook 3 needs five points because the product polynomial has
-degree 4 and therefore has five coefficients. The point values define
-the interpolation strategy, but they do not depend on the inputs and can be hardocded.
-For this implementation, points 0, 1, 2, -1, and infinity will be used
-
-p0   = p(0)  = a0
-p1   = p(1)  = a2 + a1 + a0
-p2   = p(2)  = 4*a2 + 2*a1 + a0
-pM1  = p(-1) = a2 - a1 + a0
-pInf = p(infinity) = a2
-
-q0   = q(0)  = b0
-q1   = q(1)  = b2 + b1 + b0
-q2   = q(2)  = 4*b2 + 2*b1 + b0
-qM1  = q(-1) = b2 - b1 + b0
-qInf = q(infinity) = b2
-
----MULTIPLICATION---
-
-Standard grade-school multiplication would compute 9 products:
-
-a0*b0, a0*b1, a0*b2,
-a1*b0, a1*b1, a1*b2,
-a2*b0, a2*b1, a2*b2
-
-Toom-Cook 3 instead needs only 5 recursive products:
-
-v0   = p0*q0
-v1   = p1*q1
-v2   = p2*q2
-vM1  = pM1*qM1
-vInf = pInf*qInf
-
-These are evaluations of r(x):
-
-v0   = r(0)
-v1   = r(1)
-v2   = r(2)
-vM1  = r(-1)
-vInf = r(infinity)
-
-
----INTERPOLATION---
-
-This is probably the hardest step.
-We know
-
-r(x) = r0 + r1*x + r2*x^2 + r3*x^3 + r4*x^4
-
-so our five evaluations give
-
-[ v0   ]   [ 1   0   0   0   0 ] [ r0 ]
-[ v1   ]   [ 1   1   1   1   1 ] [ r1 ]
-[ v2   ] = [ 1   2   4   8  16 ] [ r2 ]
-[ vM1  ]   [ 1  -1   1  -1   1 ] [ r3 ]
-[ vInf ]   [ 0   0   0   0   1 ] [ r4 ]
-
-The first and last coefficients are immediate:
-
-r0 = v0
-r4 = vInf
-
-Remove their contributions from the x = 1 and x = -1 evaluations:
-
-s1  = v1  - r0 - r4
-    = r1 + r2 + r3
-
-sM1 = vM1 - r0 - r4
-    = -r1 + r2 - r3
-
-Adding these equations eliminates r1 and r3:
-
-s1 + sM1 = 2*r2
-
-so
-
-r2 = (s1 + sM1)/2
-
-Subtracting them gives
-
-s1 - sM1 = 2*(r1 + r3)
-
-so define
-
-t = (s1 - sM1)/2
-  = r1 + r3
-
-Now use the x = 2 evaluation:
-
-v2 = r0 + 2*r1 + 4*r2 + 8*r3 + 16*r4
-
-Remove r0 and 16*r4, then divide by 2:
-
-u = (v2 - r0 - 16*r4)/2
-  = r1 + 2*r2 + 4*r3
-
-Since
-
-t = r1 + r3,
-
-subtract t and 2*r2:
-
-u - t - 2*r2 = 3*r3
-
-therefore
-
-r3 = (u - t - 2*r2)/3
-
-and finally
-
-r1 = t - r3
-
-Thus, the interpolation can be computed as:
-r0 = v0
-r4 = vInf
-s1  = v1  - r0 - r4
-sM1 = vM1 - r0 - r4
-r2 = (s1 + sM1)/2
-t  = (s1 - sM1)/2
-u  = (v2 - r0 - 16*r4)/2
-r3 = (u - t - 2*r2)/3
-r1 = t - r3
-All divisions above are exact. No rounding is involved.
-
----RECOMPOSITION---
-
-Recall that X = beta^k = 2^(64k).
-The final integer product is obtained by evaluating r at X:
-A*B = r(X)
-    = r0
-    + r1*X
-    + r2*X^2
-    + r3*X^3
-    + r4*X^4
-
-Because X is an exact power of the limb base, multiplication by X^j
-is simply a shift by j*k limbs.
-
-The coefficients r1, r2, and r3 may temporarily be negative during
-interpolation, so the implementation must either support signed
-intermediate values or carefully handle subtraction before the final
-recomposition.
-
----COMPLEXITY---
-
-Each recursive multiplication operates on approximately n/3 limbs,
-and there are 5 recursive multiplications.
-
-Therefore, the recurrence is
-
-T(n) = 5*T(n/3) + O(n)
-
-where the O(n) term consists of point evaluation, interpolation,
-addition/subtraction, exact small divisions, and recomposition.
-
-By the Master Theorem,
-
-T(n) = O(n^(log_3(5)))
-
-and
-
-log_3(5) ≈ 1.465
-
-so the asymptotic runtime is approximately
-
-O(n^1.465).
-
-This improves on Karatsuba's
-
-O(n^(log_2(3))) ≈ O(n^1.585),
-
-at the cost of substantially more linear-time addition,
-subtraction, and interpolation overhead. Because of that overhead,
-Toom-Cook 3 is normally only used above a larger operand-size
-threshold, with smaller recursive products falling back to
-Karatsuba or grade-school multiplication.
-*/
-        int pivot = (max + 2) / 3;
-
+        //split into four parts
+        int pivot = (max+3)/4;
         long[] a0 = sliceFixed(a, 0, pivot);
         long[] a1 = sliceFixed(a, pivot, pivot);
-        long[] a2 = sliceFixed(a, 2 * pivot, pivot);
+        long[] a2 = sliceFixed(a, 2*pivot, pivot);
+        long[] a3 = sliceFixed(a, 3*pivot, pivot);
         long[] b0 = sliceFixed(b, 0, pivot);
         long[] b1 = sliceFixed(b, pivot, pivot);
-        long[] b2 = sliceFixed(b, 2 * pivot, pivot);
-
-        long[] p1 = addThreeMagnitudes(a0, a1, a2);
-        long[] pm1Mag = addMagnitudes(a0, a2);
-        boolean pm1Negative = compareArray(pm1Mag, a1) < 0;
-        if (!pm1Negative) subtractMagnitudeInPlace(pm1Mag, a1);
-        else pm1Mag = subtractMagnitudes(a1,  pm1Mag);
-        long[] p2 = addThreeMagnitudes(a0, shiftLeftBits(a1, 1), shiftLeftBits(a2, 2));
-        long[] q1 = addThreeMagnitudes(b0, b1, b2);
-        long[] qm1Mag = addMagnitudes(b0, b2);
-        boolean qm1Negative = compareArray(qm1Mag, b1) < 0;
-        if(!qm1Negative) subtractMagnitudeInPlace(qm1Mag, b1);
-        else qm1Mag = subtractMagnitudes(b1,  qm1Mag);
-        long[] q2 = addThreeMagnitudes(b0, shiftLeftBits(b1, 1), shiftLeftBits(b2, 2));
-
-        long[] v0 = multiplyMagnitudesWithThresholds(a0, b0, KT, T3T);
-        long[] v1 = multiplyMagnitudesWithThresholds(p1, q1, KT, T3T);
-        long[] vm1Mag = multiplyMagnitudesWithThresholds(pm1Mag, qm1Mag, KT, T3T);
-        boolean vm1Negative = pm1Negative ^ qm1Negative;
-        long[] v2 = multiplyMagnitudesWithThresholds(p2, q2, KT, T3T);
-        long[] vInf = multiplyMagnitudesWithThresholds(a2, b2, KT, T3T);
-
-        long[] r2;
-        long[] s;
-        if (vm1Negative) {
-            // v1 + vm1 = v1 - |vm1|
-            r2  = subtractMagnitudes(v1, vm1Mag);
-            // v1 - vm1 = v1 + |vm1|
-            s = addMagnitudes(v1, vm1Mag);
+        long[] b2 = sliceFixed(b, 2*pivot, pivot);
+        long[] b3 = sliceFixed(b, 3*pivot, pivot);
+        //point evaluation. points 0, -1, 1, -2, 2, 3, ∞
+        long[] p1 = addFourMagnitudes(a0, a1, a2, a3);
+        long[] p2 = addFourMagnitudes(a0, shiftLeftBits(a1, 1), shiftLeftBits(a2, 2),
+                shiftLeftBits(a3, 3));
+        long[] p3 = addFourMagnitudes(a0, multiplySmall(a1, 3), multiplySmall(a2, 9),
+                multiplySmall(a3, 27));
+        long[] pM1Magnitude = addMagnitudes(a2, a0);
+        long[] pM1Subtract = addMagnitudes(a3, a1);
+        boolean pM1Neg;
+        if(compareArray(pM1Magnitude, pM1Subtract) >= 0) {
+            subtractMagnitudeInPlace(pM1Magnitude, pM1Subtract);
+            pM1Neg = false;
         } else {
-            r2  = addMagnitudes(v1, vm1Mag);
-            s = subtractMagnitudes(v1, vm1Mag);
+            pM1Magnitude = subtractMagnitudes(pM1Subtract, pM1Magnitude);
+            pM1Neg = true;
         }
-        shiftRightBitsInPlace(r2, 1);
-        shiftRightBitsInPlace(s, 1);
-        // r2 = (v1 + vm1)/2 - v0 - vInf
-        subtractMagnitudeInPlace(r2, v0);
-        subtractMagnitudeInPlace(r2, vInf);
-        // v2 -> T
-        subtractMagnitudeInPlace(v2, v0);
-        subtractShiftedLeftBitsInPlace(v2, vInf, 4, "T: v2 -= 16*vInf");
-        shiftRightBitsInPlace(v2, 1);
-        // v2 -> r3
-        subtractMagnitudeInPlace(v2, s);
-        subtractShiftedLeftBitsInPlace(v2, r2, 1, "r3: T-s -= 2*r2");
-        divideMagnitudeExactInPlace(v2, 3);
-        // s -> r1
-        subtractMagnitudeInPlace(s, v2);
+        long[] pM2Magnitude = addMagnitudes(a0, shiftLeftBits(a2, 2));
+        long[] pM2Subtract = addMagnitudes(shiftLeftBits(a1, 1), shiftLeftBits(a3, 3));
+        boolean pM2Neg;
+        if (compareArray(pM2Magnitude, pM2Subtract) >= 0) {
+            subtractMagnitudeInPlace(pM2Magnitude, pM2Subtract);
+            pM2Neg = false;
+        } else {
+            pM2Magnitude = subtractMagnitudes(pM2Subtract, pM2Magnitude);
+            pM2Neg = true;
+        }
+        long[] q1 = addFourMagnitudes(b0, b1, b2, b3);
+        long[] q2 = addFourMagnitudes(b0, shiftLeftBits(b1, 1), shiftLeftBits(b2, 2),
+                shiftLeftBits(b3, 3));
+        long[] q3 = addFourMagnitudes(b0, multiplySmall(b1, 3), multiplySmall(b2, 9),
+                multiplySmall(b3, 27));
+        long[] qM1Magnitude = addMagnitudes(b2, b0);
+        long[] qM1Subtract = addMagnitudes(b3, b1);
+        boolean qM1Neg;
+        if(compareArray(qM1Magnitude, qM1Subtract) >= 0) {
+            subtractMagnitudeInPlace(qM1Magnitude, qM1Subtract);
+            qM1Neg = false;
+        }
+        else{
+            qM1Magnitude = subtractMagnitudes(qM1Subtract, qM1Magnitude);
+            qM1Neg = true;
+        }
+        long[] qM2Magnitude = addMagnitudes(b0, shiftLeftBits(b2, 2));
+        long[] qM2Subtract = addMagnitudes(shiftLeftBits(b1, 1), shiftLeftBits(b3, 3));
+        boolean qM2Neg;
+        if (compareArray(qM2Magnitude, qM2Subtract) >= 0) {
+            subtractMagnitudeInPlace(qM2Magnitude, qM2Subtract);
+            qM2Neg = false;
+        } else {
+            qM2Magnitude = subtractMagnitudes(qM2Subtract, qM2Magnitude);
+            qM2Neg = true;
+        }
+        //multiply the points
+        long[] v0 = multiplyMagnitudesWithThresholds(a0, b0, KT, T3T, T4T);
+        long[] v1 = multiplyMagnitudesWithThresholds(p1, q1, KT, T3T, T4T);
+        long[] v2 = multiplyMagnitudesWithThresholds(p2, q2, KT, T3T, T4T);
+        long[] v3 = multiplyMagnitudesWithThresholds(p3, q3, KT, T3T, T4T);
+        long[] vM1Magnitude = multiplyMagnitudesWithThresholds(pM1Magnitude, qM1Magnitude, KT, T3T, T4T);
+        boolean vM1Neg = pM1Neg ^ qM1Neg;
+        long[] vM2Magnitude = multiplyMagnitudesWithThresholds(pM2Magnitude, qM2Magnitude, KT, T3T, T4T);
+        boolean vM2Neg = pM2Neg ^ qM2Neg;
+        long[] vInf = multiplyMagnitudesWithThresholds(a3, b3, KT, T3T, T4T);
+        //INTERPOLATE
+        // diff = (v1 - |v(-1)|) / 2
+        subtractMagnitudeInPlace(v1, vM1Magnitude);
+        shiftRightBitsInPlace(v1, 1);
+        // other half = |v(-1)| + diff
+        vM1Magnitude = addMagnitudes(vM1Magnitude, v1);
+        if (!vM1Neg) {
+            // sign positive:
+            // v1 currently odd half, vM1Magnitude even half
+            long[] t = v1;
+            v1 = vM1Magnitude;
+            vM1Magnitude = t;
+        }
+        // now:
+        // v1     = even half = r0+r2+r4+r6
+        // vM1Magnitude = O1        = r1+r3+r5
+        subtractMagnitudeInPlace(v1, v0);
+        subtractMagnitudeInPlace(v1, vInf);
+        // v1 = r2+r4
 
-        v0   = trimLeadingZeros(v0);
-        s    = trimLeadingZeros(s);
-        r2   = trimLeadingZeros(r2);
-        v2   = trimLeadingZeros(v2);
-        vInf = trimLeadingZeros(vInf);
-        addMagnitudeInPlace(out, v0, 0);
-        addMagnitudeInPlace(out, s, pivot);
-        addMagnitudeInPlace(out, r2, 2*pivot);
-        addMagnitudeInPlace(out, v2, 3*pivot);
-        addMagnitudeInPlace(out, vInf, 4*pivot);
+        subtractMagnitudeInPlace(v2, vM2Magnitude);
+        shiftRightBitsInPlace(v2, 1);
+
+        vM2Magnitude = addMagnitudes(vM2Magnitude, v2);
+
+        if (!vM2Neg) {
+            long[] t = v2;
+            v2 = vM2Magnitude;
+            vM2Magnitude = t;
+        }
+        // v2     = (v(2)+v(-2))/2
+        // vM2Magnitude = (v(2)-v(-2))/2
+
+        subtractMagnitudeInPlace(v2, v0);
+        subtractMagnitudeInPlace(v2, shiftLeftBits(vInf, 6));
+        shiftRightBitsInPlace(v2, 2);
+        // v2 = r2 + 4*r4
+        shiftRightBitsInPlace(vM2Magnitude, 1);
+        // vM2Magnitude = O2 = r1+4*r3+16*r5
+        subtractMagnitudeInPlace(v2, v1);
+        divideMagnitudeExactInPlace(v2, 3);
+        // v2 = r4
+        subtractMagnitudeInPlace(v1, v2);
+        // v1 = r2
+
+        subtractMagnitudeInPlace(v3, v0);
+        subtractMagnitudeInPlace(v3, multiplySmall(v1, 9));
+        subtractMagnitudeInPlace(v3, multiplySmall(v2, 81));
+        subtractMagnitudeInPlace(v3, multiplySmall(vInf, 729));
+        divideMagnitudeExactInPlace(v3, 3);
+        // v3 = r1 + 9*r3 + 81*r5, vM2Magnitude -> D = r3 + 5*r5
+        subtractMagnitudeInPlace(vM2Magnitude, vM1Magnitude);
+        divideMagnitudeExactInPlace(vM2Magnitude, 3);
+        // v3 -> E = r3 + 10*r5
+        subtractMagnitudeInPlace(v3, vM1Magnitude);
+        shiftRightBitsInPlace(v3, 3);
+        // v3 -> 5*r5
+        subtractMagnitudeInPlace(v3, vM2Magnitude);
+        // vM2Magnitude -> r3, while v3 still contains 5*r5
+        subtractMagnitudeInPlace(vM2Magnitude, v3);
+        // v3 -> r5
+        divideMagnitudeExactInPlace(v3, 5);
+        // vM1Magnitude -> r1
+        subtractMagnitudeInPlace(vM1Magnitude, vM2Magnitude);
+        subtractMagnitudeInPlace(vM1Magnitude, v3);
+        //recombine
+        addMagnitudeInPlace(out, v0,     0);
+        addMagnitudeInPlace(out, vM1Magnitude, pivot);
+        addMagnitudeInPlace(out, v1,     2*pivot);
+        addMagnitudeInPlace(out, vM2Magnitude, 3*pivot);
+        addMagnitudeInPlace(out, v2,     4*pivot);
+        addMagnitudeInPlace(out, v3,     5*pivot);
+        addMagnitudeInPlace(out, vInf,   6*pivot);
         return trimLeadingZeros(out);
     }
-    public LargeInteger multiply(LargeInteger other){
+    public LargeInteger multiply(LargeInteger other) {
         if(equals(other)) return square();
         return new LargeInteger(
                 multiplyMagnitudes(limbs, other.limbs), negative ^ other.negative, true);
     }
     @Override
-    public ScalarAtom multiply(ScalarAtom other){
+    public ScalarAtom multiply(ScalarAtom other) {
         return switch (other) {
             case LargeInteger I -> multiply(I);
             case LargeFraction F -> new LargeFraction(multiply(F.numerator), F.denominator);
             case LargePowerMonomial largePowerMonomial -> new LargePowerMonomial(
-                    new LargeFraction(this, ONE), LargeFraction.ONE).multiply(largePowerMonomial);
+                    new LargeFraction(this), LargeFraction.ONE).multiply(largePowerMonomial);
             case RadicalTermSum RTS -> {
                 LargeList<RadicalTerm> rt = new LargeList<>();
                 for (LargePowerMonomial L : RTS.sum.keys())
@@ -1523,11 +1540,15 @@ Karatsuba or grade-school multiplication.
     }
     LargeInteger multiply(long greg) {
         return new LargeInteger(multiplySmall(limbs, Math.abs(greg)), negative ^ (greg < 0), true);}
+
+
+
     private static final int KARATSUBA_SQUARE_THRESHOLD = 48;
-    private static final int TOOM_SQUARE_THRESHOLD = 128;
-    private static long[] squareMagnitude(long[] a){
-        if(Integer.compareUnsigned(2*a.length, Integer.MAX_VALUE) > 0) reportOverflow();
-        return squareMagnitudeWithThresholds(a, KARATSUBA_SQUARE_THRESHOLD, TOOM_SQUARE_THRESHOLD);
+    private static final int TOOM_3_SQUARE_THRESHOLD = 128;
+    private static final int TOOM_4_SQUARE_THRESHOLD = 520;
+    private static long[] squareMagnitude(long[] a) {
+        return squareMagnitudeWithThresholds(a, KARATSUBA_SQUARE_THRESHOLD, TOOM_3_SQUARE_THRESHOLD,
+                TOOM_4_SQUARE_THRESHOLD);
     }
     private static void squareInto(long[] a, long[] out) {
         int n = a.length;
@@ -1613,7 +1634,7 @@ Karatsuba or grade-school multiplication.
         // Restore the one bit lost by floor(D/2).
         out[0] |= a[0] & 1L;
     }
-    private static long[] squareMagnitudeWithThresholds(long[] a, int KT, int T3T) {
+    private static long[] squareMagnitudeWithThresholds(long[] a, int KT, int T3T, int T4T) {
         if (isZeroArray(a)) return a;
         int n = a.length;
         if (n == 1) {
@@ -1626,352 +1647,155 @@ Karatsuba or grade-school multiplication.
         if (n < KT) {
             squareInto(a, out);
             return trimLeadingZeros(out);
-        }else if (n < T3T){
-            int m = (n+1) >>> 1;
+        } else if (n < T3T) {
+            int m = (n + 1) >>> 1;
             long[] x0 = sliceFixed(a, 0, m);
             long[] x1 = slice(a, m, n);
-            long[] z0 = squareMagnitudeWithThresholds(x0, KT, T3T);
-            long[] z2 = squareMagnitudeWithThresholds(x1, KT, T3T);
-            long[] z1 = squareMagnitudeWithThresholds(addMagnitudes(x0, x1), KT, T3T);
+            long[] z0 = squareMagnitudeWithThresholds(x0, KT, T3T, T4T);
+            long[] z2 = squareMagnitudeWithThresholds(x1, KT, T3T, T4T);
+            long[] z1 = squareMagnitudeWithThresholds(addMagnitudes(x0, x1), KT, T3T, T4T);
             subtractMagnitudeInPlace(z1, z0);
             subtractMagnitudeInPlace(z1, z2);
             addMagnitudeInPlace(out, z0, 0);
             addMagnitudeInPlace(out, z1, m);
             addMagnitudeInPlace(out, z2, 2 * m);
             return trimLeadingZeros(out);
+        } else if (n < T4T) {
+            int m = (n + 2) / 3;
+            //a = a2*B^2 + a1*B + a0
+            long[] a0 = sliceFixed(a, 0, m);
+            long[] a1 = sliceFixed(a, m, m);
+            long[] a2 = slice(a, m * 2, n);
+            //evaluate points
+            long[] p1 = addThreeMagnitudes(a2, a1, a0);
+            long[] pm1 = addMagnitudes(a2, a0);
+            if (compareArray(pm1, a1) >= 0) subtractMagnitudeInPlace(pm1, a1);
+            else pm1 = subtractMagnitudes(a1, pm1);
+            long[] p2 = addThreeMagnitudes(shiftLeftBits(a2, 2), shiftLeftBits(a1, 1), a0);
+            //square each point
+            long[] v0 = squareMagnitudeWithThresholds(a0, KT, T3T, T4T);
+            long[] v1 = squareMagnitudeWithThresholds(p1, KT, T3T, T4T);
+            long[] vm1 = squareMagnitudeWithThresholds(pm1, KT, T3T, T4T);
+            long[] v2 = squareMagnitudeWithThresholds(p2, KT, T3T, T4T);
+            long[] vInf = squareMagnitudeWithThresholds(a2, KT, T3T, T4T);
+            //interpolate
+            long[] s = subtractMagnitudes(v1, vm1);
+            shiftRightBitsInPlace(s, 1);
+            // v1 -> r2
+            subtractMagnitudeInPlace(v1, s);
+            subtractMagnitudeInPlace(v1, v0);
+            subtractMagnitudeInPlace(v1, vInf);
+            // v2 -> t
+            subtractMagnitudeInPlace(v2, v0);
+            subtractShiftedLeftBitsInPlace(v2, vInf, 4, "");
+            shiftRightBitsInPlace(v2, 1);
+
+            // t -> r3
+            subtractMagnitudeInPlace(v2, s);
+            subtractShiftedLeftBitsInPlace(v2, v1, 1, "");
+            divideMagnitudeExactInPlace(v2, 3);
+            // s -> r1
+            subtractMagnitudeInPlace(s, v2);
+            //recombine
+            addMagnitudeInPlace(out, v0, 0);
+            addMagnitudeInPlace(out, s, m);
+            addMagnitudeInPlace(out, v1, 2 * m);
+            addMagnitudeInPlace(out, v2, 3 * m);
+            addMagnitudeInPlace(out, vInf, 4 * m);
+            return trimLeadingZeros(out);
         }
-        /*
-Toom-Cook 3 Squaring
-
-This is the squaring-specific version of Toom-Cook 3. It uses the
-same five evaluation points as general Toom-3 multiplication, but
-because both operands are identical, only five recursive squares are
-required rather than five general multiplications.
-
----INITIALIZATION---
-
-Let beta = 2^64 be the limb base and let
-
-m = ceil(n/3)
-
-where n is the number of limbs in the input.
-
-Define
-
-X = beta^(m).
-
-Split the input into three approximately equal pieces:
-
-a = a2*X^2 + a1*X + a0
-
-and interpret it as the polynomial
-
-p(x) = a2*x^2 + a1*x + a0.
-
-Then
-
-a^2 = p(X)^2.
-
-Define the degree-4 product polynomial
-
-r(x) = p(x)^2
-     = r0 + r1*x + r2*x^2 + r3*x^3 + r4*x^4.
-
-Expanding directly shows that
-
-r0 = a0^2
-r1 = 2*a0*a1
-r2 = a1^2 + 2*a0*a2
-r3 = 2*a1*a2
-r4 = a2^2.
-
-All five final coefficients are therefore nonnegative magnitudes.
-
-
----POINT EVALUATION---
-
-Evaluate p(x) at the Toom-3 points 0, 1, 2, -1, and infinity:
-
-p0   = p(0)  = a0
-p1   = p(1)  = a0 + a1 + a2
-p2   = p(2)  = a0 + 2*a1 + 4*a2
-pM1  = p(-1) = a0 - a1 + a2
-pInf = p(infinity) = a2
-
-The -1 evaluation may itself be negative. However, unlike general
-multiplication, its sign does not need to be stored:
-
-vM1 = p(-1)^2 = |p(-1)|^2.
-
-Therefore the implementation may calculate
-
-pm1 = |a0 + a2 - a1|
-
-and square only its magnitude.
-
-
----RECURSIVE SQUARING---
-
-Square the five evaluated values:
-
-v0   = p0^2
-v1   = p1^2
-v2   = p2^2
-vM1  = pM1^2
-vInf = pInf^2
-
-These are exactly
-
-v0   = r(0)
-v1   = r(1)
-v2   = r(2)
-vM1  = r(-1)
-vInf = r(infinity).
-
-Thus five recursive squares replace the nine chunk products that
-would arise from directly expanding a three-part square.
-
-
----INTERPOLATION---
-
-We know
-
-r(x) = r0 + r1*x + r2*x^2 + r3*x^3 + r4*x^4.
-
-Therefore
-
-v0   = r0
-
-v1   = r0 + r1 + r2 + r3 + r4
-
-vM1  = r0 - r1 + r2 - r3 + r4
-
-v2   = r0 + 2*r1 + 4*r2 + 8*r3 + 16*r4
-
-vInf = r4.
-
-
-The outer coefficients are immediate:
-
-r0 = v0
-r4 = vInf.
-
-
-First recover the combined odd-degree contribution.
-
-Subtract the -1 evaluation from the +1 evaluation:
-
-v1 - vM1
-    = 2*r1 + 2*r3.
-
-Therefore
-
-s = (v1 - vM1)/2
-  = r1 + r3.
-
-
-Now recover r2.
-
-From
-
-v1 = r0 + r1 + r2 + r3 + r4
-
-and
-
-s = r1 + r3,
-
-we obtain
-
-r2 = v1 - s - r0 - r4.
-
-
-Next use the x = 2 evaluation.
-
-Remove r0 and 16*r4 and divide by 2:
-
-t = (v2 - r0 - 16*r4)/2
-
-  = r1 + 2*r2 + 4*r3.
-
-
-Since
-
-s = r1 + r3,
-
-then
-
-t - s - 2*r2
-    = 3*r3.
-
-Therefore
-
-r3 = (t - s - 2*r2)/3.
-
-Finally,
-
-r1 = s - r3.
-
-
-Thus, interpolation is:
-
-r0 = v0
-r4 = vInf
-
-s  = (v1 - vM1)/2
-r2 = v1 - s - r0 - r4
-
-t  = (v2 - r0 - 16*r4)/2
-r3 = (t - s - 2*r2)/3
-r1 = s - r3
-
-All divisions by 2 and 3 are exact.
-
----WHY MAGNITUDE-ONLY INTERPOLATION WORKS---
-
-The temporary evaluation p(-1) may be negative, but squaring removes
-its sign:
-
-p(-1)^2 = |p(-1)|^2.
-
-Furthermore, the recovered coefficients are
-
-r1 = 2*a0*a1
-r2 = a1^2 + 2*a0*a2
-r3 = 2*a1*a2,
-
-which are all nonnegative because a0, a1, and a2 are magnitudes.
-
-Also,
-
-p(1)^2 >= p(-1)^2,
-
-so
-
-v1 - vM1 >= 0.
-
-Consequently, the entire interpolation after evaluating |-1| can be
-performed using unsigned magnitude arrays without a separate sign
-representation.
-
-
----VARIABLE REUSE IN THIS IMPLEMENTATION---
-
-To reduce temporary allocations, several evaluation arrays are
-overwritten during interpolation.
-
-Initially:
-
-v0   = r(0)
-v1   = r(1)
-vm1  = r(-1)
-v2   = r(2)
-vInf = r(infinity)
-
-Then:
-
-s  = (v1 - vm1)/2
-   = r1 + r3
-
-v1 is transformed into:
-
-v1 = v1 - s - v0 - vInf
-   = r2
-
-v2 is transformed first into:
-
-v2 = (v2 - v0 - 16*vInf)/2
-   = t
-
-and then into:
-
-v2 = (v2 - s - 2*v1)/3
-   = r3
-
-Finally:
-
-s = s - v2
-  = r1.
-
-Therefore, immediately before recomposition:
-
-v0   = r0
-s    = r1
-v1   = r2
-v2   = r3
-vInf = r4.
-
----RECOMPOSITION---
-
-Recall that
-
-X = beta^(m) = 2^(64m).
-
-Then
-
-a^2 = r(X)  = r0 + r1*X + r2*X^2 + r3*X^3+ r4*X^4.
-
-Because X is exactly one block of m limbs, multiplication by X^j
-corresponds to shifting the coefficient by j*m limbs.
-Thus, the five coefficients are accumulated at offsets 0, m, 2*m, 3*m, 4*m.
-
----COMPLEXITY---
-
-Each recursive square operates on approximately n/3 limbs and there
-are five recursive calls.
-
-Therefore
-
-T(n) = 5*T(n/3) + O(n),
-
-giving
-
-T(n) = O(n^(log_3(5)))  ≈ O(n^1.465).
-As with general Toom-Cook 3 multiplication, the larger linear-time
-evaluation and interpolation overhead means this method is useful
-only above a sufficiently large threshold. Smaller recursive squares
-fall back to Karatsuba squaring or ordinary quadratic squaring.
-*/
-        int m = (n + 2) / 3;
-        //a = a2*B^2 + a1*B + a0
-        long[] a0 = sliceFixed(a, 0, m);
-        long[] a1 = sliceFixed(a, m, m);
-        long[] a2 = slice(a, m * 2, n);
-        //evaluate points
-        long[] p1 = addThreeMagnitudes(a2, a1, a0);
-        long[] pm1 = addMagnitudes(a2, a0);
-        if(compareArray(pm1, a1) >= 0) subtractMagnitudeInPlace(pm1, a1);
-        else pm1 = subtractMagnitudes(a1, pm1);
-        long[] p2 = addThreeMagnitudes(shiftLeftBits(a2, 2), shiftLeftBits(a1, 1), a0);
-        //square each point
-        long[] v0 = squareMagnitudeWithThresholds(a0, KT, T3T);
-        long[] v1 = squareMagnitudeWithThresholds(p1,  KT, T3T);
-        long[] vm1 = squareMagnitudeWithThresholds(pm1, KT, T3T);
-        long[] v2 = squareMagnitudeWithThresholds(p2, KT, T3T);
-        long[] vInf = squareMagnitudeWithThresholds(a2, KT, T3T);
-        //interpolate
-        long[] s = subtractMagnitudes(v1, vm1);
-        shiftRightBitsInPlace(s, 1);
-        // v1 -> r2
-        subtractMagnitudeInPlace(v1, s);
-        subtractMagnitudeInPlace(v1, v0);
-        subtractMagnitudeInPlace(v1, vInf);
-        // v2 -> t
-        subtractMagnitudeInPlace(v2, v0);
-        subtractShiftedLeftBitsInPlace(v2, vInf, 4, "");
-        shiftRightBitsInPlace(v2, 1);
-
-        // t -> r3
-        subtractMagnitudeInPlace(v2, s);
-        subtractShiftedLeftBitsInPlace(v2, v1, 1, "");
+        //initialize
+        int pivot = (n+3)/4;
+        long[] a0 = sliceFixed(a, 0, pivot);
+        long[] a1 = sliceFixed(a, pivot, pivot);
+        long[] a2 = sliceFixed(a, 2*pivot, pivot);
+        long[] a3 = sliceFixed(a, 3*pivot, pivot);
+        //define points
+        long[] p1 = addFourMagnitudes(a0, a1, a2, a3);
+        long[] p2 = addFourMagnitudes(
+                shiftLeftBits(a3, 3), shiftLeftBits(a2, 2), shiftLeftBits(a1, 1), a0);
+        long[] p3 = addFourMagnitudes(
+                multiplySmall(a3, 27),  multiplySmall(a2, 9), multiplySmall(a1, 3), a0);
+        long[] pM1 = addMagnitudes(a2, a0);
+        long[] pM1Subtract = addMagnitudes(a3, a1);
+        if(compareArray(pM1, pM1Subtract) >= 0)
+            subtractMagnitudeInPlace(pM1, pM1Subtract);
+        else pM1 = subtractMagnitudes(pM1Subtract, pM1);
+        long[] pM2 = addMagnitudes(shiftLeftBits(a2, 2), a0);
+        long[] pM2Subtract = addMagnitudes(shiftLeftBits(a3, 3), shiftLeftBits(a1, 1));
+        if(compareArray(pM2, pM2Subtract) >= 0)
+            subtractMagnitudeInPlace(pM2, pM2Subtract);
+        else pM2 = subtractMagnitudes(pM2Subtract, pM2);
+        //multiply
+        long[] v0 = squareMagnitudeWithThresholds(a0, KT, T3T, T4T);
+        long[] v1 = squareMagnitudeWithThresholds(p1, KT, T3T, T4T);
+        long[] v2 = squareMagnitudeWithThresholds(p2, KT, T3T, T4T);
+        long[] v3 = squareMagnitudeWithThresholds(p3, KT, T3T, T4T);
+        long[] vM1 = squareMagnitudeWithThresholds(pM1, KT, T3T, T4T);
+        long[] vM2 = squareMagnitudeWithThresholds(pM2, KT, T3T, T4T);
+        long[] vInf = squareMagnitudeWithThresholds(a3, KT, T3T, T4T);
+        //interpolate. start with E1 = r2 + r4
+        long[] E1 = addMagnitudes(v1, vM1);
+        shiftRightBitsInPlace(E1, 1);
+        subtractMagnitudeInPlace(E1, v0);
+        subtractMagnitudeInPlace(E1, vInf);
+        // E2 = r2 + 4*r4
+        long[] E2 = addMagnitudes(v2, vM2);
+        shiftRightBitsInPlace(E2, 1);
+        subtractMagnitudeInPlace(E2, v0);
+        subtractMagnitudeInPlace(E2, shiftLeftBits(vInf, 6));
+        shiftRightBitsInPlace(E2, 2);
+        // E2 -> r4
+        subtractMagnitudeInPlace(E2, E1);
+        divideMagnitudeExactInPlace(E2, 3);
+        // E1 -> r2
+        subtractMagnitudeInPlace(E1, E2);
+        // v1 = O1
+        subtractMagnitudeInPlace(v1, vM1);
+        shiftRightBitsInPlace(v1, 1);
+        // v1 = O1 = r1+r3+r5
+
+        // v2 = O2
+        subtractMagnitudeInPlace(v2, vM2);
+        shiftRightBitsInPlace(v2, 2);
+
+        // v3 = O3
+        subtractMagnitudeInPlace(v3, v0);
+        subtractMagnitudeInPlace(v3, multiplySmall(E1, 9));
+        subtractMagnitudeInPlace(v3, multiplySmall(E2, 81));
+        subtractMagnitudeInPlace(v3, multiplySmall(vInf, 729));
+        divideMagnitudeExactInPlace(v3, 3);
+
+        // v2 = D = r3+5r5
+        subtractMagnitudeInPlace(v2, v1);
         divideMagnitudeExactInPlace(v2, 3);
-        // s -> r1
-        subtractMagnitudeInPlace(s, v2);
+
+        // v3 = E = r3+10r5
+        subtractMagnitudeInPlace(v3, v1);
+        shiftRightBitsInPlace(v3, 3);
+
+        // v3 = 5r5
+        subtractMagnitudeInPlace(v3, v2);
+
+        // v2 = r3
+        subtractMagnitudeInPlace(v2, v3);
+
+        // v3 = r5
+        divideMagnitudeExactInPlace(v3, 5);
+        // v1 = r1
+        subtractMagnitudeInPlace(v1, v2);
+        subtractMagnitudeInPlace(v1, v3);
         //recombine
-        addMagnitudeInPlace(out, v0,   0);
-        addMagnitudeInPlace(out, s,   m);
-        addMagnitudeInPlace(out, v1, 2*m);
-        addMagnitudeInPlace(out, v2, 3*m);
-        addMagnitudeInPlace(out, vInf,4*m);
+        v1 = trimLeadingZeros(v1);
+        v2 = trimLeadingZeros(v2);
+        v3 = trimLeadingZeros(v3);
+        addMagnitudeInPlace(out, v0, 0);
+        addMagnitudeInPlace(out, v1, pivot);
+        addMagnitudeInPlace(out, E1, 2*pivot);
+        addMagnitudeInPlace(out, v2, 3*pivot);
+        addMagnitudeInPlace(out, E2, 4*pivot);
+        addMagnitudeInPlace(out, v3, 5*pivot);
+        addMagnitudeInPlace(out, vInf, 6*pivot);
         return trimLeadingZeros(out);
     }
     private static long[] cubeMagnitude(long[] x) {return multiplyMagnitudes(squareMagnitude(x), x);}
@@ -1997,7 +1821,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             if (compareArray(rem, candidate) >= 0) {
                 subtractMagnitudeInPlace(rem, candidate);
                 root = addSmall(shiftLeftBits(root, 1), 1);
-            }else root = shiftLeftBits(root, 1);
+            } else root = shiftLeftBits(root, 1);
         }
         return trimLeadingZeros(root);
     }
@@ -2007,7 +1831,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         return addSmall(C, 1);
     }
     @SuppressWarnings("unused")
-    public LargeInteger sqrt(){
+    public LargeInteger sqrt() {
         if(negative) throw new IllegalArgumentException(
                 "Sqrt complex for negative numbers; this method returns an integer");
         return new LargeInteger(sqrtFloorMagnitude(limbs), false, true);
@@ -2102,49 +1926,27 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         return k.subtract(1).add(l).nCr(k);}
     private static final long U32_MASK = 0xFFFF_FFFFL;
     private static final long U32_BASE = 1L << 32;
-    private record DivRem3By2(int quotient, int remHigh, int remLow) {}
-    private static DivRem3By2 divideThreeByTwo(int a1, int a2, int a3, int b1, int b2) {
+    private static long divideThreeByTwo(int a1, int a2, int a3, int b1, int b2) {
         long A1 = Integer.toUnsignedLong(a1);
         long A2 = Integer.toUnsignedLong(a2);
         long A3 = Integer.toUnsignedLong(a3);
         long B1 = Integer.toUnsignedLong(b1);
         long B2 = Integer.toUnsignedLong(b2);
-        if (B1 == 0)
-            throw new ArithmeticException("Division by zero");
-
-        if (A1 > B1)
-            throw new IllegalArgumentException(
-                    "Three-by-two quotient does not fit one word");
-
-        // Expected for the Knuth/BZ use case.
-        if ((b1 & 0x8000_0000) == 0)
-            throw new IllegalArgumentException(
-                    "Divisor must be normalized");
-
+        if (B1 == 0) throw new ArithmeticException("Division by zero");
+        if (A1 > B1 || (A1 == B1 && A2 >= B2))
+            throw new IllegalArgumentException("Three-by-two quotient does not fit one word");
+        if ((b1 & 0x8000_0000) == 0) throw new IllegalArgumentException("Divisor must be normalized");
         long q;
         long rHat;
-
         if (A1 == B1) {
-            // qhat would be beta, so saturate at beta - 1.
             q = U32_MASK;
             rHat = A2 + B1;
         } else {
             long top = (A1 << 32) | A2;
-
             q = Long.divideUnsigned(top, B1);
             rHat = Long.remainderUnsigned(top, B1);
         }
-
         long qTimesB2 = q * B2;
-
-        /*
-         * Correct q while
-         *
-         * q*b2 > rHat*beta + a3.
-         *
-         * Once rHat >= beta, the RHS exceeds anything q*b2 can be,
-         * so correction is finished.
-         */
         while (rHat < U32_BASE) {
             long right = (rHat << 32) | A3;
             if (Long.compareUnsigned(qTimesB2, right) <= 0) break;
@@ -2152,106 +1954,68 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             rHat += B1;
             qTimesB2 -= B2;
         }
-        /*
-         * Form q * (b1*beta + b2).
-         */
-        long p0 = q * B2;
-        long p0Low = p0 & U32_MASK;
-        long carry = p0 >>> 32;
-
-        long p1 = q * B1 + carry;
-        long p1Low = p1 & U32_MASK;
-        long p2 = p1 >>> 32;
-        /*
-         * [a1,a2,a3] - [p2,p1Low,p0Low].
-         */
-        long t = A3 - p0Low;
-        long borrow = t < 0 ? 1L : 0L;
-        long r0 = t & U32_MASK;
-        t = A2 - p1Low - borrow;
-        borrow = t < 0 ? 1L : 0L;
-        long r1 = t & U32_MASK;
-        t = A1 - p2 - borrow;
-        if (t != 0)
-            throw new ArithmeticException("Internal three-by-two division error");
-        return new DivRem3By2((int) q, (int) r1, (int) r0);
+        return q;
     }
     private static DivRem divideByLong(long[] a, long divisor) {
         if (divisor == 0)
             throw new ArithmeticException("Division by zero");
         long[] q = new long[a.length];
         long rem = 0L;
+        // These depend only on divisor: do them once.
+        int shift = Long.numberOfLeadingZeros(divisor);
+        long d = shift == 0 ? divisor : divisor << shift;
+        int v1 = (int) (d >>> 32);
+        int v0 = (int) d;
         for (int i = a.length - 1; i >= 0; i--) {
-            /*
-              Grade-school division in base 2^64:
-              high / divisor = qHigh R rHigh
-              then bring down low:
-              (rHigh * 2^64 + low) / divisor = qLow R remainder
-              Since rHigh < divisor, qLow fits in one 64-bit limb.
-             */
-            long qHigh = Long.divideUnsigned(rem, divisor);
-            if(qHigh != 0)
-                throw new ArithmeticException("Quotient overflow");
-            long rHigh = Long.remainderUnsigned(rem, divisor);
-            /*
-             * Normalize divisor so bit 63 is set.
-             */
-            int shift = Long.numberOfLeadingZeros(divisor);
-            long d;
+            // Invariant from previous iteration:
+            // unsigned rem < unsigned divisor.
+            long rHigh = rem;
             long nHigh;
             long nLow;
             if (shift == 0) {
-                d = divisor;
                 nHigh = rHigh;
                 nLow = a[i];
             } else {
-                d = divisor << shift;
-                /*
-                  This cannot overflow beyond 128 bits:
-                  rHigh < divisor
-                  so after normalization rHigh << shift < 2^64.
-                 */
                 nHigh = (rHigh << shift) | (a[i] >>> (64 - shift));
                 nLow = a[i] << shift;
             }
-            /*
-              Split the normalized 128-bit dividend:
-              [u3 u2 u1 u0]
-              and 64-bit divisor:
-              [v1 v0]
-              into unsigned 32-bit words.
-             */
             int u3 = (int) (nHigh >>> 32);
             int u2 = (int) nHigh;
             int u1 = (int) (nLow >>> 32);
             int u0 = (int) nLow;
-            int v1 = (int) (d >>> 32);
-            int v0 = (int) d;
             /*
-              First quotient word:
-
-              [u3 u2 u1] / [v1 v0]
+             * First:
+             *
+             * [u3 u2 u1] / [v1 v0]
              */
-            DivRem3By2 first = divideThreeByTwo(u3, u2, u1, v1, v0);
+            long qHigh = divideThreeByTwo(u3, u2, u1, v1, v0);
             /*
-              Bring down u0:
-
-              [r1 r0 u0] / [v1 v0]
+             * Exact first remainder:
+             *
+             * [u2 u1] - qHigh * [v1 v0]
+             *
+             * modulo 2^64 is sufficient because the actual
+             * remainder fits in 64 bits.
              */
-            DivRem3By2 second = divideThreeByTwo(first.remHigh, first.remLow, u0, v1, v0);
+            long low64 = (Integer.toUnsignedLong(u2) << 32) | Integer.toUnsignedLong(u1);
+            long r1 = low64 - qHigh * d;
             /*
-              Combine the two unsigned 32-bit quotient words.
+             * Second:
+             *
+             * [rHigh32 rLow32 u0] / [v1 v0]
              */
-            long qLow = (Integer.toUnsignedLong(first.quotient) << 32)
-                    | Integer.toUnsignedLong(second.quotient);
+            int rHigh32 = (int) (r1 >>> 32);
+            int rLow32 = (int) r1;
+            long qLow = divideThreeByTwo(rHigh32, rLow32, u0, v1, v0);
             /*
-              Combine normalized remainder.
+             * Exact second remainder.
+             *
+             * Low 64 bits of the dividend are [rLow32 u0].
              */
-            long rNormalized = (Integer.toUnsignedLong(second.remHigh()) << 32)
-                    | Integer.toUnsignedLong(second.remLow);
-            long remainder = shift == 0 ? rNormalized : rNormalized >>> shift;
-            q[i] = qLow;
-            rem = remainder;
+            long low64Second = (Integer.toUnsignedLong(rLow32) << 32) | Integer.toUnsignedLong(u0);
+            long normalizedRem = low64Second - qLow * d;
+            q[i] = (qHigh << 32) | qLow;
+            rem = normalizedRem >>> shift;
         }
         return new DivRem(trimLeadingZeros(q), rem);
     }
@@ -2287,7 +2051,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         // x <- x(2 - d*x)
         // Correct bits roughly double each iteration:
         // 3 -> 6 -> 12 -> 24 -> 48 -> 96
-        for(int k = 0; k < 5; k++)
+        for (int k = 0; k < 5; k++)
             inverse *= 2L - divisor * inverse;
         long carry = 0L;
         for (int i = 0; i < a.length; i++) {
@@ -2304,7 +2068,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         if (carry != 0L)
             throw new ArithmeticException("not exactly divisible by " + Long.toUnsignedString(divisor));
     }
-    private static long[][] divideMagnitudes(long[] dividend, long[] divisor){
+    private static long[][] divideMagnitudes(long[] dividend, long[] divisor) {
         dividend = trimLeadingZeros(dividend);
         divisor  = trimLeadingZeros(divisor);
         if (isZeroArray(divisor))
@@ -2312,9 +2076,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         int cmp = compareArray(dividend, divisor);
         if (cmp < 0)
             return new long[][]{ZERO_MAG, dividend};
-        if (cmp == 0)
+        else if (cmp == 0)
             return new long[][]{ONE_MAG, ZERO_MAG};
-        if(divisor.length == 1){
+        if(divisor.length == 1) {
             DivRem DR = divideByLong(dividend, divisor[0]);
             return new long[][]{DR.quotient, new long[]{DR.remainder}};
         }
@@ -2332,9 +2096,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         return results;
     }
-    private static long[][] divideMagnitudesKnuth(long[] dividend, long[] divisor){
-        dividend = trimLeadingZeros(dividend);
-        divisor  = trimLeadingZeros(divisor);
+    private static long[][] divideMagnitudesKnuth(long[] dividend, long[] divisor) {
         if (isZeroArray(divisor))
             throw new ArithmeticException("Division by zero");
         int cmp = compareArray(dividend, divisor);
@@ -2342,12 +2104,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             return new long[][]{ZERO_MAG, dividend};
         if (cmp == 0)
             return new long[][]{ONE_MAG, ZERO_MAG};
-        if (divisor.length == 1) {
+        int n = effectiveLength(divisor);
+        if (n == 1) {
             DivRem DR = divideByLong(dividend, divisor[0]);
             return new long[][]{DR.quotient, new long[]{DR.remainder}};
         }
-        int n = divisor.length;
-        int m = dividend.length - n;
+        int m = effectiveLength(dividend) - n;
         int shift = Long.numberOfLeadingZeros(divisor[n - 1]);
         long[] v = shiftLeftBits(divisor, shift);
         long[] u = new long[dividend.length + 1];
@@ -2366,10 +2128,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 qhat = -1L;
                 rHat = ujn1 + v[n - 1];
                 rHatOverflow = Long.compareUnsigned(rHat, ujn1) < 0;
-            }else{
-                long[] dr = divide128ByNormalized64(ujn, ujn1, v[n - 1]);
-                qhat = dr[0];
-                rHat = dr[1];
+            } else{
+                qhat = divide128ByNormalized64Quotient(ujn, ujn1, v[n - 1]);
+                rHat = ujn1 - qhat * v[n - 1];
             }
             // second-limb correction
             while (!rHatOverflow) {
@@ -2515,7 +2276,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         shiftRightBitsInPlace(remainder, sigma);
         return new long[][]{trimLeadingZeros(quotient), trimLeadingZeros(remainder)};
     }
-    private static long[] slice(long[] a, int from, int to){
+    private static long[] slice(long[] a, int from, int to) {
         if(to >= a.length) to = a.length;
         if(from < 0) from = 0;
         if(from > to) throw new IllegalArgumentException("Illegal slice range " + from + " to " + to);
@@ -2543,9 +2304,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             return divideMagnitudesKnuth(A, B);
         int m = n >>> 1;
         // A = A3 β^(3m) + A2 β^(2m) + A1 β^m + A0
-        long[] upper = new long[3 * m];
-        System.arraycopy(A, m, upper, 0, 3 * m);
-        long[][] qr1 = divide3nBy2n(upper, B);
+        long[] work = new long[3 * m];
+        System.arraycopy(A, m, work, 0, 3 * m);
+        long[][] qr1 = divide3nBy2n(work, B);
         long[] Q1 = qr1[0];
         long[] R1 = qr1[1];
         /*
@@ -2554,19 +2315,18 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
           R1 may occupy up to 2m = n limbs, so this is
           another 3m / 2m division.
          */
-        long[] lower = new long[3 * m];
-        System.arraycopy(A, 0, lower, 0, m);
-        System.arraycopy(R1, 0, lower, m, Math.min(R1.length, 2 * m));
-        long[][] qr0 = divide3nBy2n(lower, B);
+        Arrays.fill(work, 0L);
+        System.arraycopy(A, 0, work, 0, m);
+        System.arraycopy(R1, 0, work, m, Math.min(R1.length, 2 * m));
+        long[][] qr0 = divide3nBy2n(work, B);
         long[] Q0 = qr0[0];
-        long[] R  = qr0[1];
         /*
          * Q = Q1 β^m + Q0
          */
         long[] Q = new long[2 * m];
         System.arraycopy(Q0, 0, Q, 0, Math.min(Q0.length, m));
         System.arraycopy(Q1, 0, Q, m, Math.min(Q1.length, m));
-        return new long[][]{trimLeadingZeros(Q), trimLeadingZeros(R)};
+        return new long[][]{trimLeadingZeros(Q), trimLeadingZeros(qr0[1])};
     }
     private static long[] mod2nBy1n(long[] A, long[] B) {
         int cmp = compareArray(A, B);
@@ -2656,8 +2416,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     private static long remainder128By64(long high, long low, long divisor) {
         if (divisor == 0L)
             throw new ArithmeticException("divide by zero");
-        // Required by this specialized routine.
-        // modSmall maintains this invariant.
         assert Long.compareUnsigned(high, divisor) < 0;
         if (high == 0L)
             return Long.remainderUnsigned(low, divisor);
@@ -2680,19 +2438,43 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         int u0 = (int) nLow;
         int v1 = (int) (d >>> 32);
         int v0 = (int) d;
-        DivRem3By2 first = divideThreeByTwo(u3, u2, u1, v1, v0);
-        DivRem3By2 second = divideThreeByTwo(first.remHigh, first.remLow, u0, v1, v0);
-        long rNormalized = (Integer.toUnsignedLong(second.remHigh) << 32) | Integer.toUnsignedLong(second.remLow);
-        return shift == 0 ? rNormalized : rNormalized >>> shift;
+
+        /*
+         * [u3 u2 u1] / [v1 v0]
+         */
+        long q1 = divideThreeByTwo(u3, u2, u1, v1, v0);
+        /*
+         * Exact remainder of the first 96/64 division.
+         *
+         * The actual remainder is < d, therefore it fits in 64 bits.
+         * We only need the low 64 bits of:
+         *
+         *      N - q1*d
+         */
+        long firstLow64 = (Integer.toUnsignedLong(u2) << 32) | Integer.toUnsignedLong(u1);
+        long r1 = firstLow64 - q1 * d;
+
+        /*
+         * Bring down u0:
+         *
+         * [r1.high r1.low u0] / [v1 v0]
+         */
+        long q2 = divideThreeByTwo((int) (r1 >>> 32), (int) r1, u0, v1, v0);
+        /*
+         * Low 64 bits of [r1.high r1.low u0]
+         * are [r1.low u0].
+         */
+        long secondLow64 = (Integer.toUnsignedLong((int) r1) << 32) | Integer.toUnsignedLong(u0);
+        long r2 = secondLow64 - q2 * d;
+        return r2 >>> shift;
     }
     private static long modSmall(long[] a, long d) {
         if (d == 0L) throw new ArithmeticException("Cannot divide by 0");
-        if (a.length == 1) return Long.remainderUnsigned(a[0], d);
+        int len = effectiveLength(a);
+        if (len == 1) return Long.remainderUnsigned(a[0], d);
         if ((d & (d - 1)) == 0) return a[0] & (d - 1);
-        if(Long.compareUnsigned(d, Integer.MAX_VALUE) < 0)
-            return modSmallInt(a, a.length, (int) d, Long.divideUnsigned(-1L, d));
         long r = 0L;
-        for (int i = a.length - 1; i >= 0; i--) r = remainder128By64(r, a[i], d);
+        for (int i = len - 1; i >= 0; i--) r = remainder128By64(r, a[i], d);
         return r;
     }
     private static int modSmallInt(long[] a, int len, int p, long reciprocal) {
@@ -2736,7 +2518,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         if (divisor.length < LargeInteger.MOD_BZ_BLOCK_THRESHOLD || dividend.length >= divisor.length * 2)
             remainder = knuthRemainder(dividend, divisor);
         else remainder = burnikelZieglerRemainder(dividend, divisor);
-        if(VERIFY_DIVISION){
+        if(VERIFY_DIVISION) {
             if(compareArray(divisor, remainder) >= 0)
                 throw new AssertionError("Remainder greater than divisor");
         }
@@ -2775,9 +2557,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 rHat = ujn1 + v[n - 1];
                 rHatOverflow = Long.compareUnsigned(rHat, ujn1) < 0;
             } else {
-                long[] dr = divide128ByNormalized64(ujn, ujn1, v[n - 1]);
-                qhat = dr[0];
-                rHat = dr[1];
+                qhat = divide128ByNormalized64Quotient(ujn, ujn1, v[n - 1]);
+                rHat = ujn1 - qhat * v[n - 1];
             }
             while (!rHatOverflow) {
                 long x = v[n - 2];
@@ -2853,7 +2634,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     }
     private static long[] multiplyMod(long[] a, long[] b, long[] m) {
         return modMagnitudes(multiplyMagnitudes(a, b), m);}
-    public LargeInteger mod(LargeInteger modulus){
+    public LargeInteger mod(LargeInteger modulus) {
         LargeInteger r = remainder(modulus);
         if (isZeroArray(r.limbs)) return ZERO;
         else if (r.negative != modulus.negative)
@@ -2866,23 +2647,23 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             return mod(modulus);
         return super.mod(other);
     }
-    long mod(long modulus){
-        if(modulus < 0){
+    long mod(long modulus) {
+        if(modulus < 0) {
             long mod = mod(-modulus);
             return mod == 0 ? 0 : mod + modulus;
         }
         long R = modSmall(limbs, modulus);
-        if(R==0) return 0;
+        if(R == 0) return 0;
         if(negative) return modulus-R;
         return R;
     }
     private static long[] modInverseMagnitudes(long[] a, long[] mod) {
         if (isZeroArray(mod))
             throw new ArithmeticException("Modulus cannot be 0");
-        ExtGcdMag eg = extendedGcdMagnitudes(a, mod);
+        ExtGcdMagnitude eg = extendedGcdMagnitudes(a, mod);
         if (!isOneArray(eg.gcd))
             throw new ArithmeticException("Modular inverse does not exist");
-        long[] x = modMagnitudes(eg.xMag, mod);
+        long[] x = modMagnitudes(eg.xMagnitude, mod);
         if (!eg.xNeg) return x;
         if (isZeroArray(x)) return ZERO_MAG;
         return subtractMagnitudes(mod, x);
@@ -2899,17 +2680,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             return new LargeInteger(subtractMagnitudes(mod.limbs, inverse), true, true);
         return new LargeInteger(inverse, false, true);
     }
-    private static boolean isOddMag(long[] x){return (x[0] & 1L) == 1L;}
-    private static boolean isEvenMag(long[] x) {return (x[0] & 1L) == 0L;}
-    public boolean isEven() {return isEvenMag(limbs);}
-    public boolean isOdd() {return isOddMag(limbs);}
+    private static boolean isOddMagnitude(long[] x) {return (x[0] & 1L) == 1L;}
+    private static boolean isEvenMagnitude(long[] x) {return (x[0] & 1L) == 0L;}
+    public boolean isEven() {return isEvenMagnitude(limbs);}
+    public boolean isOdd() {return isOddMagnitude(limbs);}
     public LargeFraction power(long p) {
         if (p == 0) return LargeFraction.ONE;
-        if (p == 1) return new LargeFraction(this, ONE);
-        if (p < 0) return new LargeInteger(power(limbs, -p), p % 2 != 0 && negative, true)
+        if (p == 1) return new LargeFraction(this);
+        if (p < 0) return new LargeInteger(power(limbs, -p), (p & 1) == 1 && negative, true)
                 .reciprocal();
-        return new LargeFraction(new LargeInteger(power(limbs, p), p % 2 != 0 && negative, true),
-                ONE);
+        return new LargeFraction(new LargeInteger(power(limbs, p), (p & 1) == 1 && negative, true));
     }
     private static long[] powerOneLimb(long base, long exp) {
         long result = 1L;
@@ -2933,15 +2713,14 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             if (isZeroArray(mag))
                 throw new IllegalArgumentException("Indeterminate form: 0^0");
             return ONE_MAG;
-        }else if(power == 1) return mag.clone();
+         } else if(power == 1) return mag.clone();
         else if(power > MAX_BITS)
             reportOverflow();
         long[] base = mag;
         long exponent = 0;
-
-        if (isEvenMag(base)) {
+        if (isEvenMagnitude(base)) {
             base = base.clone();
-            while (isEvenMag(base)) {
+            while (isEvenMagnitude(base)) {
                 exponent++;
                 shiftRightBitsInPlace(base, 1);
             }
@@ -2963,7 +2742,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 result = multiplyMagnitudes(result, base);
             mask >>>= 1;
         }
-        return shift == 0 ? result : shiftLeftBits(result, shift);
+        return shiftLeftBits(result, shift);
     }
     public LargeFraction power(LargeInteger other) {
         if (isZeroArray(other.limbs)) {
@@ -2974,29 +2753,27 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         // ±1 never grows, regardless of exponent size
         if (isOneArray(limbs)) {
             LargeInteger result = negative && other.isOdd() ? NEGATIVE_ONE : ONE;
-            return other.negative ? result.reciprocal() : new LargeFraction(result, ONE);
+            return other.negative ? result.reciprocal() : new LargeFraction(result);
         }
         if (isZeroArray(limbs)) {
             if (other.negative)
                 throw new ArithmeticException("Cannot divide by 0");
             return LargeFraction.ZERO;
         }
-        LargeInteger exp = other.abs();
         long baseBits = bitLength();
         // a^n has at least n * (baseBits - 1) + 1 bits.
         LargeInteger maxExponent = valueOf(MAX_BITS - 1).divide(valueOf(baseBits - 1));
-        if (exp.greaterThan(maxExponent))
+        if (other.abs().greaterThan(maxExponent))
             reportOverflow();
         /*
          * exp is now guaranteed <= MAX_BITS - 1,
          * and MAX_BITS = 2^37, so it necessarily fits in long.
          */
-        long p = exp.longValueExact();
-        return power(other.negative ? -p : p);
+        return power(other.longValue());
     }
     @Override
     public LargePowerMonomial power(LargeFraction f) {
-        return new LargePowerMonomial(new LargeFraction(this, ONE), f);}
+        return new LargePowerMonomial(new LargeFraction(this), f);}
     private static final class MontgomeryReducer {
         private final long[] modulus;
         private final int k;
@@ -3004,29 +2781,21 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         private final long[] rModM;
         private final long[] rTimesModulus;
         private final long[] r2ModM;
-        private final boolean useCIOS;
         private final long[] scratch;
-        private final long[] ciosScratch;
-
         MontgomeryReducer(long[] inputModulus) {
             if (inputModulus == null)
                 throw new NullPointerException("modulus is null");
             if (inputModulus.length == 0)
                 throw new IllegalArgumentException("modulus has an empty abs");
-            long[] modulus = trimLeadingZeros(inputModulus);
-            if (isZeroArray(modulus))
-                throw new ArithmeticException("modulus is zero");
-            if (isEvenMag(modulus))
+            this.modulus = trimLeadingZeros(inputModulus);
+            if (isEvenMagnitude(modulus))
                 throw new ArithmeticException("Montgomery modulus must be odd");
-            this.modulus = modulus;
             k = modulus.length;
             long x = modulus[0];
             long y = 2L * x - x * x * x;
             for (int i = 0; i < 4; i++) y *= 2L - x * y;
             mPrime = -y;
-            useCIOS = k <= 0;
             scratch = new long[2 * k + 2];
-            ciosScratch = new long[2 * k + 2];
             long[] power = new long[2 * k + 1];
             power[k] = 1L;
             rModM = Arrays.copyOf(modMagnitudes(power, modulus), k);
@@ -3052,36 +2821,33 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         private void reduceScratchInPlace() {
             for (int i = 0; i < k; i++) {
-                long u = scratch[i] * mPrime;
+                long si = scratch[i];
+                long u = si * mPrime;
                 // j = 0 special case
-                long lo = modulus[0] * u;
-                long hi = Math.unsignedMultiplyHigh(modulus[0], u);
-
-                long sum = lo + scratch[i];
-                long c = Long.compareUnsigned(sum, lo) < 0 ? 1L : 0L;// sum == 0 modulo 2^64 by construction
-                long carry = hi + c;
+                int j = 0;
+                long mj = modulus[j];
+                long lo = mj * u;
+                long carry = Math.unsignedMultiplyHigh(mj, u);
+                if (lo != 0L) carry++;
                 // start generic loop at j = 1
-                for (int j = 1; j < k; j++) {
-                    lo = modulus[j] * u;
-                    hi = Math.unsignedMultiplyHigh(modulus[j], u);
-
+                for (j=1; j < k; j++) {
+                    mj = modulus[j];
+                    lo = mj * u;
                     long s1 = lo + scratch[i + j];
-                    long c1 = Long.compareUnsigned(s1, lo) < 0 ? 1L : 0L;
-
                     long s2 = s1 + carry;
-                    long c2 = Long.compareUnsigned(s2, s1) < 0 ? 1L : 0L;
-
                     scratch[i + j] = s2;
-                    carry = hi + c1 + c2;
+                    carry = Math.unsignedMultiplyHigh(mj, u);
+                    if(Long.compareUnsigned(s1, lo) < 0) carry++;
+                    if(Long.compareUnsigned(s2, s1) < 0) carry++;
                 }
-                int pos = i + k;
+                j += i;
                 if (carry != 0L) {
-                    long old = scratch[pos];
-                    sum = old + carry;
-                    scratch[pos] = sum;
-                    if (Long.compareUnsigned(sum, old) < 0)
-                        do pos++;
-                        while (++scratch[pos] == 0L);
+                    long sj = scratch[j];
+                    long sum = sj + carry;
+                    scratch[j] = sum;
+                    if (Long.compareUnsigned(sum, sj) < 0)
+                        do j++;
+                        while (++scratch[j] == 0L);
                 }
             }
         }
@@ -3089,17 +2855,15 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             if (out.length != k)
                 throw new IllegalArgumentException();
             boolean subtract = scratch[2 * k] != 0L;
-            if (!subtract) {
+            if (!subtract)
                 // Compare low k limbs against modulus.
                 for (int i = k - 1; i >= 0; i--) {
                     int cmp = Long.compareUnsigned(scratch[k + i], modulus[i]);
                     if (cmp > 0) {
                         subtract = true;
                         break;
-                    }
-                    if (cmp < 0) break;
+                    } else if (cmp < 0) break;
                 }
-            }
             if (!subtract) {
                 System.arraycopy(scratch, k, out, 0, k);
                 return;
@@ -3109,33 +2873,23 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 long a = scratch[k + i];
                 long b = modulus[i];
                 long x = a - b;
-                long b1 = Long.compareUnsigned(a, b) < 0 ? 1L : 0L;
-                long y = x - borrow;
-                long b2 = Long.compareUnsigned(x, borrow) < 0 ? 1L : 0L;
-                out[i] = y;
-                borrow = b1 | b2;
+                long nextBorrow = Long.compareUnsigned(a, b) < 0 || (borrow != 0L && x == 0L) ? 1L : 0L;
+                out[i] = x - borrow;
+                borrow = nextBorrow;
             }
         }
         void requireReducedMagnitude(long[] x, String name) {
-            if (x == null)
-                throw new NullPointerException(name + " is null");
-            if (x.length == 0)
-                throw new IllegalArgumentException(name + " is empty");
-            if (x.length > k)
-                throw new IllegalArgumentException(name + " exceeds Montgomery width");
-            if (compareArray(x, modulus) >= 0)
-                throw new IllegalArgumentException(name + " is not reduced");
+            if (x == null) throw new NullPointerException(name + " is null");
+            if (x.length == 0) throw new IllegalArgumentException(name + " is empty");
+            if (x.length > k) throw new IllegalArgumentException(name + " exceeds Montgomery width");
+            if (compareArray(x, modulus) >= 0) throw new IllegalArgumentException(name + " is not reduced");
         }
         long[] add(long[] a, long[] b) {
             requireReducedMagnitude(a, "a");
             requireReducedMagnitude(b, "b");
-            return addCanonical(a, b);
-        }
-        long[] addCanonical(long[] a, long[] b) {
-            long[] sum = addMagnitudes(a, b);
-            if(compareArray(sum, modulus) >= 0)
-                subtractMagnitudeInPlace(sum, modulus);
-            return trimLeadingZeros(sum);
+            long[] out = new long[k];
+            addInto(a, b, out);
+            return trimLeadingZeros(out);
         }
         void addInto(long[] a, long[] b, long[] out) {
             // a,b < modulus; out has length k.
@@ -3163,20 +2917,15 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long[] subtract(long[] a, long[] b) {
             requireReducedMagnitude(a, "a");
             requireReducedMagnitude(b, "b");
-            return subtractCanonical(a, b);
-        }
-        long[] subtractCanonical(long[] a, long[] b) {
-            int cmp = compareArray(a, b);
-            if (cmp == 0) return ZERO_MAG;
-            else if (cmp > 0) return subtractMagnitudes(a, b);
-            return subtractMagnitudes(modulus, subtractMagnitudes(b, a));
+            long[] out = new long[k];
+            subtractInto(a, b, out);
+            return trimLeadingZeros(out);
         }
         void subtractInto(long[] a, long[] b, long[] out) {
             long borrow = 0;
             for (int i = 0; i < k; i++) {
                 long ai = i < a.length ? a[i] : 0;
                 long bi = i < b.length ? b[i] : 0;
-
                 long d1 = ai - bi;
                 long b1 = Long.compareUnsigned(ai, bi) < 0 ? 1 : 0;
                 long d2 = d1 - borrow;
@@ -3215,7 +2964,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         private void subtractModulusFixed(long[] a) {
             long borrow = 0;
-
             for (int i = 0; i < k; i++) {
                 long ai = a[i];
                 long bi = modulus[i];
@@ -3229,7 +2977,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 a[i] = d2;
                 borrow = b1 | b2;
             }
-
             // Deliberately discard final borrow.
         }
         long[] multiply(long[] a, long[] b) {
@@ -3237,218 +2984,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             multiplyInto(a, b, out);
             return out;
         }
-        void multiplyInto(long[] a, long[] b, long[] out){
-            if (useCIOS){
-                multiplyCIOS(a, b, out);
-                return;
-            }
-            if (Math.min(a.length, b.length) < KARATSUBA_THRESHOLD) {
-                Arrays.fill(scratch, 0L);
-                schoolbookMultiplyInto(a, b, scratch);
+        void multiplyInto(long[] a, long[] b, long[] out) {
+            if(Math.min(a.length, b.length) < KARATSUBA_THRESHOLD) {
+                LargeInteger.multiplyInto(a, b, scratch);
                 reduceScratchInPlace();
                 copyReducedInto(out);
-                return;
-            }
-            reduceInto(multiplyMagnitudes(a, b), out);
-        }
-        static void schoolbookMultiplyInto(long[] a, long[] b, long[] out) {
-            if (a.length < b.length) {
-                long[] t = a;
-                a = b;
-                b = t;
-            }
-            int al = a.length;
-            int bl = b.length;
-            // First row: there is nothing already in out[] to accumulate.
-            long ai = a[0]; long carry = 0L;
-            for (int j = 0; j < bl; j++) {
-                long bj = b[j];
-
-                long low = ai * bj;
-                long high = Math.unsignedMultiplyHigh(ai, bj);
-
-                long sum = low + carry;
-                long c = Long.compareUnsigned(sum, low) < 0 ? 1L : 0L;
-
-                out[j] = sum;
-                carry = high + c;
-            }
-            out[bl] = carry;
-            // Remaining rows accumulate into already initialized limbs.
-            for (int i = 1; i < al; i++) {
-                ai = a[i];
-                carry = 0L;
-                for (int j = 0; j < bl; j++) {
-                    int index = i + j;
-                    long bj = b[j];
-                    long low = ai * bj;
-                    long high = Math.unsignedMultiplyHigh(ai, bj);
-                    long s1 = low + out[index];
-                    long c1 = Long.compareUnsigned(s1, low) < 0 ? 1L : 0L;
-                    long s2 = s1 + carry;
-                    long c2 = Long.compareUnsigned(s2, s1) < 0 ? 1L : 0L;
-                    out[index] = s2;
-                    carry = high + c1 + c2;
-                }
-                // This limb has never previously been touched.
-                out[i + bl] = carry;
-            }
-        }
-        static void schoolbookSquareInto(long[] a, long[] out) {
-            int n = a.length;
-            // Diagonal terms: a[i]^2
-            for (int i = 0; i < n; i++) {
-                long x = a[i];
-                long low = x * x;
-                long high = Math.unsignedMultiplyHigh(x, x);
-                int index = i << 1;
-                add128Into(out, index, low, high);
-            }
-            // Cross terms: 2 * a[i] * a[j], i < j
-            for (int i = 0; i < n; i++) {
-                long ai = a[i];
-                for (int j = i + 1; j < n; j++) {
-                    long bj = a[j];
-                    long productLow = ai * bj;
-                    long productHigh = Math.unsignedMultiplyHigh(ai, bj);
-                    // Double the unsigned 128-bit product.
-                    long low  = productLow << 1;
-                    long high = (productHigh << 1) | (productLow >>> 63);
-                    long top  = productHigh >>> 63;
-                    add192Into(out, i + j, low, high, top);
-                }
-            }
-        }
-        private static void add128Into(long[] out, int index, long low, long high) {
-            long old = out[index];
-            long sum = old + low;
-            long carry = Long.compareUnsigned(sum, old) < 0 ? 1L : 0L;
-            out[index] = sum;
-            old = out[index + 1];
-            sum = old + high;
-            long c1 = Long.compareUnsigned(sum, old) < 0 ? 1L : 0L;
-            long sum2 = sum + carry;
-            long c2 = Long.compareUnsigned(sum2, sum) < 0 ? 1L : 0L;
-            out[index + 1] = sum2;
-            carry = c1 | c2;
-            index += 2;
-            while (carry != 0L) {
-                old = out[index];
-                sum = old + carry;
-                out[index] = sum;
-                carry = Long.compareUnsigned(sum, old) < 0 ? 1L : 0L;
-                index++;
-            }
-        }
-        private static void add192Into(long[] out, int index, long low, long high, long top) {
-            long carry = addWithCarry(out, index, low, 0L);
-            carry = addWithCarry(out, index + 1, high, carry);
-            long upper = top + carry;
-            index += 2;
-            while (upper != 0L) {
-                long old = out[index];
-                long sum = old + upper;
-                out[index] = sum;
-                upper = Long.compareUnsigned(sum, old) < 0 ? 1L : 0L;
-                index++;
-            }
-        }
-        /**
-         * CIOS Montgomery multiplication.
-         * Preconditions:
-         * 0 <= a < modulus
-         * 0 <= b < modulus
-         * where R = 2^(64*k).
-         */
-        void multiplyCIOS(long[] a, long[] b, long[] out) {
-            requireReducedMagnitude(a, "a");
-            requireReducedMagnitude(b, "b");
-            /*
-             * One extra top limb is required during accumulation.
-             *
-             * The old implementation allocated:
-             *     product: approximately 2*k limbs
-             *     REDC work: approximately 2*k limbs
-             *     result: approximately k limbs
-             *
-             * This implementation needs only this k+2-limb accumulator
-             * plus the returned result.
-             */
-            Arrays.fill(ciosScratch, 0L);
-            for (int i = 0; i < k; i++) {
-                long bi = i < b.length ? b[i] : 0L;
-                //t += a * bi
-                long carry = 0L;
-                for (int j = 0; j < a.length; j++) {
-                    long low = a[j] * bi;
-                    long high = Math.unsignedMultiplyHigh(a[j], bi);
-                    long s1 = ciosScratch[j] + low;
-                    long c1 = Long.compareUnsigned(s1, ciosScratch[j]) < 0 ? 1L : 0L;
-                    long s2 = s1 + carry;
-                    long c2 = Long.compareUnsigned(s2, s1) < 0 ? 1L : 0L;
-                    ciosScratch[j] = s2;
-                    /*
-                      Under the multiplication invariant, this unsigned
-                      addition cannot overflow past 1 limb.
-                     */
-                    carry = high + c1 + c2;
-                }
-                /*
-                  Add the product carry above a's highest stored limb.
-                  a may contain fewer than k limbs.
-                 */
-                int carryIndex = a.length;
-                while (carry != 0L) {
-                    long old = ciosScratch[carryIndex];
-                    long sum = old + carry;
-                    ciosScratch[carryIndex] = sum;
-                    carry = Long.compareUnsigned(sum, old) < 0 ? 1L : 0L;
-                    carryIndex++;
-                    if (carryIndex >= ciosScratch.length && carry != 0L)
-                        throw new AssertionError("CIOS product accumulation overflow");
-                }
-                //q is chosen so that t[0] + q * modulus[0] == 0 mod 2^6
-                long q = ciosScratch[0] * mPrime;
-                /*
-                  t += q * modulus
-                  Simultaneously divide by 2^64. The value written for
-                  limb j is placed at j-1, so the canceled low limb is
-                  never copied or retained.
-                 */
-                for (int j = 0; j < k; j++) {
-                    long low = modulus[j] * q;
-                    long high = Math.unsignedMultiplyHigh(modulus[j], q);
-                    long s1 = ciosScratch[j] + low;
-                    if(Long.compareUnsigned(s1, ciosScratch[j]) < 0) high++;
-                    long s2 = s1 + carry;
-                    if(Long.compareUnsigned(s2, s1) < 0) high++;
-                    carry = high;
-                    if (j == 0) {
-                        //This is the fundamental Montgomery invariant.
-                        if (s2 != 0L) throw new AssertionError("Montgomery cancellation failed");
-                    } else ciosScratch[j - 1] = s2; //Store S / 2^64 directly.
-                }
-                //Finish the shifted top limbs.
-                long oldTop = ciosScratch[k];
-                long shiftedTop = oldTop + carry;
-                long topCarry = Long.compareUnsigned(shiftedTop, oldTop) < 0 ? 1L : 0L;
-                ciosScratch[k - 1] = shiftedTop;
-                long oldExtra = ciosScratch[k + 1];
-                long newExtra = oldExtra + topCarry;
-                if (Long.compareUnsigned(newExtra, oldExtra) < 0)
-                    throw new AssertionError("CIOS top-limb overflow");
-                ciosScratch[k] = newExtra;
-                ciosScratch[k + 1] = 0L;
-            }
-            /*
-              With reduced operands, the CIOS result is in [0, 2m).
-              Therefore, at most 1 subtraction is required.
-             */
-            if (compareArray(ciosScratch, modulus) >= 0)
-                subtractMagnitudeInPlace(ciosScratch, modulus);
-            if (ciosScratch[k] != 0L || compareArray(ciosScratch, modulus) >= 0)
-                throw new AssertionError("CIOS result was not fully reduced");
-            System.arraycopy(ciosScratch, 0, out, 0, k);
+            } else reduceInto(multiplyMagnitudes(a, b), out);
         }
         long[] square(long[] a) {
             long[] out = new long[k];
@@ -3456,18 +2997,11 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             return out;
         }
         void squareInto(long[] a, long[] out) {
-            if (useCIOS) {
-                multiplyCIOS(a, a, out);
-                return;
-            }
-            if (k < KARATSUBA_THRESHOLD) {
-                Arrays.fill(scratch, 0L);
-                schoolbookSquareInto(a, scratch);
+            if(a.length < KARATSUBA_SQUARE_THRESHOLD) {
+                LargeInteger.squareInto(a, scratch);
                 reduceScratchInPlace();
                 copyReducedInto(out);
-                return;
-            }
-            reduceInto(squareMagnitude(a), out);
+            } else reduceInto(squareMagnitude(a), out);
         }
         long[] cube(long[] a) {
             requireReducedMagnitude(a, "a");
@@ -3475,9 +3009,21 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         long[] half(long[] a) {
             requireReducedMagnitude(a, "a");
-            if ((a[0] & 1L) == 0L)
+            if (isEvenMagnitude(a))
                 return shiftRightBits(a, 1);
             return shiftRightBits(addMagnitudes(a, modulus), 1);
+        }
+        long[] powMontgomery(long[] baseMontgomery, long exponent) {
+            if (exponent == 0)
+                return rModM.clone();
+            long[] result = new long[k];
+            System.arraycopy(baseMontgomery, 0, result, 0, baseMontgomery.length);
+            for (int bit = 62 - Long.numberOfLeadingZeros(exponent); bit >= 0; bit--) {
+                squareInto(result, result);
+                if (((exponent >>> bit) & 1L) != 0L)
+                    multiplyInto(result, baseMontgomery, result);
+            }
+            return trimLeadingZeros(result);
         }
         long[] powMontgomery(long[] baseMontgomery, long[] exponent) {
             if (isZeroArray(exponent)) return rModM;
@@ -3509,7 +3055,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 if (testBit(exponent, bit - i))
                     value |= 1;
             }
-            result = Arrays.copyOf(oddPowers[value >> 1], k);
+            result = oddPowers[value >> 1].clone();
             bit -= width;
             while (bit >= 0) {
                 if (!testBit(exponent, bit)) {
@@ -3530,8 +3076,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             }
             return result;
         }
-        long[] powMod(long[] base, long[] exponent) {return reduce(powMontgomery(toMontgomery(base), exponent));}
+        long[] powMod(long[] base, long[] exponent) {
+            return reduce(powMontgomery(toMontgomery(base), exponent));}
+        long[] powMod(long[] base, long exponent){
+            return reduce(powMontgomery(toMontgomery(base), exponent));}
         long[] toMontgomery(long[] x) {return multiply(x, r2ModM);}
+        long[] toMontgomery(long x) {return reduce(multiplySmall(r2ModM, x));}
     }
     private static int bestWindowSize(long[] exponent) {
         long popCount = 0;
@@ -3566,7 +3116,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     }
     /**
      * Returns a LargeInteger whose value is <code>(this<sup>exponent</sup>) mod modulus</code>.
-     * Unlike generic <code>power</code>, this method strictly returns an integer.
+     * Unlike regular <code>power</code>, this method strictly returns an integer.
      * @param exponent the power which the base is exponentiated to
      * @param modulus the modulus in which each step is always reduced with respect to
      */
@@ -3586,15 +3136,14 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         if (exponent.negative)
             return modInverse(modulus).powMod(exponent.negate(), modulus);
         if (isZeroArray(limbs)) return ZERO;
-        if(isOneArray(limbs)) return ONE;
+        else if(isOneArray(limbs)) return ONE;
         LargeInteger base = mod(modulus);
         // Odd modulus
         if (modulus.isOdd()) {
-            if (modulus.limbs.length == 1) {
-                long r = powMod64(base.limbs, exponent.limbs, modulus.limbs[0]);
-                return new LargeInteger(new long[]{r}, false, true);
-            }
-            return new LargeInteger(new MontgomeryReducer(modulus.limbs).powMod(base.limbs, exponent.limbs),
+            if (modulus.limbs.length == 1)
+                return new LargeInteger(new long[]{powMod64(base.limbs, exponent.limbs, modulus.limbs[0])},
+                        false, true);
+            else return new LargeInteger(new MontgomeryReducer(modulus.limbs).powMod(base.limbs, exponent.limbs),
                     false, true);
         }
         // Even modulus: m = 2^k * q
@@ -3611,16 +3160,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         else oddPow = new MontgomeryReducer(oddPart).powMod(oddBase, exponent.limbs);
         // CRT
         long[] pow2 = shiftLeftBits(ONE_MAG, trailingBits);
-        long[] combined = CRT(oddPow, evenPow, oddPart, pow2);
-        return new LargeInteger(combined, false, true);
-    }
-    private static long[] CRT(long[] oddPow, long[] evenPow, long[] oddPart, long[] pow2){
         long[] t = modSubtract(evenPow, oddPow, pow2);
         long[] inv = modInverseMagnitudes(oddPart, pow2);
         if (!isOneArray(modMagnitudes(multiplyMagnitudes(oddPart, inv), pow2)))
             throw new AssertionError("bad oddPart inverse mod 2^k");
         t = modMagnitudes(multiplyMagnitudes(t, inv), pow2);
-        return addMagnitudes(oddPow, multiplyMagnitudes(oddPart, t));
+        return new LargeInteger(addMagnitudes(oddPow, multiplyMagnitudes(oddPart, t)), false, true);
     }
     private static long[] lowestKBits(long[] n, long bits) {
         if (bits >= bitLength(n))
@@ -3632,12 +3177,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             out[len - 1] &= (1L << rem) - 1;
         return out;
     }
-    private static long powMod64(long[] base, long[] exponent, long modulus){
+    private static long powMod64(long[] base, long[] exponent, long modulus) {
         if (modulus == 1) return 0;
         if (isZeroArray(exponent)) return 1L;
-        if (modulus == 2)
-            return isEvenMag(base) ? 0L : 1L;
         long baseTemp = modSmall(base, modulus);
+        if (baseTemp == 0L) return 0L; // exponent is positive
+        if (baseTemp == 1L) return 1L;
+        if (modulus == 2) return baseTemp;
         long result = baseTemp;
         int top = exponent.length - 1;
         long limb = exponent[top];
@@ -3651,7 +3197,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         for (int i = top - 1; i >= 0; i--) {
             limb = exponent[i];
             for (int bit = 63; bit >= 0; bit--) {
-                result = remainder128By64(Math.unsignedMultiplyHigh(result, result), result * result, modulus);
+                result = remainder128By64(Math.unsignedMultiplyHigh(result, result), result * result,
+                        modulus);
                 if (((limb >>> bit) & 1L) != 0)
                     result = remainder128By64(Math.unsignedMultiplyHigh(result, baseTemp), result * baseTemp,
                             modulus);
@@ -3688,10 +3235,14 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         maskToBits(out, bits);
     }
     private static long[] powModPowerOfTwo(long[] in, long[] exponent, long bits) {
+        if (isZeroArray(in))
+            return ZERO_MAG;
+        if (isOneArray(in))
+            return ONE_MAG;
         if (bits <= 0)
             throw new IllegalArgumentException("bits must be positive");
         else if(bits == 1)
-            return isOddMag(in) ? ONE_MAG : ZERO_MAG;
+            return isOddMagnitude(in) ? ONE_MAG : ZERO_MAG;
         exponent = trimLeadingZeros(exponent);
         if (isZeroArray(exponent)) {
             if (isZeroArray(in))
@@ -3712,6 +3263,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             // v2(base^e) = t*e. Once >= bits, residue is zero.
             if (compareSmall(expTemp, Math.ceilDiv(bits, t)) >= 0)
                 return ZERO_MAG;
+        } else if (t == 0) {
+            if (bits == 2) expTemp = lowestKBits(expTemp, 1);
+            else expTemp = lowestKBits(expTemp, bits - 2);
         } else if (bits >= 3)
             // lambda(2^bits) = 2^(bits-2) for odd base.
             expTemp = lowestKBits(expTemp, bits - 2);
@@ -3724,7 +3278,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         if (window == 1) {
             //Exponentiation by squaring
             while (!isZeroArray(expTemp)) {
-                if ((expTemp[0] & 1L) != 0) {
+                if (isOddMagnitude(expTemp)) {
                     multiplyInto(result, base, scratch);
                     maskToBits(scratch, bits);
                     long[] swap = result;
@@ -3802,12 +3356,10 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         out[(int) (bit >>> 6)] = 1L << (bit & 63);
         return new LargeInteger(out, false, true);
     }
-    /*
+    /**
      * Returns floor(mag / 2^shift).
-     *
      * Caller chooses shift so the result occupies at most 63 bits,
      * therefore the returned long is always nonnegative.
-     *
      * Crucially, BOTH Lehmer operands must use the SAME shift.
      */
     private static long leading63AtShift(long[] mag, long shift) {
@@ -3951,7 +3503,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         // Signed subtraction overflow.
         return ((a ^ product) & (a ^ result)) < 0;
     }
-    private record LehmerStep(long A, long B, long C, long D, long steps){}
+    private record LehmerStep(long A, long B, long C, long D, long steps) {}
     private static long trailingZeroBits(long[] x) {
         int limbs = 0;
         while (limbs < x.length && x[limbs] == 0L) limbs++;
@@ -4081,25 +3633,26 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             if (Long.compareUnsigned(a, b) > 0) {
                 a -= b;
                 a >>>= Long.numberOfTrailingZeros(a);
-            }else{
+            } else{
                 b -= a;
                 b >>>= Long.numberOfTrailingZeros(b);
             }
         }
         return a << commonShift;
     }
-    private static ExtGcdMag extendedGcdMagnitudes(long[] a, long[] b) {
+    private record ExtGcdMagnitude(long[] gcd, long[] xMagnitude, boolean xNeg, long[] yMagnitude, boolean yNeg) {}
+    private static ExtGcdMagnitude extendedGcdMagnitudes(long[] a, long[] b) {
         a = trimLeadingZeros(a);
         b = trimLeadingZeros(b);
         long[] oldR = a;
         long[] r = b;
-        long[] oldSMag = ONE_MAG;
+        long[] oldSMagnitude = ONE_MAG;
         boolean oldSNeg = false;
-        long[] sMag = ZERO_MAG;
+        long[] sMagnitude = ZERO_MAG;
         boolean sNeg = false;
-        long[] oldTMag = ZERO_MAG;
+        long[] oldTMagnitude = ZERO_MAG;
         boolean oldTNeg = false;
-        long[] tMag = ONE_MAG;
+        long[] tMagnitude = ONE_MAG;
         boolean tNeg = false;
         while (!isZeroArray(r)) {
             long[][] qr = divideMagnitudes(oldR, r);
@@ -4108,94 +3661,58 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             oldR = r;
             r = nextR;
             // nextS = oldS - q*s
-            long[] qs = multiplyMagnitudes(sMag, q);
-            long[] nextSMag;
+            long[] qs = multiplyMagnitudes(sMagnitude, q);
+            long[] nextSMagnitude;
             boolean nextSNeg;
             if (oldSNeg != sNeg) {
                 // oldS and -q*s have the same sign.
-                nextSMag = addMagnitudes(oldSMag, qs);
+                nextSMagnitude = addMagnitudes(oldSMagnitude, qs);
                 nextSNeg = oldSNeg;
             } else {
                 // Opposite signs: subtract magnitudes.
-                int cmp = compareArray(oldSMag, qs);
+                int cmp = compareArray(oldSMagnitude, qs);
                 if (cmp >= 0) {
-                    nextSMag = subtractMagnitudes(oldSMag, qs);
+                    nextSMagnitude = subtractMagnitudes(oldSMagnitude, qs);
                     nextSNeg = false;
                 } else {
-                    nextSMag = subtractMagnitudes(qs, oldSMag);
+                    nextSMagnitude = subtractMagnitudes(qs, oldSMagnitude);
                     nextSNeg = true;
                 }
-                if (isZeroArray(nextSMag))
+                if (isZeroArray(nextSMagnitude))
                     nextSNeg = false;
             }
-            oldSMag = sMag;
+            oldSMagnitude = sMagnitude;
             oldSNeg = sNeg;
-            sMag = nextSMag;
+            sMagnitude = nextSMagnitude;
             sNeg = nextSNeg;
             // nextT = oldT - q*t
-            long[] qt = multiplyMagnitudes(tMag, q);
-            long[] nextTMag;
+            long[] qt = multiplyMagnitudes(tMagnitude, q);
+            long[] nextTMagnitude;
             boolean nextTNeg;
             if (oldTNeg != tNeg) {
-                nextTMag = addMagnitudes(oldTMag, qt);
+                nextTMagnitude = addMagnitudes(oldTMagnitude, qt);
                 nextTNeg = oldTNeg;
             } else {
-                int cmp = compareArray(oldTMag, qt);
+                int cmp = compareArray(oldTMagnitude, qt);
                 if (cmp >= 0) {
-                    nextTMag = subtractMagnitudes(oldTMag, qt);
+                    nextTMagnitude = subtractMagnitudes(oldTMagnitude, qt);
                     nextTNeg = false;
                 } else {
-                    nextTMag = subtractMagnitudes(qt, oldTMag);
+                    nextTMagnitude = subtractMagnitudes(qt, oldTMagnitude);
                     nextTNeg = true;
                 }
-                if (isZeroArray(nextTMag))
+                if (isZeroArray(nextTMagnitude))
                     nextTNeg = false;
             }
-            oldTMag = tMag;
+            oldTMagnitude = tMagnitude;
             oldTNeg = tNeg;
-            tMag = nextTMag;
+            tMagnitude = nextTMagnitude;
             tNeg = nextTNeg;
         }
-        return new ExtGcdMag(trimLeadingZeros(oldR), oldSMag, oldSNeg, oldTMag, oldTNeg);
-    }
-    private long[] binaryGcd(long[] g1, long[] g2){
-        if (isZeroArray(g1)) return g2;
-        if (isZeroArray(g2)) return g1;
-        long[] a = trimLeadingZeros(g1);
-        if(a == g1) a = g1.clone();
-        long[] b = trimLeadingZeros(g2);
-        if(b == g2) b = g2.clone();
-        long aShift = trailingZeroBits(a);
-        long bShift = trailingZeroBits(b);
-        long commonShift = Math.min(aShift, bShift);
-        shiftRightBitsInPlace(a, aShift);
-        shiftRightBitsInPlace(b, bShift);
-        while (true) {
-            int cmp = compareArray(a, b);
-            if (cmp == 0)
-                return shiftLeftBits(a, commonShift);
-            if (cmp > 0) {
-                subtractMagnitudeInPlace(a, b);
-                shiftRightBitsInPlace(a, trailingZeroBits(a));
-            } else {
-                subtractMagnitudeInPlace(b, a);
-                shiftRightBitsInPlace(b, trailingZeroBits(b));
-            }
-        }
-    }
-    private long[] euclideanGcd(long[] g1, long[] g2){
-        long[] a = g1.clone();
-        long[] b = g2.clone();
-        while(!isZeroArray(b)){
-            long[] mid = modMagnitudes(a, b);
-            a = b;
-            b = mid;
-        }
-        return a;
+        return new ExtGcdMagnitude(trimLeadingZeros(oldR), oldSMagnitude, oldSNeg, oldTMagnitude, oldTNeg);
     }
     public LargeInteger gcd(LargeInteger other) {
         return new LargeInteger(gcdMagnitudes(limbs, other.limbs), false, true);}
-    private record ExtGcdMag(long[] gcd, long[] xMag, boolean xNeg, long[] yMag, boolean yNeg) {}
     public LargeInteger lcm(LargeInteger other) {
         if (isZeroArray(limbs) || isZeroArray(other.limbs)) return ZERO;
         return abs().divide(gcd(other)).multiply(other.abs());
@@ -4211,17 +3728,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         if(negative) return false;
         int cmp = compareSmall(limbs, 2);
         if (cmp <= 0) return cmp == 0;
-        if (isEvenMag(limbs)) return false;
+        if (isEvenMagnitude(limbs)) return false;
         //small test
-        for(int k: VERY_SMALL_PRIMES){
+        for (int k: VERY_SMALL_PRIMES)
             if(modSmall(limbs, k) == 0)
                 return limbs.length == 1 && limbs[0] == k;
-        }
         if(compareSmall(limbs, 1000000) < 0) return true;
         if(equalsArray(limbs, squareMagnitude(sqrtFloorMagnitude(limbs)))) return false;
-        return isProbablyPrimeMag(limbs);
+        return isAProbablyPrimeMagnitude(limbs);
     }
-    private static boolean isProbablyPrimeMag(long[] n) {
+    private static boolean isAProbablyPrimeMagnitude(long[] n) {
         n = trimLeadingZeros(n);
         long[] nMinusOne = subtractSmall(n, 1);
         long s = trailingZeroBits(nMinusOne);
@@ -4230,7 +3746,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         // Montgomery representations, computed once.
         long[] oneMont = reducer.rModM;
         long[] minusOneMont = subtractMagnitudes(reducer.modulus, oneMont);
-        // randomMagBetween uses an exclusive upper bound:
+        // randomMagnitudeBetween uses an exclusive upper bound:
         // 2 <= witness < n - 1, therefore witness <= n - 2.
         long bits = bitLength(n);
         int rounds;
@@ -4255,15 +3771,15 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 if (!passed) return false;
             }
             return true;
-        }else if (bits < 100)
-            return passesMillerRabin(49, reducer, oneMont, minusOneMont, d, s, nMinusOne);
+        } else if (bits < 100)
+            return passesMillerRabin(50, reducer, oneMont, minusOneMont, d, s, nMinusOne);
         else if (bits < 256) rounds = 25;
         else if (bits < 512) rounds = 16;
         else if (bits < 768) rounds = 9;
         else if (bits < 1024) rounds = 4;
         else rounds = 2;
         return passesMillerRabin(rounds, reducer, oneMont, minusOneMont, d, s, nMinusOne)
-                && passesLucasSelfridge(n, reducer, oneMont);
+                && passesLucasSelfridge(reducer, oneMont);
     }
     private static boolean passesMillerRabin(int rounds, MontgomeryReducer reducer, long[] oneMont,
                                              long[] minusOneMont, long[] d, long s, long[] nMinusOne) {
@@ -4284,16 +3800,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         return true;
     }
-    private static boolean passesLucasSelfridge(long[] n, MontgomeryReducer reducer, long[] oneMont){
+    private static boolean passesLucasSelfridge(MontgomeryReducer reducer, long[] oneMont) {
         //Lucas-Selfridge test
-        long D = chooseSelfridgeD(n);
+        long D = chooseSelfridgeD(reducer.modulus);
         if (D == 0L) return false;
-        long[] nPlusOne = addSmall(n, 1);
+        long[] nPlusOne = addSmall(reducer.modulus, 1);
         long s = trailingZeroBits(nPlusOne);
         long[] d = shiftRightBits(nPlusOne, s);
-        if(isOneArray(d)){
-            long[] current = reducer.toMontgomery(FOUR_MAG);
-            long[] twoMont = reducer.toMontgomery(TWO_MAG);
+        if(isOneArray(d)) {
+            long[] current = reducer.toMontgomery(4);
+            long[] twoMont = reducer.toMontgomery(2);
             for (long k = 0; k < s - 2; k++)
                 current = reducer.subtract(reducer.square(current), twoMont);
             return isZeroArray(current);
@@ -4302,8 +3818,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         // P = 1
         // Q = (1 - D) / 4
         long Q = (1L - D) / 4L;
-        long[] dMont = reducer.toMontgomery(signedSmallMod(D, n));
-        long[] qMont = reducer.toMontgomery(signedSmallMod(Q, n));
+        long[] dMont = reducer.toMontgomery(signedSmallMod(D, reducer.modulus));
+        long[] qMont = reducer.toMontgomery(signedSmallMod(Q, reducer.modulus));
         // U_0 = 0
         // V_0 = 2
         // Q^0 = 1
@@ -4321,11 +3837,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             long[] doubledU = reducer.multiply(U, V);
             long[] doubledV = reducer.subtract(reducer.square(V), reducer.add(Qk, Qk));
             long[] doubledQ = reducer.square(Qk);
-
             U = doubledU;
             V = doubledV;
             Qk = doubledQ;
-
             if (testBit(d, bit)) {
                 // Save the 2k values because both formulas use them.
                 long[] oldU = U;
@@ -4335,13 +3849,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 U = reducer.half(reducer.add(oldU, oldV));
                 // V_(2k+1) = (D*U_(2k) + V_(2k)) / 2
                 V = reducer.half(reducer.add(reducer.multiply(dMont, oldU), oldV));
-                Qk = reducer.multiply(Qk, qMont);
+                reducer.multiplyInto(Qk, qMont, Qk);
             }
         }
         if (isZeroArray(U) || isZeroArray(V)) return true;
         for (int r = 1; r < s; r++) {
             V = reducer.subtract(reducer.square(V), reducer.add(Qk, Qk));
-            Qk = reducer.square(Qk);
+            reducer.squareInto(Qk, Qk);
             if (isZeroArray(V)) return true;
         }
         return false;
@@ -4436,7 +3950,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         int rem30 = (int) candidate.mod(30);
         int wheelIndex = 0;
         for (int i = 1; i < WHEEL_30_RESIDUES.length; i++)
-            if (WHEEL_30_RESIDUES[i] >= rem30){
+            if (WHEEL_30_RESIDUES[i] >= rem30) {
                 wheelIndex = i;
                 break;
             }
@@ -4542,7 +4056,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long oddLower = Math.max(lowerInclusive, 3L);
         if ((oddLower & 1L) == 0L) oddLower++;
         if (oddLower >= upperExclusive)
-            return containsTwo ? new long[]{2L} : new long[0];
+            return containsTwo ? TWO_MAG : new long[0];
         // Number of odd integers in [oddLower, upperExclusive).
         long oddCountLong = ((upperExclusive - oddLower) + 1L) >>> 1;
         if (oddCountLong > Integer.MAX_VALUE)
@@ -4616,7 +4130,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 if (prime > bitLength(current) - 1) break;
             }
         }
-        return exponent == 1 ? null : new PowerForm(current, exponent);
+        if(exponent == 1) return null;
+        return new PowerForm(current, exponent);
     }
     private static PowerForm detectPowerPlusOne(long[] n) {
         if (compareSmall(n,2) <= 0) return null;
@@ -4632,16 +4147,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         return new PowerForm(base, exponent);
     }
     private static PowerForm detectPowerMinusOne(long[] n) {return detectPerfectPower(addSmall(n, 1));}
-    private static final class MagKey {
+    private static final class MagnitudeKey {
         long[] key;
         int hashCode;
-        MagKey(long[] key) {
+        MagnitudeKey(long[] key) {
             this.key = key;
             hashCode = Arrays.hashCode(key);
         }
         @Override
         public boolean equals(Object o) {
-            if (o instanceof MagKey other)
+            if (o instanceof MagnitudeKey other)
                 return equalsArray(key, other.key);
             return false;
         }
@@ -4666,7 +4181,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         boolean fermatDone;
 
         int ecmPlanIndex;
-        int lastQSProbePlan;
         int nextECMCurve;
         ECMModulusContext context;
         double qsSeconds;
@@ -4678,17 +4192,17 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         FactorJob(long[] n) {
             this.n = trimLeadingZeros(n);
             this.context = new ECMModulusContext(this.n);
-            double lnN = logMag(this.n);
+            double lnN = lnMagnitude(this.n);
             double lnLnN = StrictMath.log(lnN);
             this.B = Math.max(100, Math.round(Math.exp(0.55 * Math.sqrt(lnN * lnLnN))));
             this.factorBase = null;
         }
-        private FactorJob(long[] n, int ecmPlanIndex, int nextECMCurve){
+        private FactorJob(long[] n, int ecmPlanIndex, int nextECMCurve) {
             this.n = trimLeadingZeros(n);
             this.ecmPlanIndex = ecmPlanIndex;
             this.nextECMCurve = nextECMCurve;
             this.context = new ECMModulusContext(this.n);
-            double lnN = logMag(n);
+            double lnN = lnMagnitude(n);
             double lnLnN = StrictMath.log(lnN);
             long B = Math.round(Math.exp(0.55 * Math.sqrt(lnN * lnLnN)));
             this.B = Math.max(B, 100);
@@ -4724,69 +4238,83 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     }
     private static boolean isNontrivialFactor(long[] d, long[] n) {
         return isZeroArray(modMagnitudes(n, d)) && !isOneArray(d) && compareArray(d, n) < 0;}
-    private static void addFactor(LargeMap<MagKey, Long> p, MagKey base, long exponent) {
+    private static void addFactor(LargeMap<MagnitudeKey, Long> p, MagnitudeKey base, long exponent) {
         if (!p.containsKey(base)) p.put(base, exponent);
         else p.put(base, p.get(base) + exponent);
     }
+    private static void sortFactors(LargeMap<MagnitudeKey, Long> factors) {
+        for (LargeInteger i = ZERO; i.lessThan(factors.size()); i = i.add(1))
+            for (LargeInteger j = i.add(1); j.lessThan(factors.size()); j = j.add(1))
+                if (compareArray(factors.keyAtIndex(i).key, factors.keyAtIndex(j).key) > 0)
+                    factors.swapIndices(i, j);
+    }
     @FunctionalInterface
     private interface FactorCall { long[] run();}
-    private record TimedFactorResult(long[] factor, long elapsedNanos){}
+    private record TimedFactorResult(long[] factor, long elapsedNanos) {}
     private static TimedFactorResult timeFactorCall(FactorCall call) {
         long start = TMX.getCurrentThreadCpuTime();
         long[] factor = call.run();
         return new TimedFactorResult(factor, TMX.getCurrentThreadCpuTime() - start);
     }
     /**
-     * Factors a limbs into multiplicative components. Usually this means prime factors.
-     * In strict mathematics, 1 has an empty factorization, 0 has no prime factorization, and negatives are handled by a separate negative.
-     * However, programming prefers total functions over philosophical purity.
-     * To account for this, 1 returns {1 -> 1}, 0 returns {0 -> 1}, and -1 is treated as another factor.
-     * Also, if the limbs decides to become a cryptography final boss, the remaining chunk may be treated as ONE atomic factor. So definitely not full prime factorization as one might expect.
+     * Decomposes this integer into known multiplicative factors.
+     * <p>Factors are prime whenever practical, but complete prime factorization is
+     * not guaranteed. If the remaining composite cofactor exceeds the configured
+     * factoring effort, it is retained as a single atomic factor.</p>
+     * The returned factors always multiply exactly to this integer.
      */
     public LargeMap<LargeInteger, LargeFraction> factor() {
         LargeMap<LargeInteger, LargeFraction> result = new LargeMap<>();
         if (negative)
             result.put(NEGATIVE_ONE, LargeFraction.ONE);
         if (isOneArray(limbs)) return result;
-        LargeMap<MagKey, Long> bag = factorMag(limbs);
-        for (MagKey factor : bag.keys())
-            result.put(new LargeInteger(factor.key, false), new LargeFraction(bag.get(factor)));
+        LargeMap<MagnitudeKey, Long> bag = factorMagnitude(limbs);
+        for (MagnitudeKey factor : bag.keys())
+            result.put(new LargeInteger(factor.key, false, true), new LargeFraction(bag.get(factor)));
         return result;
     }
-    private static LargeMap<MagKey, Long> factorMag(long[] limbs) {
-        LargeMap<MagKey, Long> factorMap = new LargeMap<>();
+    private static LargeMap<MagnitudeKey, Long> factorMagnitude(long[] limbs) {
+        LargeMap<MagnitudeKey, Long> factorMap = new LargeMap<>();
         if (isZeroArray(limbs)) {
-            factorMap.put(new MagKey(ZERO_MAG), 1L);
+            factorMap.put(new MagnitudeKey(ZERO_MAG), 1L);
             return factorMap;
-        }else if (isOneArray(limbs)) return factorMap;
+        } else if (isOneArray(limbs)) return factorMap;
         long[] copy = limbs.clone();
         if(compareSmall(copy, 1_000_000_000_000L) > 0) {
+            //detect x^n
+            PowerForm powerForm = detectPerfectPower(copy);
+            if(powerForm != null) {
+                LargeMap<MagnitudeKey, Long> smallerFactors = factorMagnitude(powerForm.base);
+                for (MagnitudeKey K : smallerFactors.keys())
+                    addFactor(factorMap, K, smallerFactors.get(K) * powerForm.exponent);
+                sortFactors(factorMap);
+                return factorMap;
+            }
             //detect 1 + 4b^4 = (1 - 2b + 2b^2)(1 + 2b + 2b^2)
             long[] nMinusOne = subtractSmall(copy, 1);
             long[] sqrtNMinusOne = sqrtFloorMagnitude(nMinusOne);
-            if (equalsArray(squareMagnitude(sqrtNMinusOne), nMinusOne) && isEvenMag(sqrtNMinusOne)) {
+            if (equalsArray(squareMagnitude(sqrtNMinusOne), nMinusOne) && isEvenMagnitude(sqrtNMinusOne)) {
                 divideMagnitudeExactInPlace(sqrtNMinusOne, 2);
                 long[] sqrtDR = sqrtFloorMagnitude(sqrtNMinusOne);
-                if (equalsArray(squareMagnitude(sqrtDR), sqrtDR)) {
-                    long[] factor1 = addSmall(subtractMagnitudes(
-                            shiftLeftBits(sqrtNMinusOne, 1), shiftLeftBits(sqrtDR, 1)), 1);
-                    long[] factor2 = addSmall(addMagnitudes(
-                            shiftLeftBits(sqrtNMinusOne, 1), shiftLeftBits(sqrtDR, 1)), 1);
-                    if (isNontrivialFactor(factor1, copy) && isNontrivialFactor(factor2, copy)) {
-                        LargeMap<MagKey, Long> F1 = factorMag(factor1);
-                        for (MagKey K : F1.keys())
+                if (equalsArray(squareMagnitude(sqrtDR), sqrtNMinusOne)) {
+                    long[] factor1 = addSmall(
+                            subtractMagnitudes(shiftLeftBits(sqrtNMinusOne, 1),
+                                    shiftLeftBits(sqrtDR, 1)), 1);
+                    if (isNontrivialFactor(factor1, copy)) {
+                        LargeMap<MagnitudeKey, Long> F1 = factorMagnitude(factor1);
+                        for (MagnitudeKey K : F1.keys())
                             addFactor(factorMap, K, F1.get(K));
-                        LargeMap<MagKey, Long> F2 = factorMag(factor2);
-                        for (MagKey K : F2.keys())
-                            addFactor(factorMap, K, F2.get(K));
-                        //sort factors
-                        for (LargeInteger i = ZERO; i.lessThan(factorMap.size()); i = i.add(1)) {
-                            for (LargeInteger j = i.add(1); j.lessThan(factorMap.size()); j = j.add(1))
-                                if (compareArray(factorMap.keyAtIndex(i).key, factorMap.keyAtIndex(j).key) > 0)
-                                    factorMap.swap(factorMap.keyAtIndex(i), factorMap.keyAtIndex(j));
-                        }
-                        return factorMap;
                     }
+                    long[] factor2 = addSmall(
+                            addMagnitudes(shiftLeftBits(sqrtNMinusOne, 1), shiftLeftBits(sqrtDR, 1)),
+                            1);
+                    if(isNontrivialFactor(factor2, copy)) {
+                        LargeMap<MagnitudeKey, Long> F2 = factorMagnitude(factor2);
+                        for (MagnitudeKey K : F2.keys())
+                            addFactor(factorMap, K, F2.get(K));
+                    }
+                    sortFactors(factorMap);
+                    return factorMap;
                 }
             }
             // detect x^n - 1
@@ -4796,12 +4324,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 LargeList<LargeInteger> divisors = n.divisors();
                 for (LargeInteger d : divisors) {
                     long[] value = ((LargeInteger) LargePolynomial.cyclotomic(d)
-                                    .evaluateAt(new LargeInteger(minusForm.base, false))).limbs;
+                                    .evaluateAt(new LargeInteger(minusForm.base, false, true))).limbs;
                     if (isOneArray(value)) continue;
                     if (equalsArray(value, copy)) break;
                     copy = divideMagnitudesExact(copy, value);
-                    LargeMap<MagKey, Long> subFactors = factorMag(value);
-                    for (MagKey base : subFactors.keys())
+                    LargeMap<MagnitudeKey, Long> subFactors = factorMagnitude(value);
+                    for (MagnitudeKey base : subFactors.keys())
                         addFactor(factorMap, base, subFactors.get(base));
                 }
             }
@@ -4812,61 +4340,51 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 LargeList<LargeInteger> divisors = n.divisors();
                 for (LargeInteger d : divisors) {
                     long[] value = ((LargeInteger) LargePolynomial.cyclotomic(d.shiftLeft(1))
-                                    .evaluateAt(new LargeInteger(plusForm.base, false))).limbs;
+                                    .evaluateAt(new LargeInteger(plusForm.base, false, true))).limbs;
                     if (isOneArray(value)) continue;
                     if (equalsArray(value, copy)) break;
                     copy = divideMagnitudesExact(copy, value);
-                    LargeMap<MagKey, Long> subFactors = factorMag(value);
-                    for (MagKey base : subFactors.keys())
+                    LargeMap<MagnitudeKey, Long> subFactors = factorMagnitude(value);
+                    for (MagnitudeKey base : subFactors.keys())
                         addFactor(factorMap, base, subFactors.get(base));
                 }
             }
         }
-        int remLength = copy.length;
+        int remLength = effectiveLength(copy);
         for (int k : SMALL_PRIMES) {
             int exponent = 0;
             long rec = Long.divideUnsigned(-1, k);
             while (modSmallInt(copy, remLength, k, rec) == 0) {
                 exponent++;
                 divideMagnitudeExactInPlace(copy, k);
-                while(remLength > 1 && copy[remLength-1] == 0) remLength--;
+                while (remLength > 1 && copy[remLength-1] == 0) remLength--;
             }
-            if(exponent != 0) addFactor(factorMap, new MagKey(new long[]{k}), exponent);
-            if(remLength == 1 && copy[remLength-1] == 1){
-                for (LargeInteger i = ZERO; i.lessThan(factorMap.size()); i = i.add(1)) {
-                    for (LargeInteger j = i.add(1); j.lessThan(factorMap.size()); j = j.add(1))
-                        if (compareArray(factorMap.keyAtIndex(i).key, factorMap.keyAtIndex(j).key) > 0)
-                            factorMap.swap(factorMap.keyAtIndex(i), factorMap.keyAtIndex(j));
-                }
+            if(exponent != 0) addFactor(factorMap, new MagnitudeKey(new long[]{k}), exponent);
+            if(remLength == 1 && copy[remLength-1] == 1) {
+                sortFactors(factorMap);
                 return factorMap;
             }
         }
         copy = trimLeadingZeros(copy);
-        if (compareSmall(copy, 1000000000000L) < 0) {
-            factorMap.put(new MagKey(copy), 1L);
-            for (LargeInteger i = ZERO; i.lessThan(factorMap.size()); i = i.add(1)) {
-                for (LargeInteger j = i.add(1); j.lessThan(factorMap.size()); j = j.add(1))
-                    if (compareArray(factorMap.keyAtIndex(i).key, factorMap.keyAtIndex(j).key) > 0)
-                        factorMap.swap(factorMap.keyAtIndex(i), factorMap.keyAtIndex(j));
-            }
+        if (compareSmall(copy, 1_000_000_000_000L) < 0) {
+            addFactor(factorMap, new MagnitudeKey(copy), 1L);
+            sortFactors(factorMap);
             return factorMap;
         }
 //        FactorCacheDatabase cache = FactorCacheDatabase.instance();
         ArrayDeque<FactorJob> work = new ArrayDeque<>();
         FactorJob task = new FactorJob(copy);
-        task.lastQSProbePlan = -1;
         work.push(task);
         while (!work.isEmpty()) {
             task = work.pop();
             final long[] n = task.n;
-            if (isOneArray(n))
-                continue;
-            if (isProbablyPrimeMag(n)) {
+            if (isOneArray(n)) continue;
+            if (isAProbablyPrimeMagnitude(n)) {
                 // Add prime to result.
-                addFactor(factorMap, new MagKey(n), 1);
+                addFactor(factorMap, new MagnitudeKey(n), 1);
                 continue;
             }
-            LargeInteger number = new LargeInteger(n, false);
+            LargeInteger number = new LargeInteger(n, false, true);
 //            LargeInteger cached = cache.findFactor(number);
 //            if (cached != null) {
 //                splitAndQueue(work, task, cached.limbs);
@@ -4908,7 +4426,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             }
             if (task.ecmPlanIndex >= ECM_EXTREME_PLANS.length) {
                 System.out.println(number + " is too difficult to factor; treated as composite atomic");
-                addFactor(factorMap, new MagKey(n), 1L);
+                addFactor(factorMap, new MagnitudeKey(n), 1L);
                 continue;
             }
             ECMPlan plan = ECM_EXTREME_PLANS[task.ecmPlanIndex];
@@ -4928,18 +4446,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 continue;
             }
             task.nextECMCurve += 32;
-            if(task.nextECMCurve == plan.curves){
+            if(task.nextECMCurve == plan.curves) {
                 task.nextECMCurve = 0;
                 task.ecmPlanIndex++;
             }
             work.push(task);
         }
-        //sort factors
-        for (LargeInteger i = ZERO; i.lessThan(factorMap.size()); i = i.add(1)) {
-            for (LargeInteger j = i.add(1); j.lessThan(factorMap.size()); j = j.add(1))
-                if (compareArray(factorMap.keyAtIndex(i).key, factorMap.keyAtIndex(j).key) > 0)
-                    factorMap.swap(factorMap.keyAtIndex(i), factorMap.keyAtIndex(j));
-        }
+        sortFactors(factorMap);
         return factorMap;
     }
     public LargeInteger totient() {
@@ -4950,7 +4463,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         LargeInteger result = n.clone();
         for (LargeInteger p : factors.keys()) {
             if (!p.isProbablyPrime())
-                throw new ArithmeticException("Totient requires full prime decomposition; composite atomic factor found: " + p);
+                throw new ArithmeticException("Totient requires full prime decomposition; " +
+                        "composite atomic factor found: " + p);
             result = result.divide(p).multiply(p.subtract(1));
         }
         return result;
@@ -5006,19 +4520,17 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     private record PM1Plan(int B1, int B2) {}
     private record PM1Stage1Result(long[] state, long[] factor, boolean saturated) {}
     private static long[] pollardPMinusOneEasy(long[] n) {
-        if (isEvenMag(n)) return TWO_MAG;
+        if (isEvenMagnitude(n)) return TWO_MAG;
         PM1Plan[] plans = {new PM1Plan(10_000, 100_000), new PM1Plan(20000, 200000)};
         // Sieve once through the largest B2.
         int[] primes = sieve(plans[plans.length - 1].B2);
         MontgomeryReducer reducer = new MontgomeryReducer(n);
-        long[] state = reducer.toMontgomery(TWO_MAG);
+        long[] state = reducer.toMontgomery(2);
         int previousB1 = 1;
         for (PM1Plan plan : plans) {
             PM1Stage1Result stage1 = pollardPMinusOneStage1(n, state, previousB1, plan.B1, primes, reducer);
-            if (isNontrivialFactor(stage1.factor, n))
-                return stage1.factor;
-            if (stage1.saturated)
-                return ONE_MAG;
+            if (isNontrivialFactor(stage1.factor, n)) return stage1.factor;
+            if (stage1.saturated) return ONE_MAG;
             state = stage1.state;
             long[] factor = pollardPMinusOneStage2(n, state, primes, plan.B1, plan.B2, reducer);
             if (isNontrivialFactor(factor, n))
@@ -5066,7 +4578,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                         long newP = largestPrimePowerAtMost(p, newBound);
                         long step = newP / oldP;
                         if (step == 1) continue;
-                        replay = reducer.powMontgomery(replay, new long[]{step});
+                        replay = reducer.powMontgomery(replay, step);
                         long[] replayGcd = gcdMagnitudes(modSubtract(replay, reducer.rModM, n), n);
                         if (isNontrivialFactor(replayGcd, n))
                             return new PM1Stage1Result(replay, replayGcd, false);
@@ -5117,7 +4629,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long[] xToD = reducer.multiply(power, stage1Montgomery);
         int firstPrime = primes[start];
         int currentM = (firstPrime + D - 1) / D;
-        long[] giant = reducer.powMontgomery(xToD, new long[]{currentM});
+        long[] giant = reducer.powMontgomery(xToD, currentM);
         long[] product = reducer.rModM;
         long[][] batchTerms = new long[1024][];
         int terms = 0;
@@ -5125,20 +4637,19 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             int q = primes[i];
             if (q > B2) break;
             int targetM = (q + D - 1) / D;
-            while(currentM < targetM){
-                giant = reducer.multiply(giant, xToD);
+            while (currentM < targetM) {
+                reducer.multiplyInto(giant, xToD, giant);
                 currentM++;
             }
             int r = targetM * D - q;
-            // q > B1, so q cannot be ONE of D's small prime factors.
+            // q > B1, so q cannot be one of D's small prime factors.
             if (r == 0 || baby[r] == null) continue;
             long[] term = reducer.subtract(giant, baby[r]);
             product = reducer.multiply(product, term);
             batchTerms[terms++] = term;
             if (terms == 1024) {
                 long[] factor = checkPM1Stage2Batch(product, batchTerms, terms, n);
-                if (isNontrivialFactor(factor, n))
-                    return factor;
+                if (isNontrivialFactor(factor, n)) return factor;
                 product = reducer.rModM;
                 terms = 0;
             }
@@ -5180,37 +4691,20 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         int len = reducer.k;
 
         // Convert to Montgomery form once.
-        long[] y = Arrays.copyOf(
-                reducer.toMontgomery(
-                        randomMagnitudeBetween(TWO_MAG, subtractSmall(n, 2))
-                ),
-                len
-        );
-
-        long[] c = Arrays.copyOf(
-                reducer.toMontgomery(
-                        randomMagnitudeBetween(ONE_MAG, subtractSmall(n, 1))
-                ),
-                len
-        );
-
+        long[] y = reducer.toMontgomery(randomMagnitudeBetween(TWO_MAG, subtractSmall(n, 2)));
+        long[] c = reducer.toMontgomery(randomMagnitudeBetween(ONE_MAG, subtractSmall(n, 1)));
         long m = 1024;
         long r = 1;
         long times = 0;
-
         long[] g = ONE_MAG;
-
         // Fixed-width Montgomery work buffers.
         long[] x    = new long[len];
         long[] ys   = new long[len];
-        long[] q    = new long[len];
+        long[] q;
         long[] diff = new long[len];
-
         while (isOneArray(g) && times < steps) {
-
             // x = y
             System.arraycopy(y, 0, x, 0, len);
-
             // Advance y by r steps.
             for (long i = 0; i < r && times < steps; i++) {
                 // y = y^2 + c mod n
@@ -5218,11 +4712,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 reducer.addInto(y, c, y);
                 times++;
             }
-
             long k = 0;
-
             while (k < r && isOneArray(g) && times < steps) {
-
                 /*
                  * Save y for Brent's g == n recovery.
                  *
@@ -5233,25 +4724,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                  * anymore, because y is now mutated in place.
                  */
                 System.arraycopy(y, 0, ys, 0, len);
-
                 // q = 1 in Montgomery representation.
-                Arrays.fill(q, 0L);
-                System.arraycopy(
-                        reducer.rModM,
-                        0,
-                        q,
-                        0,
-                        reducer.rModM.length
-                );
-
+                q = reducer.rModM.clone();
                 long limit = Math.min(m, r - k);
-
                 for (long i = 0; i < limit && times < steps; i++) {
-
                     // y = y^2 + c mod n
                     reducer.squareInto(y, y);
                     reducer.addInto(y, c, y);
-
                     /*
                      * diff = x - y mod n.
                      *
@@ -5260,16 +4739,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                      * gcd((x - y) mod n, n) == gcd(x - y, n)
                      */
                     reducer.subtractInto(x, y, diff);
-
                     if (isZeroArray(diff))
                         return ONE_MAG;
-
                     // q = q * diff mod n, still Montgomery form.
                     reducer.multiplyInto(q, diff, q);
-
                     times++;
                 }
-
                 /*
                  * q is a Montgomery residue:
                  *
@@ -5282,19 +4757,14 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                  * Therefore no fromMontgomery() is required here.
                  */
                 g = gcdMagnitudes(q, n);
-
                 k += m;
             }
-
             if (r > (Long.MAX_VALUE >>> 1))
                 return ONE_MAG;
-
             r <<= 1;
         }
-
         if (isNontrivialFactor(g, n))
             return g;
-
         /*
          * Brent recovery when the accumulated q caused gcd(q, n) == n.
          *
@@ -5329,50 +4799,69 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
 
     private record MontgomeryPoint(long[] X, long[] Z) {}
     private static final class MontgomeryCurve {
-        final long[] A24; //(A+2)/4 mod n
+        final long[] A24; // (A+2)/4 mod n
         final MontgomeryReducer reducer;
         final long[] n;
-        void requireCanonicalPoint(MontgomeryPoint P) {
-            reducer.requireReducedMagnitude(P.X, "P.X");
-            reducer.requireReducedMagnitude(P.Z, "P.Z");
-        }
+
+        // Shared arithmetic scratch.
         final long[] s0;
         final long[] s1;
         final long[] s2;
         final long[] s3;
+        final long[] s4;
+        final long[] s5;
+
         MontgomeryCurve(MontgomeryReducer reducer, long[] A24Normal) {
             this.reducer = reducer;
-            A24 = reducer.toMontgomery(A24Normal);
-            n = reducer.modulus;
+            this.A24 = reducer.toMontgomery(A24Normal);
+            this.n = reducer.modulus;
 
             int k = reducer.k;
             s0 = new long[k];
             s1 = new long[k];
             s2 = new long[k];
             s3 = new long[k];
+            s4 = new long[k];
+            s5 = new long[k];
         }
+
+        void requireCanonicalPoint(MontgomeryPoint P) {
+            reducer.requireReducedMagnitude(P.X, "P.X");
+            reducer.requireReducedMagnitude(P.Z, "P.Z");
+        }
+
+        /*
+         * ------------------------------------------------------------
+         * xDBL
+         * ------------------------------------------------------------
+         */
+
         MontgomeryPoint doublePoint(MontgomeryPoint P, ECMStats stats) {
             requireCanonicalPoint(P);
             return doublePointCanonical(P, stats);
         }
-        private MontgomeryPoint doublePointCanonical(MontgomeryPoint P, ECMStats stats) {
-            long t0 = 0;
+
+        private MontgomeryPoint doublePointCanonical(
+                MontgomeryPoint P,
+                ECMStats stats) {
+
+            long t0 = 0L;
             if (stage2)
                 t0 = TMX.getCurrentThreadCpuTime();
 
-            // s0 = X + Z
+            // A = X + Z
             reducer.addInto(P.X, P.Z, s0);
 
-            // s1 = X - Z
+            // B = X - Z
             reducer.subtractInto(P.X, P.Z, s1);
 
-            // s0 = (X + Z)^2 = AA
+            // AA = A^2
             reducer.squareInto(s0, s0);
 
-            // s1 = (X - Z)^2 = BB
+            // BB = B^2
             reducer.squareInto(s1, s1);
 
-            // s2 = AA - BB = E
+            // E = AA - BB
             reducer.subtractInto(s0, s1, s2);
 
             long[] X2 = new long[reducer.k];
@@ -5387,167 +4876,569 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             // s3 = BB + A24*E
             reducer.addInto(s1, s3, s3);
 
-            // Z2 = E * (...)
+            // Z2 = E * (BB + A24*E)
             reducer.multiplyInto(s2, s3, Z2);
 
-            if (stage2){
+            if (stage2) {
                 stats.stage2DoublingTime += TMX.getCurrentThreadCpuTime() - t0;
-                stats.stage2MontMultiplications += 2;
+                // There are THREE Montgomery multiplications here:
+                //
+                // AA*BB,
+                // A24*E,
+                // E*(...)
+                stats.stage2MontMultiplications += 3;
             }
-
             return new MontgomeryPoint(X2, Z2);
         }
-        MontgomeryPoint diffAdd(MontgomeryPoint P, MontgomeryPoint Q, MontgomeryPoint PMinusQ, ECMStats stats) {
+        /*
+         * ------------------------------------------------------------
+         * Differential addition
+         * ------------------------------------------------------------
+         */
+
+        MontgomeryPoint diffAdd(
+                MontgomeryPoint P,
+                MontgomeryPoint Q,
+                MontgomeryPoint PMinusQ,
+                ECMStats stats) {
+
             requireCanonicalPoint(P);
             requireCanonicalPoint(Q);
             requireCanonicalPoint(PMinusQ);
+
             return diffAddCanonical(P, Q, PMinusQ, stats);
         }
-        private MontgomeryPoint diffAddCanonical(MontgomeryPoint P, MontgomeryPoint Q, MontgomeryPoint PMinusQ,
+
+        private MontgomeryPoint diffAddCanonical(
+                MontgomeryPoint P,
+                MontgomeryPoint Q,
+                MontgomeryPoint PMinusQ,
                 ECMStats stats) {
-            long t0 = 0;
+
+            long t0 = 0L;
             if (stage2)
                 t0 = TMX.getCurrentThreadCpuTime();
-            // s0 = Xp + Zp
+
+            // A = Xp + Zp
             reducer.addInto(P.X, P.Z, s0);
-            // s1 = Xp - Zp
+
+            // B = Xp - Zp
             reducer.subtractInto(P.X, P.Z, s1);
-            // s2 = Xq + Zq
+
+            // C = Xq + Zq
             reducer.addInto(Q.X, Q.Z, s2);
-            // s3 = Xq - Zq
+
+            // D = Xq - Zq
             reducer.subtractInto(Q.X, Q.Z, s3);
-            // s3 = (Xq-Zq)(Xp+Zp) = DA
+
+            // DA = D*A
             reducer.multiplyInto(s3, s0, s3);
-            // s2 = (Xq+Zq)(Xp-Zp) = CB
+
+            // CB = C*B
             reducer.multiplyInto(s2, s1, s2);
-            // s0 no longer needed:
-            // s0 = DA + CB
+
+            // DA + CB
             reducer.addInto(s3, s2, s0);
-            // s1 no longer needed:
-            // s1 = DA - CB
+
+            // DA - CB
             reducer.subtractInto(s3, s2, s1);
+
+            // (DA + CB)^2
             reducer.squareInto(s0, s0);
+
+            // (DA - CB)^2
             reducer.squareInto(s1, s1);
 
             long[] X = new long[reducer.k];
             long[] Z = new long[reducer.k];
 
+            // X = Zd * (DA + CB)^2
             reducer.multiplyInto(PMinusQ.Z, s0, X);
+
+            // Z = Xd * (DA - CB)^2
             reducer.multiplyInto(PMinusQ.X, s1, Z);
-            if (stage2){
-                stats.stage2DiffAdditionTime += TMX.getCurrentThreadCpuTime() - t0;
+
+            if (stage2) {
+                stats.stage2DiffAdditionTime +=
+                        TMX.getCurrentThreadCpuTime() - t0;
+
                 stats.stage2MontMultiplications += 4;
             }
+
             return new MontgomeryPoint(X, Z);
         }
+
+        /*
+         * ------------------------------------------------------------
+         * Combined xDBL + xADD
+         * ------------------------------------------------------------
+         *
+         * This remains void because it naturally produces TWO points.
+         *
+         * Everything else keeps returning MontgomeryPoint.
+         */
+
         private static final class DblAddResult {
             MontgomeryPoint doubled;
             MontgomeryPoint added;
         }
-        private void doubleAndDiffAddCanonical(MontgomeryPoint P, MontgomeryPoint Q,
-                                                       MontgomeryPoint PMinusQ, DblAddResult out, ECMStats stats) {
-            long[] a = reducer.addCanonical(P.X, P.Z);
-            long[] b = reducer.subtractCanonical(P.X, P.Z);
-            long[] aa = reducer.square(a);
-            long[] bb = reducer.square(b);
-            long[] e = reducer.subtractCanonical(aa, bb);
-            long[] c = reducer.addCanonical(Q.X, Q.Z);
-            long[] d = reducer.subtractCanonical(Q.X, Q.Z);
-            long[] da = reducer.multiply(d, a);
-            long[] cb = reducer.multiply(c, b);
-            long[] plus = reducer.addCanonical(da, cb);
-            long[] minus = reducer.subtractCanonical(da, cb);
-            MontgomeryPoint doubled = new MontgomeryPoint(reducer.multiply(aa, bb),
-                    reducer.multiply(e, reducer.addCanonical(bb, reducer.multiply(A24, e))));
-            MontgomeryPoint added = new MontgomeryPoint(reducer.multiply(PMinusQ.Z, reducer.square(plus)),
-                    reducer.multiply(PMinusQ.X, reducer.square(minus)));
-            if(stage2)
+
+        private void doubleAndDiffAddCanonical(
+                MontgomeryPoint P,
+                MontgomeryPoint Q,
+                MontgomeryPoint PMinusQ,
+                DblAddResult out,
+                ECMStats stats) {
+
+            /*
+             * Shared:
+             *
+             * A = Xp + Zp
+             * B = Xp - Zp
+             * C = Xq + Zq
+             * D = Xq - Zq
+             */
+
+            reducer.addInto(P.X, P.Z, s0);       // A
+            reducer.subtractInto(P.X, P.Z, s1);  // B
+            reducer.addInto(Q.X, Q.Z, s2);       // C
+            reducer.subtractInto(Q.X, Q.Z, s3);  // D
+
+            /*
+             * xADD side first.
+             */
+
+            reducer.multiplyInto(s3, s0, s3); // DA
+            reducer.multiplyInto(s2, s1, s2); // CB
+
+            reducer.addInto(s3, s2, s4);      // DA + CB
+            reducer.subtractInto(s3, s2, s5); // DA - CB
+
+            /*
+             * xDBL side.
+             *
+             * Original A and B remain in s0/s1.
+             */
+
+            reducer.squareInto(s0, s0); // AA
+            reducer.squareInto(s1, s1); // BB
+
+            // E = AA - BB
+            // old CB in s2 is dead now
+            reducer.subtractInto(s0, s1, s2);
+
+            long[] doubledX = new long[reducer.k];
+            long[] doubledZ = new long[reducer.k];
+
+            long[] addedX = new long[reducer.k];
+            long[] addedZ = new long[reducer.k];
+
+            // X(2P) = AA * BB
+            reducer.multiplyInto(s0, s1, doubledX);
+
+            // old DA in s3 is dead
+            // s3 = A24 * E
+            reducer.multiplyInto(A24, s2, s3);
+
+            // s3 = BB + A24*E
+            reducer.addInto(s1, s3, s3);
+
+            // Z(2P) = E * (BB + A24*E)
+            reducer.multiplyInto(s2, s3, doubledZ);
+
+            /*
+             * Finish xADD.
+             */
+
+            reducer.squareInto(s4, s4);
+            reducer.squareInto(s5, s5);
+
+            reducer.multiplyInto(
+                    PMinusQ.Z,
+                    s4,
+                    addedX
+            );
+
+            reducer.multiplyInto(
+                    PMinusQ.X,
+                    s5,
+                    addedZ
+            );
+
+            out.doubled =
+                    new MontgomeryPoint(doubledX, doubledZ);
+
+            out.added =
+                    new MontgomeryPoint(addedX, addedZ);
+
+            if (stage2)
                 stats.stage2MontMultiplications += 7;
-            out.doubled = doubled;
-            out.added = added;
         }
-        MontgomeryPoint multiply(MontgomeryPoint P, long k, ECMStats stats) {
-            if (k <= 0L) throw new IllegalArgumentException("Scalar must be positive");
+
+        /*
+         * ------------------------------------------------------------
+         * Scalar multiplication
+         * ------------------------------------------------------------
+         */
+
+        MontgomeryPoint multiply(
+                MontgomeryPoint P,
+                long k,
+                ECMStats stats) {
+
+            if (k <= 0L)
+                throw new IllegalArgumentException(
+                        "Scalar must be positive"
+                );
+
+            requireCanonicalPoint(P);
+
             int shifts = Long.numberOfTrailingZeros(k);
             long oddPart = k >>> shifts;
-            MontgomeryPoint result;
+
+            /*
+             * Pure power of two.
+             */
             if (oddPart == 1L) {
-                result = P;
+                MontgomeryPoint result = P;
+
                 for (int i = 0; i < shifts; i++)
-                    result = doublePointCanonical(result, stats);
+                    result = doublePointCanonical(
+                            result,
+                            stats
+                    );
+
                 return result;
             }
-            PracChain chain = PracChain.buildPracChain(k);
-            return multiplyPrac(P, chain.operations, 0, chain.operations.length, chain.trailingDoubling, stats);
+
+            PracChain chain =
+                    PracChain.buildPracChain(k);
+
+            return multiplyPrac(
+                    P,
+                    chain.operations,
+                    0,
+                    chain.operations.length,
+                    chain.trailingDoubling,
+                    stats
+            );
         }
-        MontgomeryPoint multiplyPrac(MontgomeryPoint P, byte[] operations, int from, int toExclusive,
-                                     int trailingDoubling, ECMStats stats) {
-            if (from < 0 || toExclusive < from || toExclusive > operations.length || trailingDoubling < 0)
-                throw new IllegalArgumentException("Invalid PRAC slice");
+
+        /*
+         * ------------------------------------------------------------
+         * PRAC
+         * ------------------------------------------------------------
+         *
+         * IMPORTANT:
+         *
+         * Keep this purely return-value based.
+         *
+         * No mutable point registers.
+         * No output-buffer aliasing.
+         * No representation change.
+         */
+
+        MontgomeryPoint multiplyPrac(
+                MontgomeryPoint P,
+                byte[] operations,
+                int from,
+                int toExclusive,
+                int trailingDoubling,
+                ECMStats stats) {
+
+            if (from < 0 ||
+                    toExclusive < from ||
+                    toExclusive > operations.length ||
+                    trailingDoubling < 0) {
+
+                throw new IllegalArgumentException(
+                        "Invalid PRAC slice"
+                );
+            }
+
             requireCanonicalPoint(P);
-            MontgomeryPoint A = doublePointCanonical(P, stats);
+
+            MontgomeryPoint A =
+                    doublePointCanonical(P, stats);
+
             MontgomeryPoint B = P;
             MontgomeryPoint C = P;
+
             DblAddResult pair = new DblAddResult();
-            for (int index = from; index < toExclusive; index++) {
+
+            for (int index = from;
+                 index < toExclusive;
+                 index++) {
+
                 switch (operations[index]) {
-                    case PracChain.SWAP -> {
+
+                    /*
+                     * ------------------------------------------------
+                     * Swap
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_SWAP -> {
                         MontgomeryPoint temp = A;
                         A = B;
                         B = temp;
-                    }case PracChain.CASE_1 -> {
-                        MontgomeryPoint sum = diffAddCanonical(A, B, C, stats);
-                        MontgomeryPoint newA = diffAddCanonical(sum, A, B, stats);
-                        MontgomeryPoint newB = diffAddCanonical(B, sum, A, stats);
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Case 1
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_1 -> {
+
+                        MontgomeryPoint sum =
+                                diffAddCanonical(
+                                        A,
+                                        B,
+                                        C,
+                                        stats
+                                );
+
+                        MontgomeryPoint newA =
+                                diffAddCanonical(
+                                        sum,
+                                        A,
+                                        B,
+                                        stats
+                                );
+
+                        MontgomeryPoint newB =
+                                diffAddCanonical(
+                                        B,
+                                        sum,
+                                        A,
+                                        stats
+                                );
+
                         A = newA;
                         B = newB;
-                    }case PracChain.CASE_2, PracChain.CASE_4 -> {
-                        doubleAndDiffAddCanonical(A, B, C, pair, stats);
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Cases 2 / 4
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_2,
+                         PracChain.PRAC_CASE_4 -> {
+
+                        doubleAndDiffAddCanonical(
+                                A,
+                                B,
+                                C,
+                                pair,
+                                stats
+                        );
+
                         A = pair.doubled;
                         B = pair.added;
-                    }case PracChain.CASE_3 -> {
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Case 3
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_3 -> {
+
                         MontgomeryPoint oldB = B;
-                        B = diffAddCanonical(B, A, C, stats);
+
+                        B = diffAddCanonical(
+                                B,
+                                A,
+                                C,
+                                stats
+                        );
+
                         C = oldB;
-                    }case PracChain.CASE_5 -> {
-                        // Computes 2A and A+C, where |A-C| = B.
-                        doubleAndDiffAddCanonical(A, C, B, pair, stats);
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Case 5
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_5 -> {
+
+                        // Computes 2A and A+C,
+                        // where |A-C| = B.
+
+                        doubleAndDiffAddCanonical(
+                                A,
+                                C,
+                                B,
+                                pair,
+                                stats
+                        );
+
                         A = pair.doubled;
                         C = pair.added;
-                    }case PracChain.CASE_6 -> {
-                        MontgomeryPoint oldB = B;
-                        doubleAndDiffAddCanonical(A, B, C, pair, stats);
-                        MontgomeryPoint doubled = pair.doubled;
-                        MontgomeryPoint added = pair.added;
+                    }
 
-                        B = diffAddCanonical(doubled, added, C, stats);
-                        A = diffAddCanonical(doubled, A, A, stats);
+                    /*
+                     * ------------------------------------------------
+                     * Case 6
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_6 -> {
+
+                        MontgomeryPoint oldB = B;
+
+                        doubleAndDiffAddCanonical(
+                                A,
+                                B,
+                                C,
+                                pair,
+                                stats
+                        );
+
+                        MontgomeryPoint doubled =
+                                pair.doubled;
+
+                        B = diffAddCanonical(
+                                doubled,
+                                pair.added,
+                                C,
+                                stats
+                        );
+
+                        A = diffAddCanonical(
+                                doubled,
+                                A,
+                                A,
+                                stats
+                        );
+
                         C = oldB;
-                    }case PracChain.CASE_7 -> {
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Case 7
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_7 -> {
+
                         MontgomeryPoint oldA = A;
                         MontgomeryPoint oldB = B;
-                        doubleAndDiffAddCanonical(oldA, oldB, C, pair, stats);
-                        B = diffAddCanonical(pair.added, oldA, oldB, stats);
-                        A = diffAddCanonical(pair.doubled, oldA, oldA, stats);
-                    }case PracChain.CASE_8 -> {
+
+                        doubleAndDiffAddCanonical(
+                                oldA,
+                                oldB,
+                                C,
+                                pair,
+                                stats
+                        );
+
+                        B = diffAddCanonical(
+                                pair.added,
+                                oldA,
+                                oldB,
+                                stats
+                        );
+
+                        A = diffAddCanonical(
+                                pair.doubled,
+                                oldA,
+                                oldA,
+                                stats
+                        );
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Case 8
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_8 -> {
+
                         MontgomeryPoint oldA = A;
                         MontgomeryPoint oldB = B;
                         MontgomeryPoint oldC = C;
-                        doubleAndDiffAddCanonical(oldA, oldB, oldC, pair, stats);
-                        A = diffAddCanonical(pair.doubled, oldA, oldA, stats);
+
+                        doubleAndDiffAddCanonical(
+                                oldA,
+                                oldB,
+                                oldC,
+                                pair,
+                                stats
+                        );
+
+                        A = diffAddCanonical(
+                                pair.doubled,
+                                oldA,
+                                oldA,
+                                stats
+                        );
+
                         B = pair.added;
-                        C = diffAddCanonical(oldA, oldC, oldB, stats);
-                    }case PracChain.CASE_9 -> {
-                        // Computes 2B and B+C, where |B-C| = A.
-                        doubleAndDiffAddCanonical(B, C, A, pair, stats);
+
+                        C = diffAddCanonical(
+                                oldA,
+                                oldC,
+                                oldB,
+                                stats
+                        );
+                    }
+
+                    /*
+                     * ------------------------------------------------
+                     * Case 9
+                     * ------------------------------------------------
+                     */
+                    case PracChain.PRAC_CASE_9 -> {
+
+                        // Computes 2B and B+C,
+                        // where |B-C| = A.
+
+                        doubleAndDiffAddCanonical(
+                                B,
+                                C,
+                                A,
+                                pair,
+                                stats
+                        );
+
                         B = pair.doubled;
                         C = pair.added;
-                    }default -> throw new IllegalStateException("Unknown PRAC operation: " + operations[index]);
+                    }
+
+                    default ->
+                            throw new IllegalStateException(
+                                    "Unknown PRAC operation: "
+                                            + operations[index]
+                            );
                 }
             }
-            MontgomeryPoint result = diffAddCanonical(A, B, C, stats);
-            for (int i = 0; i < trailingDoubling; i++)
-                result = doublePointCanonical(result, stats);
+
+            /*
+             * Final PRAC combination.
+             */
+            MontgomeryPoint result =
+                    diffAddCanonical(
+                            A,
+                            B,
+                            C,
+                            stats
+                    );
+
+            /*
+             * The chain builder factors powers of two out.
+             */
+            for (int i = 0;
+                 i < trailingDoubling;
+                 i++) {
+
+                result =
+                        doublePointCanonical(
+                                result,
+                                stats
+                        );
+            }
             return result;
         }
     }
@@ -5581,16 +5472,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     }
 
     private record PracChain(byte[] operations, int trailingDoubling, long oddPart) {
-        static final byte SWAP = 0;
-        static final byte CASE_1 = 1;
-        static final byte CASE_2 = 2;
-        static final byte CASE_3 = 3;
-        static final byte CASE_4 = 4;
-        static final byte CASE_5 = 5;
-        static final byte CASE_6 = 6;
-        static final byte CASE_7 = 7;
-        static final byte CASE_8 = 8;
-        static final byte CASE_9 = 9;
+        static final byte PRAC_SWAP = 0;
+        static final byte PRAC_CASE_1 = 1;
+        static final byte PRAC_CASE_2 = 2;
+        static final byte PRAC_CASE_3 = 3;
+        static final byte PRAC_CASE_4 = 4;
+        static final byte PRAC_CASE_5 = 5;
+        static final byte PRAC_CASE_6 = 6;
+        static final byte PRAC_CASE_7 = 7;
+        static final byte PRAC_CASE_8 = 8;
+        static final byte PRAC_CASE_9 = 9;
         static PracChain buildPracChain(long k) {
             if (k <= 0L)
                 throw new IllegalArgumentException("k must be positive");
@@ -5607,36 +5498,36 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                     long temporary = d;
                     d = e;
                     e = temporary;
-                    operations.write(SWAP);
+                    operations.write(PRAC_SWAP);
                 }
                 // Apply the first qualifying PRAC condition.
                 if (d - e <= e / 4L && (d + e) % 3L == 0L) {
-                    operations.write(CASE_1);
+                    operations.write(PRAC_CASE_1);
                     d = (2L * d - e) / 3L;
                     e = (e - d) / 2L;
                 } else if (d - e <= e / 4L && (d - e) % 6L == 0L) {
-                    operations.write(CASE_2);
+                    operations.write(PRAC_CASE_2);
                     d = (d - e) / 2L;
                 } else if ((d + 3L) / 4L <= e) {
-                    operations.write(CASE_3);
+                    operations.write(PRAC_CASE_3);
                     d -= e;
                 } else if ((d + e) % 2L == 0L) {
-                    operations.write(CASE_4);
+                    operations.write(PRAC_CASE_4);
                     d = (d - e) / 2L;
                 } else if ((d & 1L) == 0L) {
-                    operations.write(CASE_5);
+                    operations.write(PRAC_CASE_5);
                     d /= 2L;
                 } else if (d % 3L == 0L) {
-                    operations.write(CASE_6);
+                    operations.write(PRAC_CASE_6);
                     d = d / 3L - e;
                 } else if ((d + e) % 3L == 0L) {
-                    operations.write(CASE_7);
+                    operations.write(PRAC_CASE_7);
                     d = (d - 2L * e) / 3L;
                 } else if ((d - e) % 3L == 0L) {
-                    operations.write(CASE_8);
+                    operations.write(PRAC_CASE_8);
                     d = (d - e) / 3L;
                 } else {
-                    operations.write(CASE_9);
+                    operations.write(PRAC_CASE_9);
                     e /= 2L;
                 }
                 if (d <= 0L || e <= 0L)
@@ -5644,7 +5535,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             }
             if (d != 1L)
                 throw new IllegalStateException("PRAC pair was not coprime");
-            return new PracChain(operations.toByteArray(), trailingDoubling, k);
+            return new PracChain(operations.toByteArray(), trailingDoubling, oddK);
         }
     }
     private static final class ECMCurveWork {
@@ -5667,9 +5558,10 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     private static boolean stage2;
     private static final class Stage2State {
         private static final int D = 2310;
-        private static final int HALF_D = D >>> 1;
+        private static final int HALF_D = 1155;
         final MontgomeryCurve curve;
         final MontgomeryPoint Q;
+
         final MontgomeryPoint[] baby;
         final MontgomeryPoint difference;
 
@@ -5686,61 +5578,131 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         MontgomeryPoint blockStartCurrent;
         long blockStartM;
 
-        Stage2State(MontgomeryCurve curve, MontgomeryPoint P, long firstStage2Prime, ECMStats stats) {
+        Stage2State(
+                MontgomeryCurve curve,
+                MontgomeryPoint P,
+                long firstStage2Prime,
+                ECMStats stats) {
+
             this.curve = curve;
-            Q = P;
+            this.Q = P;
+
+            /*
+             * Baby steps:
+             *
+             * baby[r - 1] = [r]Q
+             *
+             * for the r values needed by the wheel.
+             */
             baby = new MontgomeryPoint[HALF_D];
+
             baby[0] = Q;
+
             MontgomeryPoint previousMultiple = Q;
-            MontgomeryPoint currentMultiple = curve.doublePoint(Q, stats);
+            MontgomeryPoint currentMultiple =
+                    curve.doublePoint(Q, stats);
 
             for (int r = 2; r < HALF_D; r++) {
                 if (gcdLong(r, D) == 1)
                     baby[r - 1] = currentMultiple;
-                MontgomeryPoint nextMultiple = curve.diffAdd(currentMultiple, Q, previousMultiple, stats);
+
+                MontgomeryPoint nextMultiple =
+                        curve.diffAdd(
+                                currentMultiple,
+                                Q,
+                                previousMultiple,
+                                stats
+                        );
+
                 previousMultiple = currentMultiple;
                 currentMultiple = nextMultiple;
             }
+
+            /*
+             * Giant-step difference:
+             *
+             * difference = [D]Q
+             */
             difference = curve.multiply(Q, D, stats);
+
+            /*
+             * Start at the giant-step center nearest the
+             * first prime in stage 2.
+             */
             currentM = nearestCenterIndex(firstStage2Prime);
             if (currentM == 1L) {
+                /*
+                 * current = [D]Q
+                 *
+                 * There is no [0]Q projective point we want
+                 * to use as the differential-addition predecessor.
+                 */
                 previous = null;
                 current = difference;
             } else {
                 previous = curve.multiply(Q, Math.multiplyExact(currentM - 1L, D), stats);
                 current = curve.multiply(Q, Math.multiplyExact(currentM, D), stats);
             }
-            blockProduct = new long[curve.reducer.k];
-            System.arraycopy(curve.reducer.rModM, 0, blockProduct, 0, curve.reducer.k);
+            blockProduct = curve.reducer.rModM.clone();
         }
         static long nearestCenterIndex(long q) {
             long m = q / D;
-            if (q % D > HALF_D) m++;
+            if (q % D > HALF_D)
+                m++;
             return Math.max(1L, m);
         }
         long[] stage2Term(long q, ECMStats stats, long[] left, long[] right, long[] out) {
             long targetM = nearestCenterIndex(q);
+            /*
+             * Move giant-step state forward until:
+             *
+             * current = [targetM * D]Q
+             */
             while (currentM < targetM) {
                 MontgomeryPoint next;
-                if (currentM == 1L) next = curve.doublePoint(difference, stats);
-                else next = curve.diffAdd(current, difference, previous, stats);
+                if (currentM == 1L)
+                    /*
+                     * previous would conceptually be [0]Q here,
+                     * so just obtain [2D]Q with doubling.
+                     */
+                    next = curve.doublePoint(difference, stats);
+                else
+                    /*
+                     * current    = [mD]Q
+                     * difference = [D]Q
+                     * previous   = [(m-1)D]Q
+                     *
+                     * therefore:
+                     *
+                     * next = [(m+1)D]Q
+                     */
+                    next = curve.diffAdd(current, difference, previous, stats);
                 previous = current;
                 current = next;
                 currentM++;
             }
-            long center = currentM*D;
+            long center = currentM * D;
             long distance = Math.abs(center - q);
             if (distance == 0L) return null;
             MontgomeryPoint B = baby[(int) distance - 1];
+            /*
+             * Projective x-coordinate equality test:
+             *
+             * X_current/Z_current == X_baby/Z_baby
+             *
+             * numerator:
+             *
+             * X_current * Z_baby -
+             * X_baby    * Z_current
+             */
             curve.reducer.multiplyInto(current.X, B.Z, left);
             curve.reducer.multiplyInto(B.X, current.Z, right);
-            stats.stage2MontMultiplications += 2;
             curve.reducer.subtractInto(left, right, out);
+            stats.stage2MontMultiplications += 2;
             return out;
         }
         void clearStage2Block() {
-            blockProduct = new long[curve.reducer.k];
-            System.arraycopy(curve.reducer.rModM, 0, blockProduct, 0, curve.reducer.k);
+            blockProduct = curve.reducer.rModM.clone();
             blockTermCount = 0;
             blockStartPrevious = null;
             blockStartCurrent = null;
@@ -5849,24 +5811,21 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         final MontgomeryReducer reducer;
         ECMModulusContext(long[] n) {
             this.n = n;
-            GcdInverseMag eg = gcdInverseMagnitudes(FOUR_MAG, n);
+            GcdInverseMagnitude eg = gcdInverseMagnitudes(FOUR_MAG, n);
             if (!isOneArray(eg.gcd)) throw new FactorFoundException(eg.gcd);
             inv4 = eg.inverse;
             reducer = new MontgomeryReducer(n);
         }
     }
-    private record GcdInverseMag(long[] gcd, long[] inverse) {}
-    private static GcdInverseMag gcdInverseMagnitudes(long[] a, long[] n) {
+    private record GcdInverseMagnitude(long[] gcd, long[] inverse) {}
+    private static GcdInverseMagnitude gcdInverseMagnitudes(long[] a, long[] n) {
         a = trimLeadingZeros(a);
         n = trimLeadingZeros(n);
-
-        long[] oldR = a;
-        long[] r = n;
-
+        long[] oldR = a.clone();
+        long[] r = n.clone();
         // Coefficient of 'a'.
         long[] oldX = ONE_MAG;
         boolean oldXNegative = false;
-
         long[] x = ZERO_MAG;
         boolean xNegative = false;
 
@@ -5889,7 +5848,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 nextXNegative = oldXNegative;
             } else {
                 int cmp = compareArray(oldX, qx);
-
                 if (cmp >= 0) {
                     nextX = subtractMagnitudes(oldX, qx);
                     nextXNegative = false;
@@ -5897,7 +5855,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                     nextX = subtractMagnitudes(qx, oldX);
                     nextXNegative = true;
                 }
-
                 if (isZeroArray(nextX))
                     nextXNegative = false;
             }
@@ -5907,11 +5864,11 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             xNegative = nextXNegative;
         }
         if (!isOneArray(oldR))
-            return new GcdInverseMag(oldR, null);
+            return new GcdInverseMagnitude(oldR, null);
         long[] inverse = modMagnitudes(oldX, n);
         if (oldXNegative && !isZeroArray(inverse))
             inverse = subtractMagnitudes(n, inverse);
-        return new GcdInverseMag(oldR, inverse);
+        return new GcdInverseMagnitude(oldR, inverse);
     }
     private static long[] runThirtyTwoCurves(FactorJob job, ECMPlan plan) {
         ECMModulusContext context = job.context;
@@ -5925,7 +5882,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             ecmCurveCreation(n, context, works, stats);
             ecmStage1(job, works, plan, stats);
             ecmStage2(job, reducer, plan, works, stats);
-        } catch(FactorFoundException e){return e.factor;}
+        } catch(FactorFoundException e) {return e.factor;}
         System.out.println("32 curves tried with bounds " + plan.B1 + " and " + plan.B2 + "; "
                 + stats.usableCurves + " being useful");
         System.out.println("Time for creating all the curves: " + formatSeconds(stats.curveCreateNanos));
@@ -5950,8 +5907,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         ECM_RUNTIME.observe(n, plan, completedPlanNanos);
         return ONE_MAG;
     }
-    private static void ecmCurveCreation(long[] n, ECMModulusContext context,
-                                         ECMCurveWork[] works, ECMStats stats){
+    private static void ecmCurveCreation(long[] n, ECMModulusContext context, ECMCurveWork[] works,
+                                         ECMStats stats) {
         long t0 = TMX.getCurrentThreadCpuTime();
         int curveCount = 0;
         while (curveCount < works.length) {
@@ -5967,7 +5924,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             if (negative && !isZeroArray(numerator))
                 numerator = subtractMagnitudes(n, numerator);
             long[] denominator = multiplyMod(cubeMagnitude(u), shiftLeftBits(v, 2), n);
-            GcdInverseMag eg = gcdInverseMagnitudes(denominator, n);
+            GcdInverseMagnitude eg = gcdInverseMagnitudes(denominator, n);
             if (isNontrivialFactor(eg.gcd, n)) {
                 stats.curveCreateNanos = TMX.getCurrentThreadCpuTime() - t0;
                 stats.found(eg.gcd, "Curve construction denominator GCD", curveCount + 1,
@@ -5987,7 +5944,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         stats.curveCreateNanos = TMX.getCurrentThreadCpuTime() - t0;
     }
-    private static void ecmStage1(FactorJob job, ECMCurveWork[] works, ECMPlan plan, ECMStats stats){
+    private static void ecmStage1(FactorJob job, ECMCurveWork[] works, ECMPlan plan, ECMStats stats) {
         long t0;
         long t1 = TMX.getCurrentThreadCpuTime();
         stage2 = false;
@@ -6028,36 +5985,36 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                         long temporary = d;
                         d = e;
                         e = temporary;
-                        operations.write(PracChain.SWAP);
+                        operations.write(PracChain.PRAC_SWAP);
                     }
                     // Apply the first qualifying PRAC condition.
                     if (d - e <= e / 4L && (d + e) % 3L == 0L) {
-                        operations.write(PracChain.CASE_1);
+                        operations.write(PracChain.PRAC_CASE_1);
                         d = (2L * d - e) / 3L;
                         e = (e - d) / 2L;
                     } else if (d - e <= e / 4L && (d - e) % 6L == 0L) {
-                        operations.write(PracChain.CASE_2);
+                        operations.write(PracChain.PRAC_CASE_2);
                         d = (d - e) / 2L;
                     } else if ((d + 3L) / 4L <= e) {
-                        operations.write(PracChain.CASE_3);
+                        operations.write(PracChain.PRAC_CASE_3);
                         d -= e;
                     } else if ((d + e) % 2L == 0L) {
-                        operations.write(PracChain.CASE_4);
+                        operations.write(PracChain.PRAC_CASE_4);
                         d = (d - e) / 2L;
                     } else if ((d & 1L) == 0L) {
-                        operations.write(PracChain.CASE_5);
+                        operations.write(PracChain.PRAC_CASE_5);
                         d /= 2L;
                     } else if (d % 3L == 0L) {
-                        operations.write(PracChain.CASE_6);
+                        operations.write(PracChain.PRAC_CASE_6);
                         d = d / 3L - e;
                     } else if ((d + e) % 3L == 0L) {
-                        operations.write(PracChain.CASE_7);
+                        operations.write(PracChain.PRAC_CASE_7);
                         d = (d - 2L * e) / 3L;
                     } else if ((d - e) % 3L == 0L) {
-                        operations.write(PracChain.CASE_8);
+                        operations.write(PracChain.PRAC_CASE_8);
                         d = (d - e) / 3L;
                     } else {
-                        operations.write(PracChain.CASE_9);
+                        operations.write(PracChain.PRAC_CASE_9);
                         e /= 2L;
                     }
                     if (d <= 0L || e <= 0L)
@@ -6083,7 +6040,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             long[] g = gcdMagnitudes(state.point.Z, job.n);
             if (isNontrivialFactor(g, job.n)) {
                 stats.stage1Nanos = TMX.getCurrentThreadCpuTime() - t1;
-                stats.found(g, "Stage 1 final GCD", job.nextECMCurve + k + 1, -1, -1);
+                stats.found(g, "Stage 1 GCD", job.nextECMCurve + k + 1, -1, -1);
                 throw new FactorFoundException(g);
             }
             if (equalsArray(g, job.n)) state.usable = false;
@@ -6109,8 +6066,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         stats.stage1ApplyNanos = TMX.getCurrentThreadCpuTime() - t0;
     }
-    private static void ecmStage2(FactorJob job, MontgomeryReducer reducer,
-                                  ECMPlan plan, ECMCurveWork[] works, ECMStats stats){
+    private static void ecmStage2(FactorJob job, MontgomeryReducer reducer, ECMPlan plan, ECMCurveWork[] works,
+                                  ECMStats stats) {
         long t2 = TMX.getCurrentThreadCpuTime();
         stage2 = true;
         long lower = plan.B1 + 1L;
@@ -6121,8 +6078,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long[] right = new long[reducer.k];
         long[] out = new long[reducer.k];
         while (blockLower < upperExclusive) {
-            long blockUpper = upperExclusive - blockLower <= 1_048_576L
-                    ? upperExclusive : blockLower + 1_048_576L;
+            long blockUpper = upperExclusive - blockLower <= 1_048_576L ? upperExclusive
+                    : blockLower + 1_048_576L;
             long[] primes = sievePrimeBlock(blockLower, blockUpper, SMALL_PRIMES);
             if (primes.length == 0) {
                 blockLower = blockUpper;
@@ -6136,8 +6093,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                  * across all prime blocks.
                  */
                 if (stage2States[k] == null)
-                    stage2States[k] = new Stage2State(work.curve, work.point, primes[0],
-                            stats);
+                    stage2States[k] = new Stage2State(work.curve, work.point, primes[0], stats);
                 Stage2State s2 = stage2States[k];
                 stats.stage2BlockCount++;
                 s2.blockStartPrevious = s2.previous;
@@ -6154,8 +6110,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 /*
                  * Do not overwrite blockProduct with the normal residue.
                  */
-                long[] g = gcdMagnitudes(s2.curve.reducer.reduce(s2.blockProduct),
-                        s2.curve.n);
+                long[] g = gcdMagnitudes(s2.curve.reducer.reduce(s2.blockProduct), s2.curve.n);
                 stats.stage2GcdTime += TMX.getCurrentThreadCpuTime() - t0;
                 if (isNontrivialFactor(g, s2.curve.n)) {
                     s2.clearStage2Block();
@@ -6207,17 +6162,19 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         stats.stage2Nanos = TMX.getCurrentThreadCpuTime() - t2;
     }
-    private static void processStage2Terms(Stage2State s2, long[] primes, ECMStats stats,
-                                           long[] left, long[] right,
-            long[] out) {
+    private static void processStage2Terms(Stage2State s2, long[] primes, ECMStats stats, long[] left,
+            long[] right, long[] out) {
         stats.stage2TermCount += primes.length;
         for (long prime : primes) {
             long[] term = s2.stage2Term(prime, stats, left, right, out);
-            if (term == null) continue;
+            if (term == null)
+                continue;
             s2.curve.reducer.multiplyInto(s2.blockProduct, term, s2.blockProduct);
             s2.blockTermCount++;
             stats.blockTermCount++;
-            stats.stage2MontMultiplications += 3;
+            // Only the block-product multiply.
+            // stage2Term() already counted its 2 multiplies.
+            stats.stage2MontMultiplications++;
         }
     }
 
@@ -6262,17 +6219,17 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         int[] score = new int[0];
         QSFactorBase(int[] primes, int[] logPrimes, int[] root1, int[] root2, long[] reciprocals, int size) {
             this.size = size;
-            this.primes = Arrays.copyOf(primes, size);
-            this.reciprocals = Arrays.copyOf(reciprocals, size);
-            this.logPrimes = Arrays.copyOf(logPrimes, size);
-            this.root1 = Arrays.copyOf(root1, size);
-            this.root2 = Arrays.copyOf(root2, size);
+            this.primes = primes.length == size ? primes : Arrays.copyOf(primes, size);
+            this.reciprocals = reciprocals.length == size ? reciprocals : Arrays.copyOf(reciprocals, size);
+            this.logPrimes = logPrimes.length == size ? logPrimes : Arrays.copyOf(logPrimes, size);
+            this.root1 = root1.length == size ? root1 : Arrays.copyOf(root1, size);
+            this.root2 = root2.length == size ? root2 : Arrays.copyOf(root2, size);
             columnCount = size + 1; // negative column + real factor-base primes
             globalPMax = primes[size - 1];
             logB = Math.log(globalPMax);
             largePrimeBound = Math.multiplyExact(100L, globalPMax);
             logLP = Math.log(largePrimeBound);
-            filterAllowance = (StrictMath.log(largePrimeBound)) * 27.0/32.0;
+            filterAllowance = StrictMath.log(largePrimeBound) * 27.0/32.0;
             long lpLow = largePrimeBound*largePrimeBound;
             long lpHigh = Math.unsignedMultiplyHigh(largePrimeBound, largePrimeBound);
             largePrimeBoundSquared = lpHigh > 0 ?
@@ -6280,7 +6237,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             pMaxSquared = new long[]{(long) globalPMax * globalPMax};
             int aFactorCount = 1;
             int bPolys = 1;
-            while (bPolys < size/ bPolys) {
+            while (bPolys < size / bPolys) {
                 aFactorCount++;
                 bPolys <<= 1;
             }
@@ -6303,7 +6260,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 hitHead = new int[interval];
                 candidateIndices = new int[interval];
             }
-            if (hitIndices.length < largeHitCapacity){
+            if (hitIndices.length < largeHitCapacity) {
                 hitIndices = new int[largeHitCapacity];
                 hitPrimes = new int[largeHitCapacity];
             }
@@ -6416,11 +6373,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             index[factorBase.primes[i]] = i;
         return index;
     }
-    private static int factorBaseIndexOf(int[] fbIndex, long L) {
-        if (Long.compareUnsigned(L, fbIndex.length) >= 0)
-            return -1;
-        return fbIndex[(int) L];
-    }
     private static int legendreSymbol(long a, int p, long reciprocal) {
         a %= p;
         if (a < 0) a += p;
@@ -6521,7 +6473,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long[] vertex1;
         long[] vertex2;
         int size;
-
         QSPartialRelationPool(int initialCapacity) {
             int cap = Math.max(1, initialCapacity);
             xValues = new long[cap][][];
@@ -6591,54 +6542,38 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     }
     private static final class PartialGraph {
         private static final int NONE = -1;
-
         final HashMap<Long, Integer> vertexIds = new HashMap<>();
-
         int[] treeParent = new int[1024];
         int[] treeEdge   = new int[1024];
-
         int[] ufParent = new int[1024];
         int[] ufSize   = new int[1024];
-
         int[] mark = new int[1024];
         int markStamp = 0;
-
         /*
          * Ephemeral path buffers. Valid until the next path search.
          */
         int[] path = new int[64];
         int[] reverse = new int[64];
-
         int vertexCount;
-
         PartialGraph() {
             Arrays.fill(treeParent, NONE);
             Arrays.fill(treeEdge, NONE);
         }
-
         private int vertexId(long vertex) {
             Integer existing = vertexIds.get(vertex);
-            if (existing != null)
-                return existing;
-
+            if (existing != null) return existing;
             int id = vertexCount++;
             ensureVertexCapacity(vertexCount);
-
             vertexIds.put(vertex, id);
-
             treeParent[id] = NONE;
             treeEdge[id] = NONE;
-
             ufParent[id] = id;
             ufSize[id] = 1;
-
             return id;
         }
-
         private int ufFind(int x) {
             int root = x;
-            while (ufParent[root] != root)
-                root = ufParent[root];
+            while (ufParent[root] != root) root = ufParent[root];
             while (ufParent[x] != x) {
                 int next = ufParent[x];
                 ufParent[x] = root;
@@ -6679,7 +6614,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 reroot(va);
                 treeParent[va] = vb;
                 treeEdge[va] = partialId;
-
                 ufParent[rootA] = rootB;
                 ufSize[rootB] += ufSize[rootA];
             } else {
@@ -6742,7 +6676,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 path[length++] = reverse[--reverseLength];
             return length;
         }
-
         private int nextStamp() {
             if (++markStamp == 0) {
                 Arrays.fill(mark, 0);
@@ -6752,20 +6685,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         private void ensureVertexCapacity(int needed) {
             if (needed <= treeParent.length) return;
-
             int oldLength = treeParent.length;
             int n = Math.max(needed, oldLength << 1);
-
             treeParent = Arrays.copyOf(treeParent, n);
             treeEdge = Arrays.copyOf(treeEdge, n);
             ufParent = Arrays.copyOf(ufParent, n);
             ufSize = Arrays.copyOf(ufSize, n);
             mark = Arrays.copyOf(mark, n);
-
             Arrays.fill(treeParent, oldLength, n, NONE);
             Arrays.fill(treeEdge, oldLength, n, NONE);
         }
-
         private void ensurePathCapacity(int needed) {
             if (needed > path.length)
                 path = Arrays.copyOf(path, Math.max(needed, path.length << 1));
@@ -6790,8 +6719,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             oldS = s;
             s = tmpS;
         }
-        if (oldR != 1)
-            throw new ArithmeticException("No inverse mod " + p);
+        if (oldR != 1) throw new ArithmeticException("No inverse mod " + p);
         return Math.floorMod(oldS, p);
     }
     private static int maxFactorBaseIndexAtMost(QSFactorBase factorBase, long[] maxNextPrimeMag) {
@@ -6809,7 +6737,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         static ACandidateResult ok(ACoefficient c) {return new ACandidateResult(c, null);}
         static ACandidateResult fail(String reason) {return new ACandidateResult(null, reason);}
     }
-    private static ACoefficient chooseAByScoring(long[] sqrt2N, QSFactorBase factorBase, int aFactorCount, SplittableRandom rng) {
+    private static ACoefficient chooseAByScoring(long[] sqrt2N, QSFactorBase factorBase, SplittableRandom rng) {
         ACoefficient best = null;
         double bestYield = -1.0;
         ACoefficient fallback = null;
@@ -6823,18 +6751,17 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         int halfTooSmall = 0;
         int halfTooLarge = 0;
         String firstGenFailure = null;
-        long targetHalf = 16L*factorBase.size/(1L << aFactorCount);
-        targetHalf = Math.max(targetHalf, 1);
+        long targetHalf = 16L*factorBase.size/(1L << factorBase.aPrimeCount);
         long lower = Math.max(1L, targetHalf / 4L);
         long upper = Math.multiplyExact(targetHalf, 4L);
-        double logTargetA = logMag(sqrt2N) - StrictMath.log(targetHalf);
+        double logTargetA = lnMagnitude(sqrt2N) - StrictMath.log(targetHalf);
         if (!Double.isFinite(logTargetA) || logTargetA <= 0.0)
             throw new IllegalStateException("Bad SIQS log target A");
         for (int trial = 0; trial < attempts; trial++) {
-            ACandidateResult result = randomSquarefreeAResult(sqrt2N, factorBase, aFactorCount, logTargetA, rng);
+            ACandidateResult result = randomSquarefreeAResult(sqrt2N, factorBase, logTargetA, rng);
             if (result.coefficient == null) {
                 genFail++;
-                if (firstGenFailure == null)
+                if (trial == 0)
                     firstGenFailure = result.failure;
                 continue;
             }
@@ -6861,7 +6788,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 fallback = candidate;
                 fallbackHalf = half;
             }
-            double yield = estimatedRelationsPerPolynomial(candidate.A, half, factorBase.globalPMax);
+            double yield = 2.0 * half * roughDickman((lnMagnitude(candidate.A) + 2.0 * StrictMath.log(half))
+                            / StrictMath.log(factorBase.globalPMax));
             if (!Double.isFinite(yield) || yield <= 0.0) {
                 badYield++;
                 continue;
@@ -6880,34 +6808,34 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
          */
         if (fallback != null) {
             System.out.println("SIQS A warning: using fallback A because strict scoring rejected all candidates."
-                    + " aFactorCount=" + aFactorCount + " attempts=" + attempts + " genFail=" + genFail +
+                    + " aFactorCount=" + factorBase.aPrimeCount + " attempts=" + attempts + " genFail=" + genFail +
                     " zeroHalf=" + zeroHalf + " halfOverInt" + halfOverInt + " halfTooLarge" + halfTooLarge
                     + "halfTooSmall" + halfTooSmall + " badYield=" + badYield + " accepted=" + accepted +
                     " fallbackHalf=" + Long.toUnsignedString(fallbackHalf));
             return fallback;
         }
-        throw new IllegalStateException("Could not find usable SIQS A: "
-                + "aFactorCount=" + aFactorCount + " attempts=" + attempts +
-                " genFail=" + genFail + " zeroHalf=" + zeroHalf + " halfOverInt=" + halfOverInt
-                + " halfTooLarge=" + halfTooLarge + "halfTooSmall=" + halfTooSmall + " badYield=" + badYield
-                + " accepted=" + accepted + " firstGenFailure=[" + firstGenFailure + "]");
+        throw new IllegalStateException("Could not find usable SIQS A: aFactorCount=" +
+                factorBase.aPrimeCount + " attempts=" + attempts + " genFail=" + genFail + " zeroHalf="
+                + zeroHalf + " halfOverInt=" + halfOverInt + " halfTooLarge=" + halfTooLarge + "halfTooSmall="
+                + halfTooSmall + " badYield=" + badYield + " accepted=" + accepted + " firstGenFailure=["
+                + firstGenFailure + "]");
     }
     private static ACandidateResult randomSquarefreeAResult(long[] sqrt2N, QSFactorBase factorBase,
-            int aFactorCount, double logTargetA, SplittableRandom rng) {
-        int[] chosen = new int[aFactorCount];
+                                                            double logTargetA, SplittableRandom rng) {
+        int[] chosen = new int[factorBase.aPrimeCount];
         int chosenCount = 0;
-        long[] A = new long[aFactorCount+1];
+        long[] A = new long[factorBase.aPrimeCount+1];
         A[0] = 1L;
         // floor(sqrt2N / A), initially A = 1.
-        long[] halfMag = sqrt2N;
+        long[] half = sqrt2N;
         double logA = 0.0;
-        while (chosenCount < aFactorCount) {
-            int remaining = aFactorCount - chosenCount;
+        while (chosenCount < factorBase.aPrimeCount) {
+            int remaining = factorBase.aPrimeCount - chosenCount;
             double remainingLogBudget = logTargetA - logA;
             if (remainingLogBudget <= 0.0) return ACandidateResult.fail("A already above target");
             double desiredLogP = remainingLogBudget / remaining;
-            // halfMag is already floor(sqrt2N / A).
-            int maxIdx = maxFactorBaseIndexAtMost(factorBase, halfMag);
+            // half is already floor(sqrt2N / A).
+            int maxIdx = maxFactorBaseIndexAtMost(factorBase, half);
             if (maxIdx < 1) return ACandidateResult.fail("maxIdx < 1");
             int idx = chooseUnusedPrimeNearLogBounded(factorBase, chosen, chosenCount, desiredLogP, maxIdx, rng);
             if (idx < 0) return ACandidateResult.fail("no unused prime");
@@ -6916,13 +6844,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             // Exact identity:
             // floor(sqrt2N / (oldA * p))
             // = floor(floor(sqrt2N / oldA) / p)
-            halfMag = divideByLong(halfMag, p).quotient;
+            half = divideByLong(half, p).quotient;
             boolean secondRoot = rng.nextBoolean();
             chosen[chosenCount++] = (idx << 1) | (secondRoot ? 1 : 0);
             logA += factorBase.logPrimes[idx] / LOG_SCALE;
         }
-        if(halfMag.length > 1) return ACandidateResult.fail("half too large");
-        return ACandidateResult.ok(new ACoefficient(trimLeadingZeros(A), chosen, halfMag[0]));
+        if(half.length > 1) return ACandidateResult.fail("half too large");
+        return ACandidateResult.ok(new ACoefficient(trimLeadingZeros(A), chosen, half[0]));
     }
     private static int chooseUnusedPrimeNearLogBounded(QSFactorBase factorBase, int[] chosen, int chosenCount,
             double desiredLogP, int maxIdx, SplittableRandom rng) {
@@ -6973,15 +6901,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             // Crude but useful ranking approximation.
             default -> StrictMath.exp(-u * (StrictMath.log(u) + Math.log(StrictMath.log(u)) - 1.0));
         };
-    }
-    private static double estimatedRelationsPerPolynomial(long[] A, long half, int pMax) {
-        if (half == 0) return 0.0;
-        double logA = logMag(A);
-        double logM = StrictMath.log((double) half);
-        double logQEdge = logA + 2.0 * logM;
-        double u = logQEdge / StrictMath.log(pMax);
-        double smoothProb = roughDickman(u);
-        return 2.0 * half * smoothProb;
     }
     private static final class AStats {
         final int aFactorCount;
@@ -7067,13 +6986,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long factorTestsTotal;
         long factorTestsMin = Long.MAX_VALUE;
         long factorTestsMax;
-        void observeFactorTests(long tested){
+        void observeFactorTests(long tested) {
             smallDivisions++;
             factorTestsTotal += tested;
             factorTestsMin = Math.min(factorTestsMin, tested);
             factorTestsMax = Math.max(factorTestsMax, tested);
         }
-        long mergedRows(){return singlePartialMerged+doublePartialMerged+mixedPartialMerged;}
+        long mergedRows() {return singlePartialMerged+doublePartialMerged+mixedPartialMerged;}
         long usefulRows() {return full + mergedRows();}
         private RelationYieldEstimate adaptiveEstimate() {
             if (polys == 0L) return initialEstimate;
@@ -7101,7 +7020,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             long sum = collectionNs();
             return sum == 0L ? Double.NaN : sum / 1e9 / polys;
         }
-        long collectionNs(){return precomputation+polyNs+sieveNs+attemptNs;}
+        long collectionNs() {return precomputation+polyNs+sieveNs+attemptNs;}
         double empiricalSecondsRemaining(long requiredRelations, long currentRelations) {
             long remaining = Math.max(0L, requiredRelations - currentRelations);
             RelationYieldEstimate adaptive = adaptiveEstimate();
@@ -7123,7 +7042,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
              * Prefer measured polynomial time once available. Before the first
              * polynomial, the total-time estimate cannot be formed from AStats.
              */
-            double estimatedPolysRemaining = estimatedRowsPerPoly > 0.0 ? remainingRelations / estimatedRowsPerPoly : Double.POSITIVE_INFINITY;
+            double estimatedPolysRemaining = estimatedRowsPerPoly > 0.0 ?
+                    remainingRelations / estimatedRowsPerPoly : Double.POSITIVE_INFINITY;
             double estimatedCollectionSeconds = empiricalSecondsRemaining(requiredRelations, currentRelations);
             System.out.println("  A-factor count: " + aFactorCount);
             System.out.println("  B-polynomials per A: " + bCount);
@@ -7177,7 +7097,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             System.out.println("  Current relations: " + currentRelations + " / " + requiredRelations);
             System.out.println("  Remaining relations: " + remainingRelations);
             System.out.println("  Estimated polynomials remaining: " + estimatedPolysRemaining);
-            System.out.println("  Estimated collection time remaining: " + estimatedCollectionSeconds + " seconds");
+            System.out.println("  Estimated collection time remaining: " + estimatedCollectionSeconds +
+                    " seconds");
             System.out.println();
         }
     }
@@ -7191,23 +7112,24 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                                             QSFullRelationPool relations, QSPartialRelationPool partials,
                                             PartialGraph partialGraph, SplittableRandom rng) {
         long precomputation = TMX.getCurrentThreadCpuTime();
-        ACoefficient AR = chooseAByScoring(sqrt2N, factorBase, factorBase.aPrimeCount, rng);
+        ACoefficient AR = chooseAByScoring(sqrt2N, factorBase, rng);
         long[] A = AR.A;
         Arrays.sort(AR.factors);
         int half = (int)AR.half;
         int startT = -half;
         int interval = 2 * half;
-        double logA = logMag(A);
+        double logA = lnMagnitude(A);
         double logQ = logA + 2.0 * Math.log(half);
         double fullProbability = roughDickman(logQ / factorBase.logB);
-        double rawAcceptedPartialPool = interval * Math.max(0.0, roughDickman(logQ / factorBase.logLP) - fullProbability);
+        double rawAcceptedPartialPool = interval *
+                Math.max(0.0, roughDickman(logQ / factorBase.logLP) - fullProbability);
         double fullHits = fullCalibration * interval * fullProbability;
         double calibratedPartialPool = partialCalibration * rawAcceptedPartialPool;
         /*
          * Wider LP ranges make accepted two-prime residuals more likely.
          * Scale the span against the typical logarithmic Q magnitude.
          */
-        double normalizedSpan = (factorBase.logLP - factorBase.logB)/ Math.max(logQ - factorBase.logB, 1e-12);
+        double normalizedSpan = (factorBase.logLP - factorBase.logB) / Math.max(logQ - factorBase.logB, 1e-12);
         normalizedSpan = Math.clamp(1.0 - normalizedSpan, 0.10, 0.90);
         double singlePartialHits = calibratedPartialPool * normalizedSpan;
         double doublePartialHits = calibratedPartialPool * (1.0 - normalizedSpan);
@@ -7251,18 +7173,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         shiftLeftBitsInto(B, 1, twoB);
         long[] b2 = squareMagnitude(B);
         long[] deltaB;
-        long[] cMag;
+        long[] cMagnitude;
         boolean cNegative;
         if (compareArray(b2, N) >= 0) {
             subtractMagnitudeInPlace(b2, N);
-            cMag = divideMagnitudesExact(b2, A);
             cNegative = false;
         } else {
             b2 = subtractMagnitudes(N, b2);
-            cMag = divideMagnitudesExact(b2, A);
             cNegative = true;
         }
-        cMag = Arrays.copyOf(cMag, cMag.length+1);
+        cMagnitude = divideMagnitudesExact(b2, A);
         plan.polyNs += TMX.getCurrentThreadCpuTime() - polynomialTime;
         //log sieve
         long logSieve = TMX.getCurrentThreadCpuTime();
@@ -7282,11 +7202,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         long relationTime = TMX.getCurrentThreadCpuTime();
         int candidateCount = scanCandidates(interval, scoreThreshold, hitCount, factorBase, plan);
         plan.scanTime += TMX.getCurrentThreadCpuTime() - relationTime;
-        collectQSRelations(N, A, B, BR, twoB, cMag, cNegative, candidateCount, startT, factorBase, fbIndex,
+        collectQSRelations(N, A, B, BR, twoB, cMagnitude, cNegative, candidateCount, startT, factorBase, fbIndex,
                 largeStart, relations, partials, partialGraph, plan);
         plan.attemptNs += TMX.getCurrentThreadCpuTime() - relationTime;
         plan.polys++;
         plan.sieveNs += totalSieveTime;
+        cMagnitude = Arrays.copyOf(cMagnitude, cMagnitude.length+1);
         for (int mask = 1; mask < 1 << (factorBase.aPrimeCount-1); mask++) {
             long[] oldB = B.clone();
             int bit = Integer.numberOfTrailingZeros(mask);
@@ -7331,18 +7252,18 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             }
             if (!isZeroArray(deltaB)) {
                 long[] sumB = addMagnitudes(B, oldB);
-                long[] deltaC = multiplyMagnitudes(deltaB, sumB);
-                deltaC = divideMagnitudesExact(deltaC, A);
+                long[] deltaC = divideMagnitudesExact(multiplyMagnitudes(deltaB, sumB), A);
                 if (cNegative == deltaNegative)
-                    addMagnitudeInPlace(cMag, deltaC, 0);
+                    addMagnitudeInPlace(cMagnitude, deltaC, 0);
                 else {
-                    int cCmp = compareArray(cMag, deltaC);
-                    if (cCmp > 0) subtractMagnitudeInPlace(cMag, deltaC);
+                    int cCmp = compareArray(cMagnitude, deltaC);
+                    if (cCmp > 0) subtractMagnitudeInPlace(cMagnitude, deltaC);
                     else if (cCmp < 0) {
-                        cMag = subtractMagnitudes(deltaC, cMag);
+                        subtractMagnitudeInPlace(deltaC, cMagnitude);
+                        cMagnitude = deltaC;
                         cNegative = deltaNegative;
                     } else {
-                        cMag = ZERO_MAG;
+                        cMagnitude = ZERO_MAG;
                         cNegative = false;
                     }
                 }
@@ -7351,7 +7272,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             plan.polyNs += TMX.getCurrentThreadCpuTime() - polynomialTime;
             //log sieve
             logSieve = TMX.getCurrentThreadCpuTime();
-            Arrays.fill(factorBase.score, 0, interval, 0);
+            Arrays.fill(factorBase.score, 0);
             smallSieve = TMX.getCurrentThreadCpuTime();
             // ---------------- SMALL SIEVE ---------------- //
             markSmallRoots(largeStart, factorBase, interval);
@@ -7366,7 +7287,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             relationTime = TMX.getCurrentThreadCpuTime();
             candidateCount = scanCandidates(interval, scoreThreshold, hitCount, factorBase, plan);
             plan.scanTime += TMX.getCurrentThreadCpuTime() - relationTime;
-            collectQSRelations(N, A, B, BR, twoB, cMag, cNegative, candidateCount, startT, factorBase, fbIndex,
+            collectQSRelations(N, A, B, BR, twoB, cMagnitude, cNegative, candidateCount, startT, factorBase, fbIndex,
                     largeStart, relations, partials, partialGraph, plan);
             plan.attemptNs += TMX.getCurrentThreadCpuTime() - relationTime;
             plan.polys++;
@@ -7376,7 +7297,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 "%50s %10d %12d %12d %10d %8d "
                         + "%20.5f %14.5f %11.5f %11.5f %16.5f %16.5f %16.5f %16.5f %14.5f %13.5f %14.5f " +
                         "%14.5f %12.5f %12.5f %15d %n",
-                new LargeInteger(A, false),
+                new LargeInteger(A, false, true),
                 interval,
                 plan.candidates,
                 plan.full,
@@ -7412,7 +7333,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     private record BResult(long[] B, int[] inactiveLarge, int inactiveLargeCount) {}
     private static BResult computeB(ACoefficient AR, QSFactorBase factorBase, int largeStart) {
         long[] A = AR.A;
-        long[] B = new long[A.length + 1];
+        int aLen = effectiveLength(A);
+        long[] B = new long[aLen + 1];
         int inactiveLargeCount = 0;
         int[] inactiveLarge = new int[AR.factors.length+1];
         int lo = 1;
@@ -7423,7 +7345,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             for (int j = lo; j < idx; j++) {
                 int p = factorBase.primes[j];
                 factorBase.invAModP[j] =
-                        inverseModSmall(modSmallInt(A, A.length, p, factorBase.reciprocals[j]), p);
+                        inverseModSmall(modSmallInt(A, aLen, p, factorBase.reciprocals[j]), p);
             }
             // idx is inactive because primes[idx] divides A.
             factorBase.inactive[i + 1] = idx;
@@ -7435,10 +7357,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             int root = (packed & 1) == 0 ? factorBase.root1[idx] : factorBase.root2[idx];
             long[] Ai = A.clone();
             divideMagnitudeExactInPlace(Ai, p);
-            long coefficient =
-                    (long) inverseModSmall(modSmallInt(Ai, A.length, p, factorBase.reciprocals[idx]), p)
-                            * root % p;
-            multiplySmallInto(Ai, coefficient, Ai);
+            multiplySmallInto(Ai,(long) inverseModSmall(
+                    modSmallInt(Ai, aLen, p, factorBase.reciprocals[idx]), p) * root % p, Ai);
             long[] twoAi = multiplySmall(Ai, 2);
             if (compareArray(twoAi, A) >= 0)
                 subtractMagnitudeInPlace(twoAi, A);
@@ -7451,7 +7371,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         // Active tail after the final A-factor.
         for (int j = lo; j < factorBase.primes.length; j++) {
             int p = factorBase.primes[j];
-            factorBase.invAModP[j] = inverseModSmall(modSmallInt(A, A.length, p, factorBase.reciprocals[j]), p);
+            factorBase.invAModP[j] = inverseModSmall(modSmallInt(A, aLen, p, factorBase.reciprocals[j]), p);
         }
         return new BResult(trimLeadingZeros(B), inactiveLarge, inactiveLargeCount);
     }
@@ -7533,7 +7453,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             fb.pos2[j] = x2;
         }
     }
-    private static void updateRootsAddWrapped(QSFactorBase fb, int[] deltaRow){
+    private static void updateRootsAddWrapped(QSFactorBase fb, int[] deltaRow) {
         int lo = 0;
         for (int hi : fb.inactive) {
             for (int j = lo; j < hi; j++) {
@@ -7564,7 +7484,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             fb.pos2[j] = x2;
         }
     }
-    private static void updateRootsSubtract(QSFactorBase fb, int[] deltaRow){
+    private static void updateRootsSubtract(QSFactorBase fb, int[] deltaRow) {
         int lo = 0;
         for (int hi : fb.inactive) {
             for (int j = lo; j < hi; j++) {
@@ -7590,7 +7510,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             fb.pos2[j] = x2;
         }
     }
-    private static void updateRootsSubtractWrapped(QSFactorBase factorBase, int[] deltaRow){
+    private static void updateRootsSubtractWrapped(QSFactorBase factorBase, int[] deltaRow) {
         int lo = 0;
         for (int hi : factorBase.inactive) {
             for (int j = lo; j < hi; j++) {
@@ -7618,16 +7538,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             factorBase.pos2[j] = x2;
         }
     }
-    private static void markSmallRoots(int largeStart, QSFactorBase factorBase, int interval){
+    private static void markSmallRoots(int largeStart, QSFactorBase factorBase, int interval) {
         int lo = 0;
         for (int hi : factorBase.inactive) {
             if (hi >= largeStart) break;
             for (int j = lo; j < hi; j++) {
-                int p = factorBase.primes[j];
-                int x1 = factorBase.pos1[j];
-                int x2 = factorBase.pos2[j];
-                if (x1 >= interval && x2 >= interval) continue;
-                int logP = factorBase.logPrimes[j];
+                int p = factorBase.primes[j], x1 = factorBase.pos1[j], x2 = factorBase.pos2[j],
+                        logP = factorBase.logPrimes[j];
                 while (x1 < interval && x2 < interval) {
                     factorBase.score[x1] += logP;
                     factorBase.score[x2] += logP;
@@ -7640,11 +7557,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             lo = hi + 1;
         }
         for (int j = lo; j < largeStart; j++) {
-            int p = factorBase.primes[j];
-            int x1 = factorBase.pos1[j];
-            int x2 = factorBase.pos2[j];
-            if (x1 >= interval && x2 >= interval) continue;
-            int logP = factorBase.logPrimes[j];
+            int p = factorBase.primes[j], x1 = factorBase.pos1[j], x2 = factorBase.pos2[j],
+                    logP = factorBase.logPrimes[j];
             while (x1 < interval && x2 < interval) {
                 factorBase.score[x1] += logP;
                 factorBase.score[x2] += logP;
@@ -7655,47 +7569,45 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             if (x2 < interval) factorBase.score[x2] += logP;
         }
     }
-    private static int markLargeRoots(BResult BR, int largeStart,
-                                      QSFactorBase factorBase, int interval) {
+    private static int markLargeRoots(BResult BR, int largeStart, QSFactorBase factorBase, int interval) {
         int hitCount = 0, lo = largeStart;
-        for (int k = 0; k < BR.inactiveLargeCount; k++) {
-            int hi = BR.inactiveLarge[k];
+        int[] inactiveLarge = BR.inactiveLarge;
+        int[] pos1 = factorBase.pos1, pos2 = factorBase.pos2, logPrimes = factorBase.logPrimes,
+                score = factorBase.score, hitIndices = factorBase.hitIndices, hitPrimes = factorBase.hitPrimes;
+        for (int k = 0, inactiveLargeCount = BR.inactiveLargeCount; k < inactiveLargeCount; k++) {
+            int hi = inactiveLarge[k];
             for (int j = lo; j < hi; j++) {
-                int x1 = factorBase.pos1[j], x2 = factorBase.pos2[j];
-                if (x1 >= interval && x2 >= interval) continue;
-                int logP = factorBase.logPrimes[j];
+                int x1 = pos1[j], x2 = pos2[j], logP = logPrimes[j];
                 if (x1 < interval) {
-                    factorBase.score[x1] += logP;
-                    factorBase.hitIndices[hitCount] = x1;
-                    factorBase.hitPrimes[hitCount++] = j;
+                    score[x1] += logP;
+                    hitIndices[hitCount] = x1;
+                    hitPrimes[hitCount++] = j;
                 }
                 if (x2 < interval) {
-                    factorBase.score[x2] += logP;
-                    factorBase.hitIndices[hitCount] = x2;
-                    factorBase.hitPrimes[hitCount++] = j;
+                    score[x2] += logP;
+                    hitIndices[hitCount] = x2;
+                    hitPrimes[hitCount++] = j;
                 }
             }
             lo = hi + 1;
         }
-        for (int j = lo; j < factorBase.size; j++) {
-            int x1 = factorBase.pos1[j], x2 = factorBase.pos2[j];
-            if (x1 >= interval && x2 >= interval) continue;
-            int logP = factorBase.logPrimes[j];
+        for (int j = lo, fbSize = factorBase.size; j < fbSize; j++) {
+            int x1 = pos1[j], x2 = pos2[j], logP = logPrimes[j];
             if (x1 < interval) {
-                factorBase.score[x1] += logP;
-                factorBase.hitIndices[hitCount] = x1;
-                factorBase.hitPrimes[hitCount++] = j;
+                score[x1] += logP;
+                hitIndices[hitCount] = x1;
+                hitPrimes[hitCount++] = j;
             }
             if (x2 < interval) {
-                factorBase.score[x2] += logP;
-                factorBase.hitIndices[hitCount] = x2;
-                factorBase.hitPrimes[hitCount++] = j;
+                score[x2] += logP;
+                hitIndices[hitCount] = x2;
+                hitPrimes[hitCount++] = j;
             }
         }
         return hitCount;
     }
     private static int scanCandidates(int interval, int scoreThreshold, int hitCount, QSFactorBase factorBase,
-                                      AStats plan){
+                                      AStats plan) {
         long candidateScanStart = TMX.getCurrentThreadCpuTime();
         int candidateCount = 0;
         for (int idx = 0; idx < interval; idx++) {
@@ -7725,7 +7637,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     private static void performSmallDivisions(long[] remaining, int largeStart, int[] primes, long[] reciprocals,
             short[] dense, int[] used, int usedCount, int[] result) {
         int tested = 0;
-        int remLength = remaining.length;
+        int remLength = effectiveLength(remaining);
         for (int j = 0; j < largeStart; j++) {
             tested++;
             int p = primes[j];
@@ -7737,11 +7649,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 divideMagnitudeExactInPlace(remaining, p);
                 while (remLength > 1 && remaining[remLength - 1] == 0) remLength--;
             }
-            if (remLength == 1) {
-                long part = remaining[0];
-                long pp = (long) p * p;
-                if (Long.compareUnsigned(part, pp) <= 0) break;
-            }
+            if (remLength == 1 && Long.compareUnsigned(remaining[0], (long) p * p) <= 0) break;
         }
         result[0] = tested;
         result[1] = usedCount;
@@ -7762,8 +7670,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                     used[usedCount++] = column;
                 incExp(dense, column);
                 divideMagnitudeExactInPlace(remaining, p);
-                while (remLength > 1 && remaining[remLength - 1] == 0)
-                    remLength--;
+                while (remLength > 1 && remaining[remLength - 1] == 0) remLength--;
             }
             if (remLength == 1) {
                 long part = remaining[0];
@@ -7811,55 +7718,55 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             long t = startT + idx;
             boolean tNegative = t < 0;
             long absT = tNegative ? -t : t;
-            long[] atMag = multiplySmall(A, absT);
+            long[] atMagnitude = multiplySmall(A, absT);
             // q = At + 2B
-            long[] qMag = new long[Math.max(Math.max(atMag.length, twoB.length) + 3, cMag.length + 1)];
-            System.arraycopy(atMag, 0, qMag, 0, atMag.length);
+            long[] qMagnitude = new long[Math.max(Math.max(atMagnitude.length, twoB.length) + 3, cMag.length + 1)];
+            System.arraycopy(atMagnitude, 0, qMagnitude, 0, atMagnitude.length);
             boolean qNegative;
             if (!tNegative) {
-                addMagnitudeInPlace(qMag, twoB, 0);
+                addMagnitudeInPlace(qMagnitude, twoB, 0);
                 qNegative = false;
             } else {
-                if (compareArray(twoB, atMag) >= 0) {
-                    // qMag = twoB - atMag, but retain scratch capacity
-                    System.arraycopy(twoB, 0, qMag, 0, twoB.length);
-                    Arrays.fill(qMag, twoB.length, qMag.length, 0L);
-                    subtractMagnitudeInPlace(qMag, atMag);
+                if (compareArray(twoB, atMagnitude) >= 0) {
+                    // qMagnitude = twoB - atMagnitude, but retain scratch capacity
+                    System.arraycopy(twoB, 0, qMagnitude, 0, twoB.length);
+                    Arrays.fill(qMagnitude, twoB.length, qMagnitude.length, 0L);
+                    subtractMagnitudeInPlace(qMagnitude, atMagnitude);
                     qNegative = false;
                 } else {
-                    subtractMagnitudeInPlace(qMag, twoB);
+                    subtractMagnitudeInPlace(qMagnitude, twoB);
                     qNegative = true;
                 }
             }
-            multiplySmallInto(qMag, absT, qMag);
-            if (tNegative && !isZeroArray(qMag)) qNegative = !qNegative;
-            if (qNegative == cNegative) addMagnitudeInPlace(qMag, cMag, 0);
+            multiplySmallInto(qMagnitude, absT, qMagnitude);
+            if (tNegative && !isZeroArray(qMagnitude)) qNegative = !qNegative;
+            if (qNegative == cNegative) addMagnitudeInPlace(qMagnitude, cMag, 0);
             else {
-                int cmp = compareArray(qMag, cMag);
-                if (cmp >= 0) subtractMagnitudeInPlace(qMag, cMag);
+                int cmp = compareArray(qMagnitude, cMag);
+                if (cmp >= 0) subtractMagnitudeInPlace(qMagnitude, cMag);
                 else {
-                    qMag = subtractMagnitudes(cMag, qMag);
+                    qMagnitude = subtractMagnitudes(cMag, qMagnitude);
                     qNegative = cNegative;
                 }
-                if (isZeroArray(qMag)) qNegative = false;
+                if (isZeroArray(qMagnitude)) qNegative = false;
             }
-            if (factorBase.score[idx] / LOG_SCALE + factorBase.filterAllowance < logMag(qMag)) continue;
+            if (factorBase.score[idx] / LOG_SCALE + factorBase.filterAllowance < lnMagnitude(qMagnitude)) continue;
             plan.secondFilterHits++;
             long[] currentX;
-            if (!tNegative) currentX = modAdd(B, atMag, N);
-            else currentX = modSubtract(B, atMag, N);
+            if (!tNegative) currentX = modAdd(B, atMagnitude, N);
+            else currentX = modSubtract(B, atMagnitude, N);
             int usedCount = 0;
             // A contribution: column 0 is negative, factorBase[j] lives at column j + 1.
-            if (qNegative){
+            if (qNegative) {
                 factorBase.used[usedCount++] = 0;
                 incExp(factorBase.dense, 0);
             }
-            if (isZeroArray(qMag)) {
+            if (isZeroArray(qMagnitude)) {
                 clearUsed(factorBase.dense, factorBase.used, usedCount);
                 plan.observeRelationAdd(RelationAddKind.NONE);
                 continue;
             }
-            if (isOneArray(qMag)) {
+            if (isOneArray(qMagnitude)) {
                 Arrays.sort(factorBase.used, 0, usedCount);
                 int[] bIndex = Arrays.copyOf(factorBase.used, usedCount);
                 short[] bCount = new short[usedCount];
@@ -7872,19 +7779,19 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 continue;
             }
             long smallDivideTime = TMX.getCurrentThreadCpuTime();
-            performSmallDivisions(qMag, largeStart, factorBase.primes, factorBase.reciprocals,
+            performSmallDivisions(qMagnitude, largeStart, factorBase.primes, factorBase.reciprocals,
                     factorBase.dense, factorBase.used, usedCount, factorBase.smallDivResult);
             int tested = factorBase.smallDivResult[0];
             usedCount = factorBase.smallDivResult[1];
             int remLength = factorBase.smallDivResult[2];
             plan.smallDivideTime += TMX.getCurrentThreadCpuTime() - smallDivideTime;
-            performInactiveLargeDivisions(qMag, remLength, BR.inactiveLarge, BR.inactiveLargeCount, factorBase.primes,
+            performInactiveLargeDivisions(qMagnitude, remLength, BR.inactiveLarge, BR.inactiveLargeCount, factorBase.primes,
                     factorBase.reciprocals, factorBase.dense, factorBase.used, usedCount,
                     factorBase.smallDivResult);
             tested += factorBase.smallDivResult[0];
             usedCount = factorBase.smallDivResult[1];
             remLength = factorBase.smallDivResult[2];
-            performHitLargeDivisions(qMag, remLength, idx, factorBase.hitHead, factorBase.hitIndices,
+            performHitLargeDivisions(qMagnitude, remLength, idx, factorBase.hitHead, factorBase.hitIndices,
                     factorBase.hitPrimes, factorBase.primes, factorBase.reciprocals, factorBase.dense,
                     factorBase.used, usedCount, factorBase.smallDivResult);
             tested += factorBase.smallDivResult[0];
@@ -7897,13 +7804,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
              * If the residual is itself a factor-base prime,
              * incorporate it before compressing the exponent vector.
              */
-            qMag = trimLeadingZeros(qMag);
-            if (remLength == 1) {
-                int index = factorBaseIndexOf(fbIndex, qMag[0]);
-                if (index >= 0) {
-                    if(factorBase.dense[index+1] == 0) factorBase.used[usedCount++] = index+1;
-                    incExp(factorBase.dense, index + 1);
-                    qMag = ONE_MAG;
+            qMagnitude = trimLeadingZeros(qMagnitude);
+            if (remLength == 1 && Long.compareUnsigned(qMagnitude[0], fbIndex.length) < 0) {
+                int index = fbIndex[(int) qMagnitude[0]]+1;
+                if (index >= 1) {
+                    if(factorBase.dense[index] == 0) factorBase.used[usedCount++] = index;
+                    incExp(factorBase.dense, index);
+                    qMagnitude = ONE_MAG;
                 }
             }
             Arrays.sort(factorBase.used, 0, usedCount);
@@ -7916,18 +7823,18 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             short[] count = new short[mergedLength];
             mergeExponents(localIndex, localCount, factorBase.aIndex, factorBase.aCount, index, count);
             clearUsed(factorBase.dense, factorBase.used, usedCount);
-            plan.observeRelationAdd(classifyRelation(qMag, index, count, xValues, relations, partials, partialGraph,
+            plan.observeRelationAdd(classifyRelation(qMagnitude, index, count, xValues, relations, partials, partialGraph,
                     factorBase));
             plan.relationClassifyNs += TMX.getCurrentThreadCpuTime() - classifyTime;
         }
     }
     private static RelationAddKind classifyRelation(long[] remaining, int[] index, short[] count, long[][] xValues,
                                                     QSFullRelationPool relations, QSPartialRelationPool partials,
-                                                    PartialGraph partialGraph, QSFactorBase factorBase){
+                                                    PartialGraph partialGraph, QSFactorBase factorBase) {
         /*
          * Fully factor-base smooth.
          */
-        if (isOneArray(remaining)){
+        if (isOneArray(remaining)) {
             relations.add(xValues, index, count, new long[0][]);
             return RelationAddKind.FULL;
         }
@@ -7944,7 +7851,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
              * globalPMax < residual <= largePrimeBound
              */
             if (withinLargePrimeRange(residual, factorBase.globalPMax,
-                    factorBase.largePrimeBound)){
+                    factorBase.largePrimeBound)) {
                 long a = PARTIAL_ROOT;
                 int pathLength = partialGraph.findPartialPath(a, residual);
                 if (pathLength >= 0) {
@@ -7969,13 +7876,16 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
          * Avoid trying to split a residual that is itself prime.
          * A prime residual larger than largePrimeBound cannot be accepted.
          */
-        if (isProbablyPrimeMag(remaining))
+        if (isAProbablyPrimeMagnitude(remaining))
             return RelationAddKind.NONE;
-        long[] factor = pollardPMinusOneEasy(remaining);
+        long[] factor = fermatCheck(remaining);
         if (!isNontrivialFactor(factor, remaining)) {
-            factor = brentRhos(remaining);
-            if (!isNontrivialFactor(factor, remaining))
-                return RelationAddKind.NONE;
+            factor = pollardPMinusOneEasy(remaining);
+            if (!isNontrivialFactor(factor, remaining)){
+               factor = brentRhos(remaining);
+               if(!isNontrivialFactor(factor, remaining))
+                   return RelationAddKind.NONE;
+            }
         }
         long[] otherFactor = divideMagnitudesExact(remaining, factor);
         /*
@@ -7992,7 +7902,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         /*
          * The factor finder may return a composite divisor.
          */
-        if (!isProbablyPrimeMag(factor) || !isProbablyPrimeMag(otherFactor))
+        if (!isAProbablyPrimeMagnitude(factor) || !isAProbablyPrimeMagnitude(otherFactor))
             return RelationAddKind.NONE;
         /*
          * residual = q² already has even large-prime parity, so this is a full
@@ -8004,7 +7914,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         }
         int pathLength = partialGraph.findPartialPath(q1, q2);
         if (pathLength >= 0) {
-            combinePartialCycle(partialGraph.path, pathLength, xValues, index, count, q1, q2, partials, relations);
+            combinePartialCycle(partialGraph.path, pathLength, xValues, index, count, q1, q2, partials,
+                    relations);
             return RelationAddKind.DOUBLE_PARTIAL_CYCLE;
         }
         int partialId = partials.add(xValues, index, count, q1, q2);
@@ -8018,24 +7929,23 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                                         double singlePartialMergesPerPoly, double doublePartialHitsPerPoly,
                                         double doublePartialMergesPerPoly) {
             double usableRowsPerPoly = fullHitsPerPoly + singlePartialMergesPerPoly + doublePartialMergesPerPoly;
-            return new RelationYieldEstimate(fullHitsPerPoly, singlePartialHitsPerPoly, singlePartialMergesPerPoly,
-                    doublePartialHitsPerPoly, doublePartialMergesPerPoly, usableRowsPerPoly);
+            return new RelationYieldEstimate(fullHitsPerPoly, singlePartialHitsPerPoly,
+                    singlePartialMergesPerPoly, doublePartialHitsPerPoly, doublePartialMergesPerPoly,
+                    usableRowsPerPoly);
         }
     }
     private static double unsignedLongToDouble(long x) {
-        if (x >= 0)
-            return (double) x;
-        return (double) (x & Long.MAX_VALUE) + 0x1.0p63;
+        if (x >= 0) return (double) x;
+        else return (double) (x & Long.MAX_VALUE) + 0x1.0p63;
     }
-    private static double logMag(long[] mag) {
-        mag = trimLeadingZeros(mag);
+    private static double lnMagnitude(long[] mag) {
         if (isZeroArray(mag))
             return Double.NEGATIVE_INFINITY;
-        int n = mag.length;
+        int n = effectiveLength(mag);
         double hi = unsignedLongToDouble(mag[n - 1]);
         if (n > 1)
             hi += Math.scalb(unsignedLongToDouble(mag[n - 2]), -64);
-        return Math.log(hi) + 64.0 * (n - 1) * Math.log(2.0);
+        return StrictMath.log(hi) + 64.0 * (n - 1) * Math.log(2.0);
     }
     private static void incExp(short[] dense, int column) {
         if (dense[column] == Short.MAX_VALUE)
@@ -8118,38 +8028,35 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         fulls.add(mergedX, mergedIndex, mergedCount, squareFactors);
     }
     private static void validateQSRelations(QSFullRelationPool relations, QSFactorBase factorBase, long[] N) {
-        BigInteger n = new LargeInteger(N, false, true).toBigInteger();
+        MontgomeryReducer reducer = new MontgomeryReducer(N);
+
         for (int r = 0; r < relations.size; r++) {
-            BigInteger x = BigInteger.ONE;
-            for (long[] xv : relations.xValues[r]) {
-                BigInteger v = new LargeInteger(xv, false, true).toBigInteger();
-                x = x.multiply(v).mod(n);
-            }
-            BigInteger rhs = BigInteger.ONE;
+            long[] lhs = reducer.rModM;
+            for (long[] xv : relations.xValues[r])
+                lhs = reducer.multiply(lhs, reducer.toMontgomery(xv));
+            lhs = reducer.square(lhs);
+            long[] rhs = reducer.rModM;
             for (int k = 0; k < relations.exponentIndex[r].length; k++) {
                 int col = relations.exponentIndex[r][k];
                 int e = relations.exponentCount[r][k];
                 if (col == 0) {
-                    if ((e & 1) != 0)
-                        rhs = rhs.negate().mod(n);
-                } else {
-                    BigInteger p = BigInteger.valueOf(factorBase.primes[col - 1]);
-                    rhs = rhs.multiply(p.modPow(BigInteger.valueOf(e), n)).mod(n);
-                }
+                    if ((e & 1) != 0 && !isZeroArray(rhs))
+                        // Montgomery representation of -rhs mod N.
+                        rhs = subtractMagnitudes(N, rhs);
+                } else rhs = reducer.multiply(rhs, reducer.powMontgomery(
+                        reducer.toMontgomery(factorBase.primes[col - 1]), e));
             }
-            // Each stored squareFactor belongs directly on Y,
-            // therefore its square belongs on RHS.
             for (long[] sf : relations.squareFactors[r]) {
-                BigInteger s = new LargeInteger(sf, false, true).toBigInteger();
-                rhs = rhs.multiply(s.multiply(s).mod(n)).mod(n);
+                long[] sfM = reducer.toMontgomery(sf);
+                rhs = reducer.multiply(rhs, reducer.square(sfM));
             }
-            BigInteger lhs = x.multiply(x).mod(n);
-            if (!lhs.equals(rhs))
-                throw new AssertionError("BAD QS RELATION " + r + "\n" +
-                        "xValues=" + relations.xValues[r].length + "\n" +
-                        "squareFactors=" + relations.squareFactors[r].length + "\n" +
-                        "lhs=" + lhs + "\n" +
-                        "rhs=" + rhs);
+            lhs = reducer.reduce(lhs);
+            rhs = reducer.reduce(rhs);
+            if (!equalsArray(lhs, rhs))
+                throw new AssertionError("BAD QS RELATION " + r + "\nxValues="
+                        + relations.xValues[r].length + "\nsquareFactors=" + relations.squareFactors[r].length
+                        + "\nlhs=" + new LargeInteger(lhs, false, true) + "\nrhs="
+                        + new LargeInteger(rhs, false, true));
         }
     }
 
@@ -8301,16 +8208,15 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             for (int c : row.cols) {
                 incidences++;
                 weight[c]++;
-                IntList list = incidence[c];
-                if (list == null) incidence[c] = list = new IntList();
-                list.add(r);
+                if (incidence[c] == null) incidence[c] = new IntList();
+                incidence[c].add(r);
             }
         }
         int nonNullColumns = 0;
         for (IntList list : incidence) if (list != null) nonNullColumns++;
-        System.out.println("aliveRows=" + aliveRows + " incidences=" + incidences +
-                " nonNullColumns=" + nonNullColumns);
-        for (boolean changed = true; changed;){
+        System.out.println("aliveRows=" + aliveRows + " incidences=" + incidences + " nonNullColumns="
+                + nonNullColumns);
+        for (boolean changed = true; changed;) {
             changed = false;
             // Singleton elimination.
             for (int c = 0; c < columnCount; c++) {
@@ -8343,10 +8249,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 // Add new row to both incidence structure and live weights.
                 for (int c2 : mergedCols) {
                     weight[c2]++;
-                    IntList list = incidence[c2];
-                    if (list == null)
-                        incidence[c2] = list = new IntList();
-                    list.add(newRowIndex);
+                    if (incidence[c2] == null)
+                        incidence[c2] = new IntList();
+                    incidence[c2].add(newRowIndex);
                 }
                 changed = true;
                 if (mergedCols.length == 0) {
@@ -8377,7 +8282,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             this.alive = true;
         }
     }
-    private static SparseMatrixSetup buildQSMatrix(QSFullRelationPool relations, QSFactorBase factorBase, long[] N){
+    private static SparseMatrixSetup buildQSMatrix(QSFullRelationPool relations, QSFactorBase factorBase,
+                                                   long[] N) {
         long t0 = TMX.getCurrentThreadCpuTime();
         ArrayList<SparseMatrixRow> sparseRows = new ArrayList<>(relations.size);
         for (int i = 0, size = relations.size; i < size; i++) {
@@ -8515,7 +8421,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             tableBuildTime += TMX.getCurrentThreadCpuTime() - t0;
         }
         static long rightMultiplyLookup(long x, long[] table) {
-            return table[(int) x & 255]
+            return    table[(int) x & 255]
                     ^ table[256  | ((int) (x >>>  8) & 255)]
                     ^ table[512  | ((int) (x >>> 16) & 255)]
                     ^ table[768  | ((int) (x >>> 24) & 255)]
@@ -8527,7 +8433,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         BlockLanczosResult blockLanczos(SplittableRandom rng) {
             long[] LEFT = new long[rowCount];
             long[] RIGHT = new long[rowCount];
-            for(int k = 0; k < RIGHT.length; k++)
+            for (int k = 0; k < RIGHT.length; k++)
                 RIGHT[k] = rng.nextLong();
             long[] dTable = new long[2048];
             long[] eTable = new long[2048];
@@ -8549,7 +8455,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                     return new BlockLanczosResult(LEFT, RIGHT, state.v, iter);
                 if (VERIFY_BLOCK_LANCZOS) {
                     long[] transposed = GF2Matrix64.transpose(gram);
-                    if (!equalsArray(gram, transposed))
+                    if (!Arrays.equals(gram, transposed))
                         throw new AssertionError("Gram matrix is not symmetric");
                 }
                 GF2Elim64 elimination = GF2Matrix64.eliminate64(gram, activeMask(state.v)
@@ -8647,7 +8553,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             }
             long[][] pivotColumns = new long[rowCount][];
             Combination128[] pivotCombinations = new Combination128[rowCount];
-            ArrayList<Combination128> nullspace = new ArrayList<>();
+            ArrayList<Combination128> nullspace = new ArrayList<>(128);
             for (int column = 0; column < 128; column++) {
                 long[] vector = columns[column].clone();
                 long combinationLow = column < 64 ? 1L << column : 0L;
@@ -8670,13 +8576,12 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                     combinationHigh ^= old.high;
                 }
             }
-            Combination128[] combinations = nullspace.toArray(Combination128[]::new);
-            for (Combination128 combination : combinations) {
+            for (Combination128 combination : nullspace) {
                 long[] dependency = new long[(d.length + 63) >>> 6];
                 for (int row = 0; row < d.length; row++) {
                     int parity = (Long.bitCount(d[row] & combination.low)
-                            ^ Long.bitCount(terminalV[row] & combination.high)) & 1;
-                    if (parity != 0)
+                            ^ Long.bitCount(terminalV[row] & combination.high));
+                    if ((parity & 1) != 0)
                         dependency[row >>> 6] |= 1L << (row & 63);
                 }
                 if(isZeroArray(dependency)) continue;
@@ -8691,7 +8596,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             return dependencies.toArray(long[][]::new);
         }
     }
-    private static long activeMask(long[] block){
+    private static long activeMask(long[] block) {
         long mask = 0L;
         for (long row : block)
             mask |= row;
@@ -8742,7 +8647,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     private static long transposeBlockTime;
     private static long blockTime;
     private static final class GF2Matrix64{
-        private GF2Matrix64(){}
+        private GF2Matrix64() {}
         static GF2Elim64 eliminate64(long[] rows, long requiredMask) {
             long t0 = TMX.getCurrentThreadCpuTime();
             long[] reducedRows = rows.clone();
@@ -8780,38 +8685,23 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                         "required=" + Long.toHexString(requiredMask) + ", selected=" +
                         Long.toHexString(selectedMask));
             long[] embeddedInverse = embeddedPrincipalInverse(rows, selectedMask);
-            if(VERIFY_BLOCK_LANCZOS)
-                verifyEmbeddedInverse(selectedMask, embeddedInverse, rows);
+            if(VERIFY_BLOCK_LANCZOS) {
+                long[] projector = new long[64];
+                for (long bits = selectedMask; bits != 0L; bits &= bits - 1) {
+                    int lane = Long.numberOfTrailingZeros(bits);
+                    projector[lane] = 1L << lane;
+                }
+                long[] left = multiply(multiply(embeddedInverse, rows), projector);
+                long[] right = multiply(multiply(projector, rows), embeddedInverse);
+                if (!equalsArray(left, projector) || !equalsArray(right, projector))
+                    throw new AssertionError("Invalid embedded inverse");
+                if (!equalsArray(embeddedInverse, transpose(embeddedInverse)))
+                    throw new AssertionError("Embedded inverse of symmetric principal minor "
+                            + "is not symmetric");
+            }
             long[] inverse = rank == 64 ? embeddedInverse : null;
             eliminateTime += TMX.getCurrentThreadCpuTime() - t0;
             return new GF2Elim64(rank, selectedMask, inverse, embeddedInverse, reducedRows);
-        }
-        private static long[] inverseFullRankDirect(long[] rows) {
-            long[] left = rows.clone();
-            long[] right = new long[64];
-            for (int row = 0; row < 64; row++)
-                right[row] = 1L << row;
-            int rank = 0;
-            for (int col = 0; col < 64; col++) {
-                int pivotRow = rank;
-                while (pivotRow < 64 && ((left[pivotRow] >>> col) & 1L) == 0L) pivotRow++;
-                if (pivotRow == 64) return null;
-                long swap = left[rank];
-                left[rank] = left[pivotRow];
-                left[pivotRow] = swap;
-                swap = right[rank];
-                right[rank] = right[pivotRow];
-                right[pivotRow] = swap;
-                for (int row = 0; row < 64; row++) {
-                    if (row != rank && ((left[row] >>> col) & 1L) != 0L) {
-                        left[row] ^= left[rank];
-                        right[row] ^= right[rank];
-                    }
-                }
-                rank++;
-            }
-            if (rank != 64) return null;
-            return right;
         }
         static long[] embeddedPrincipalInverse(long[] rows, long selectedMask) {
             int rank = Long.bitCount(selectedMask);
@@ -8843,11 +8733,35 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             }
             for (int i = rank; i < 64; i++)
                 compactRows[i] = 1L << i;
-            long[] compactInverse = inverseFullRankDirect(compactRows);
-            if (compactInverse == null)
-                throw new AssertionError("Selected principal submatrix is singular: "
+            long[] left = compactRows.clone();
+            long[] compactInverse = new long[64];
+            for (int row = 0; row < 64; row++)
+                compactInverse[row] = 1L << row;
+            int invRank = 0;
+            for (int col = 0; col < 64; col++) {
+                int pivotRow = invRank;
+                while (pivotRow < 64 && ((left[pivotRow] >>> col) & 1L) == 0L) pivotRow++;
+                if (pivotRow == 64)
+                    throw new AssertionError("Selected principal submatrix is singular at "
+                            + Long.toHexString(selectedMask));
+                long swap = left[invRank];
+                left[invRank] = left[pivotRow];
+                left[pivotRow] = swap;
+                swap = compactInverse[invRank];
+                compactInverse[invRank] = compactInverse[pivotRow];
+                compactInverse[pivotRow] = swap;
+                for (int row = 0; row < 64; row++) {
+                    if (row != invRank && ((left[row] >>> col) & 1L) != 0L) {
+                        left[row] ^= left[invRank];
+                        compactInverse[row] ^= compactInverse[invRank];
+                    }
+                }
+                invRank++;
+            }
+            if (invRank != 64)
+                throw new AssertionError("Selected principal submatrix is singular at "
                         + Long.toHexString(selectedMask));
-            long[] embeddedRows = new long[64];
+            long[] embeddedInverse = new long[64];
             for (int compactRow = 0; compactRow < rank; compactRow++) {
                 int originalRow = selected[compactRow];
                 long compactInverseRow = compactInverse[compactRow];
@@ -8856,22 +8770,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                     if ((compactInverseRow & (1L << compactColumn)) != 0L)
                         destination |= 1L << selected[compactColumn];
                 }
-                embeddedRows[originalRow] = destination;
+                embeddedInverse[originalRow] = destination;
             }
-            return embeddedRows;
-        }
-        static void verifyEmbeddedInverse(long selectedMask, long[] embeddedInverse, long[] rows) {
-            long[] projector = new long[64];
-            for (long bits = selectedMask; bits != 0L; bits &= bits - 1) {
-                int lane = Long.numberOfTrailingZeros(bits);
-                projector[lane] = 1L << lane;
-            }
-            long[] left = multiply(multiply(embeddedInverse, rows), projector);
-            long[] right = multiply(multiply(projector, rows), embeddedInverse);
-            if (!equalsArray(left, projector) || !equalsArray(right, projector))
-                throw new AssertionError("Invalid embedded inverse");
-            if (!equalsArray(embeddedInverse, transpose(embeddedInverse)))
-                throw new AssertionError("Embedded inverse of symmetric principal minor " + "is not symmetric");
+            return embeddedInverse;
         }
         static long[] multiply(long[] rows, long[] other) {
             long[] out = new long[64];
@@ -9024,7 +8925,6 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         MontgomeryReducer reducer = new MontgomeryReducer(N);
         for (int col = 0; col < expSums.length; col++) {
             long e = expSums[col];
-
             if ((e & 1L) != 0)
                 throw new AssertionError("Dependency exponent sum is odd at column " + col);
             long half = e >>> 1;
@@ -9033,10 +8933,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 // (-1)^half
                 if ((half & 1L) != 0)
                     Y = modSubtract(N, Y, N);
-            } else {
-                long[] power = reducer.powMod(new long[]{factorBase.primes[col - 1]}, new long[]{half});
-                Y = multiplyMod(Y, power, N);
-            }
+            } else Y = multiplyMod(Y, reducer.powMod(new long[]{factorBase.primes[col - 1]}, half), N);
         }
         for (long[] sf : squareFactors) Y = multiplyMod(Y, sf, N);
         if(!equalsArray(multiplyMod(X, X, N), multiplyMod(Y, Y, N)))
@@ -9048,16 +8945,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         return ONE_MAG;
     }
     private static long[] reconstructFactor(long[] dependency, QSFullRelationPool relations,
-                                            QSFactorBase factorBase, long[] N) {
+            QSFactorBase factorBase, long[] N) {
         int expectedWords = (relations.size + 63) >>> 6;
         if (dependency.length != expectedWords)
             throw new IllegalArgumentException("Dependency length mismatch");
-        long[] X = ONE_MAG;
-        long[] Y = ONE_MAG;
-        /*
-         * Column 0 is the negative-sign column.
-         * Column j + 1 represents factorBase[j].
-         */
+        MontgomeryReducer reducer = new MontgomeryReducer(N);
+        long[] X = reducer.rModM;
+        long[] Y = reducer.rModM;
         int columnCount = factorBase.size + 1;
         long[] exponentSums = new long[columnCount];
         boolean selectedAny = false;
@@ -9070,61 +8964,52 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                 if (relationIndex >= relations.size) continue;
                 selectedAny = true;
                 for (long[] xValue : relations.xValues[relationIndex])
-                    X = multiplyMod(X, xValue, N);
-                /*
-                 * A merged partial relation has the common
-                 * large prime stored as a square-side factor.
-                 */
+                    X = reducer.multiply(X, reducer.toMontgomery(xValue));
                 for (long[] squareFactor : relations.squareFactors[relationIndex])
-                    Y = multiplyMod(Y, squareFactor, N);
-                for (int j = 0; j < relations.exponentIndex[relationIndex].length; j++) {
-                    int column = relations.exponentIndex[relationIndex][j];
-                    int exponent = relations.exponentCount[relationIndex][j];
+                    Y = reducer.multiply(Y, reducer.toMontgomery(squareFactor));
+                int[] indexes = relations.exponentIndex[relationIndex];
+                short[] counts = relations.exponentCount[relationIndex];
+                for (int j = 0; j < indexes.length; j++) {
+                    int column = indexes[j];
                     if (column < 0 || column >= columnCount)
                         throw new AssertionError("Relation exponent column out of range: "
                                 + column + " of " + columnCount);
-                    exponentSums[column] += exponent;
+                    exponentSums[column] += counts[j];
                 }
             }
         }
-        if (!selectedAny) return ONE_MAG;
-        MontgomeryReducer reducer = new MontgomeryReducer(N);
+        if (!selectedAny)
+            return ONE_MAG;
         for (int column = 0; column < columnCount; column++) {
             long exponent = exponentSums[column];
             if ((exponent & 1L) != 0L)
-                throw new IllegalStateException("Invalid dependency: odd exponent " + exponent +
-                        " at column " + column);
+                throw new IllegalStateException("Invalid dependency: odd exponent " + exponent + " at column "
+                        + column);
             long halfExponent = exponent >>> 1;
             if (halfExponent == 0L) continue;
-            if (column == 0){
-                /*
-                 * Sign-column base is -1 mod n.
-                 */
-                if ((halfExponent & 1L) != 0L)
-                    Y = modSubtract(N, Y, N);
-            }else{
-                long[] power = reducer.powMod(new long[]{factorBase.primes[column - 1]}, new long[]{halfExponent});
-                Y = multiplyMod(Y, power, N);
-            }
+            if (column == 0) {
+                if ((halfExponent & 1L) != 0L && !isZeroArray(Y))
+                    Y = subtractMagnitudes(N, Y);
+            } else Y = reducer.multiply(Y, reducer.powMontgomery(
+                        reducer.toMontgomery(factorBase.primes[column - 1]), halfExponent));
         }
-        long[] x2 = multiplyMod(X, X, N);
-        long[] y2 = multiplyMod(Y, Y, N);
-
-        if (!equalsArray(x2, y2)) {
-            BigInteger bn = new LargeInteger(N, false, true).toBigInteger();
-            BigInteger bx = new LargeInteger(X, false, true).toBigInteger();
-            BigInteger by = new LargeInteger(Y, false, true).toBigInteger();
-            BigInteger bx2 = bx.multiply(bx).mod(bn);
-            BigInteger by2 = by.multiply(by).mod(bn);
-            throw new AssertionError(
-                    "X^2 !≡ Y^2 mod N\n" +
-                            "LargeInteger X2 = " + new LargeInteger(x2, false, true) + "\n" +
-                            "LargeInteger Y2 = " + new LargeInteger(y2, false, true) + "\n" +
-                            "BigInteger X2   = " + bx2 + "\n" +
-                            "BigInteger Y2   = " + by2 + "\n" +
-                            "BigInteger congruent = " + bx2.equals(by2)
-            );
+        // These can be checked while still in Montgomery representation.
+        long[] x2M = reducer.square(X);
+        long[] y2M = reducer.square(Y);
+        if (!equalsArray(x2M, y2M)) {
+            // Only convert for diagnostics.
+            long[] normalX = reducer.reduce(X);
+            long[] normalY = reducer.reduce(Y);
+            BigInteger bx2 = new LargeInteger(normalX, false, true).square().toBigInteger();
+            BigInteger by2 = new LargeInteger(normalY, false, true).square().toBigInteger();
+            throw new AssertionError("X^2 !≡ Y^2 mod N\nLargeInteger X2 = "
+                    + new LargeInteger(x2M, false, true) + "\nLargeInteger Y2 = "
+                    + new LargeInteger(y2M, false, true) + "\nBigInteger X2   = "
+                    + bx2 + "\nBigInteger Y2   = " + by2 + "\nBigInteger congruent = " + bx2.equals(by2));
         }
+        // Leave Montgomery representation only once.
+        X = reducer.reduce(X);
+        Y = reducer.reduce(Y);
         long[] factor = gcdMagnitudes(modSubtract(X, Y, N), N);
         if (isNontrivialFactor(factor, N)) return factor;
         factor = gcdMagnitudes(modAdd(X, Y, N), N);
@@ -9134,7 +9019,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
     @SuppressWarnings("unused")
     public LargeInteger quadraticSieveWithoutConstraints() {
         if(isProbablyPrime()) return this;
-        double lnN = logMag(limbs);
+        double lnN = lnMagnitude(limbs);
         double lnLnN = StrictMath.log(lnN);
         long B = Math.round(Math.exp(0.55 * Math.sqrt(lnN * lnLnN)));
         B = Math.max(B, 100L);
@@ -9148,13 +9033,13 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             String S = toString();
             System.out.println("Number entered unconstrained QS: " + S + "(" + S.length() + " digits)");
             System.out.println("Factor-base bound: " + B);
-            System.out.println("Factor base build time: " + formatSeconds(factorBaseBuildTime) +
-                    " (" + factorBase.size + " primes)");
+            System.out.println("Factor base build time: " + formatSeconds(factorBaseBuildTime) + " ("
+                    + factorBase.size + " primes)");
             int requiredRelations = factorBase.primes.length + 30;
             QSFullRelationPool relations = new QSFullRelationPool(requiredRelations +
-                    requiredRelations/8);
+                    requiredRelations/4);
             QSPartialRelationPool partials = new QSPartialRelationPool(requiredRelations +
-                    requiredRelations/8);
+                    requiredRelations/4);
             PartialGraph partialGraph = new PartialGraph();
             //A deterministic seed is used so that A sequences are fixed. This is to make an objective
             //decision on if a code change really made the method faster. Please do not replace with
@@ -9165,16 +9050,17 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             SplittableRandom A_RNG = new SplittableRandom(A_RNG_SEED);
             long relationStart = TMX.getCurrentThreadCpuTime();
             System.out.printf(
-                    "%3s %50s %10s %12s %12s %10s %8s %20s %14s %11s %11s %16s %16s %16s %16s %14s %13s %14s %14s %12s %12s %15s%n",
+                    "%3s %50s %10s %12s %12s %10s %8s %20s %14s %11s %11s %16s %16s %16s %16s %14s %13s %14s " +
+                            "%14s %12s %12s %15s%n",
                     "#", "A", "int", "candidates", "full", "sing", "merge", "precomputation",
-                    "root", "small", "large", "scanning", "candidateScan", "hitLink", "smallDiv", "class", "processing", "total", "rel/s",
-                    "tests", "rel/poly", "rel total"
+                    "root", "small", "large", "scanning", "candidateScan", "hitLink", "smallDiv", "class",
+                    "processing", "total", "rel/s", "tests", "rel/poly", "rel total"
             );
             long[] sqrt2N = sqrtCeilMagnitude(shiftLeftBits(limbs, 1));
-            for(long blocks = 0; relations.size < requiredRelations; blocks++) {
+            for (long blocks = 0; relations.size < requiredRelations; blocks++) {
                 System.out.printf("%3d ", blocks+1);
                 sieve128Polynomials(limbs, sqrt2N, factorBase, fbIndex, relations, partials, partialGraph, A_RNG);
-//                if(blocks % 16 == 0){
+//                if(blocks % 16 == 0) {
 //                    System.out.println("Total usable relations up to now: " + relations.size());
 //                    System.out.println("Total blocks up to now: " + blocks);
 //                    System.out.println("Time up to now: " + formatSeconds(TMX.getCurrentThreadCpuTime() - relationStart));
@@ -9184,7 +9070,8 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             System.out.println();
             long relationNanos = TMX.getCurrentThreadCpuTime() - relationStart;
             System.out.println("Total QS relation time: " + formatSeconds(relationNanos));
-            System.out.println("Overall relation collection rate: " + relations.size * 1e9 / relationNanos + " relations/second");
+            System.out.println("Overall relation collection rate: " + relations.size * 1e9 / relationNanos
+                    + " relations/second");
             System.out.println();
             validateQSRelations(relations, factorBase, limbs);
             int originalRelationCount = relations.size;
@@ -9199,9 +9086,9 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             for (long[] dependency : dependencies) {
                 long[] factor = reconstructFactor(dependency, relations, factorBase, limbs);
                 if (isNontrivialFactor(factor, limbs))
-                    return new LargeInteger(factor, false);
+                    return new LargeInteger(factor, false, true);
             }
-        }catch (FactorFoundException e) {return new LargeInteger(e.factor, false);}
+        }catch (FactorFoundException e) {return new LargeInteger(e.factor, false, true);}
         return ONE;
     }
     //given a number N, find a relation X^2 ≡ Y^2 (mod N). then (X-Y) and (X+Y) reveal factors of N.
@@ -9214,7 +9101,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
         double probeSeconds = Math.max(remainingECMSeconds * 0.05, 20.0);
         long probeBudgetNanos = Math.round(probeSeconds * 1e9);
         long totalStart = TMX.getCurrentThreadCpuTime();
-        String numberText = new LargeInteger(task.n, false).toString();
+        String numberText = new LargeInteger(task.n, false, true).toString();
         System.out.println("Number entering QS: " + numberText + "(" + numberText.length() + " digits)");
         /*
          * Factor-base construction time counts against the QS probe.
@@ -9261,7 +9148,7 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
                  * block from a genuinely good QS input.
                  */
                 double medianRate = 0;
-                for(double blockRate: blockRates) medianRate += blockRate;
+                for (double blockRate: blockRates) medianRate += blockRate;
                 medianRate /= blockRates.size();
                 if (!(medianRate > 0.0) || !Double.isFinite(medianRate)) {
                     System.out.println("QS rejected: mean verified-relation rate is zero");
@@ -9301,11 +9188,11 @@ fall back to Karatsuba squaring or ordinary quadratic squaring.
             long[][] dependencies = nullspaceDependencies(setup, FAST_RNG.split(), originalRelationCount);
             matrixTime = TMX.getCurrentThreadCpuTime() - matrixTime;
             System.out.println("Matrix build+solve time: " + formatSeconds(matrixTime));
-            System.out.println();
             for (long[] dependency : dependencies) {
                 long[] factor = reconstructFactor(dependency, task.relations, task.factorBase, task.n);
-                if (isNontrivialFactor(factor, task.n)){
-                    System.out.println("QS FACTOR FOUND: " + new LargeInteger(factor, false));
+                if (isNontrivialFactor(factor, task.n)) {
+                    System.out.println("QS FACTOR FOUND: " + new LargeInteger(factor, false, true));
+                    System.out.println();
                     return factor;
                 }
             }

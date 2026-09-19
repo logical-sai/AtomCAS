@@ -76,10 +76,7 @@ public class DevPlayground {
         if (sink == 0x123456789ABCDEFL)
             System.out.println(sink);
     }
-    private static long[] randomBenchmarkMag(
-            int limbs,
-            SplittableRandom rng
-    ) {
+    private static long[] randomBenchmarkMag(int limbs, SplittableRandom rng) {
         long[] x = new long[limbs];
 
         for (int i = 0; i < limbs; i++)
@@ -93,7 +90,8 @@ public class DevPlayground {
     static void testMultiply(){
         int BI_Wins = 0;
         int LI_Wins = 0;
-        int[] sizes = {8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536};
+        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048,
+                3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536};
         int pairs = 10;
         double[] ratios = new double[sizes.length*pairs];
         for (int k = 0; k < sizes.length; k++) {
@@ -102,11 +100,10 @@ public class DevPlayground {
             double[] sizeRatios = new double[pairs];
             for (int l = 0; l < pairs; l++) {
                 LargeInteger A = LargeInteger.randomChunks(sizes[k]);
-                LargeInteger B = LargeInteger.randomChunks(sizes[k]);
+                LargeInteger B = A.clone();
                 BigInteger BA = A.toBigInteger();
-                BigInteger BB = B.toBigInteger();
                 LargeInteger LResult = A.multiply(B);
-                BigInteger BResult = BA.multiply(BB);
+                BigInteger BResult = BA.multiply(BA);
                 if (!LResult.toBigInteger().equals(BResult))
                     throw new AssertionError("Product is wrong");
                 long liTime;
@@ -116,7 +113,7 @@ public class DevPlayground {
                 if (((k * pairs + l) & 1) == 1){
                     for (int i = 0; i < trials; i++) {
                         sink = A.multiply(B);
-                        sink = BA.multiply(BB);
+                        sink = BA.multiply(BA);
                     }
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
@@ -126,19 +123,19 @@ public class DevPlayground {
 
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
-                        sink = BA.multiply(BB);
+                        sink = BA.multiply(BA);
                     t1 = System.nanoTime();
                     biTime = t1 - t0;
 
                 } else {
                     for (int i = 0; i < trials; i++) {
-                        sink = BA.multiply(BB);
+                        sink = BA.multiply(BA);
                         sink = A.multiply(B);
                     }
 
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
-                        sink = BA.multiply(BB);
+                        sink = BA.multiply(BA);
                     t1 = System.nanoTime();
                     biTime = t1 - t0;
                     t0 = System.nanoTime();
@@ -205,7 +202,7 @@ public class DevPlayground {
         for(int k: new int[]{64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
             long LI_time = 0;
             long BI_time = 0;
-            int trials = 16384/k;
+            int trials = 32768/k;
             System.out.println("Bits tested: " + k);
             for(int j = 0; j < 100; j++){
                 LargeInteger base = LargeInteger.randomBits(k);
@@ -215,7 +212,8 @@ public class DevPlayground {
                 BigInteger bigExponent = exponent.toBigInteger();
                 BigInteger bigModulus = modulus.toBigInteger();
                 if(!base.powMod(exponent, modulus).toBigInteger().equals(bigBase.modPow(bigExponent, bigModulus)))
-                    throw new AssertionError("PowMod for base=" + base + ", exponent=" + exponent + ", and modulus=" + modulus + " is wrong");
+                    throw new AssertionError("PowMod for base=" + base + ", exponent=" + exponent
+                            + ", and modulus=" + modulus + " is wrong");
                 //warmup
                 for(int i = 0; i < 20; i++){
                     sink = base.powMod(exponent, modulus);
@@ -353,39 +351,19 @@ public class DevPlayground {
             new FactorBoss(
                     "6428380277058512877402805374285161923129703426793563359435194951116582476919717925450545523629758567927222158921007107167940393067361029334463486674570492299456886839634573238186015211",
                     "10^303 + 1",
-                    "Extremely difficult factorization with ECM"
-            ),
+                    "Extremely difficult factorization with ECM"),
             new FactorBoss(
                     "18748342930951187059699050387401582462321458294019614481729930646671266182084358057158477154583753264703849269569462288159923316207103194097051657281",
                     "10^280 + 1",
-                    "Extremely difficult factorization"
-            ),
+                    "Extremely difficult factorization"),
             new FactorBoss(
                     "92556179448994367391887834053878562534782033760810527051075248738484727059555245899601591",
                     "10^97-1",
-                    "Might require higher bounds or more curves than the first one on this list"
-            )
+                    "Might require higher bounds or more curves than the first one on this list")
     );
-    static boolean hasFullDecimalPeriod(LargeInteger p) {
-        if (!p.isProbablyPrime())
-            return false;
-
-        LargeInteger phi = p.subtract(LargeInteger.ONE);
-        LargeMap<LargeInteger, LargeFraction> factors = phi.factor();
-
-        for (LargeInteger q : factors.keys()) {
-            if (q.equals(LargeInteger.NEGATIVE_ONE))
-                continue;
-            if (LargeInteger.TEN.powMod(phi.divide(q), p).equals(LargeInteger.ONE))
-                return false;
-        }
-        return true;
-    }
     static void main() {
-//        System.out.println(
-//                new LargeInteger("366228771818863144299753563917078548162208985250742844503471659472303")
-//                .quadraticSieveWithoutConstraints());
-        testMultiply();
+        System.out.println(new LargeInteger("881975966463387623401550621533024970899955250627528568187087047")
+                .quadraticSieveWithoutConstraints());
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");

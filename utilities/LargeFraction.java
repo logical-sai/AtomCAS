@@ -3,10 +3,15 @@ package com.AtomCAS.utilities;
 public class LargeFraction extends ScalarAtom {
     final LargeInteger numerator;
     final LargeInteger denominator;
-    public static final LargeFraction NEGATIVE_ONE = new LargeFraction(-1L);
-    public static final LargeFraction ZERO = new LargeFraction(0L);
+    public static final LargeFraction NEGATIVE_ONE = new LargeFraction(LargeInteger.NEGATIVE_ONE);
+    public static final LargeFraction ZERO = new LargeFraction(LargeInteger.ZERO);
     public static final LargeFraction HALF = new LargeFraction(LargeInteger.ONE, LargeInteger.TWO);
     public static final LargeFraction ONE = new LargeFraction(1L);
+    public static final LargeFraction TWO = new LargeFraction(2L);
+    public LargeFraction(LargeInteger in){
+        numerator = in;
+        denominator = LargeInteger.ONE;
+    }
     public LargeFraction(LargeInteger numerator, LargeInteger denominator) {
         if (denominator.negative) {
             numerator = numerator.negate();
@@ -46,7 +51,7 @@ public class LargeFraction extends ScalarAtom {
         denominator = LargeInteger.ONE;
     }
     @Override
-    public LargeFraction clone() {return new LargeFraction(numerator, denominator);}
+    public LargeFraction clone() {return new LargeFraction(numerator.clone(), denominator.clone());}
     @Override
     public String toString() {
         if(LargeInteger.isOneArray(denominator.limbs))
@@ -83,7 +88,8 @@ public class LargeFraction extends ScalarAtom {
                 yield f.compareTo(o);
             }case RadicalTerm RT -> this.subtract(RT.rationalPart).divide(RT.coefficient)
                     .compareMagnitudes(RT.exponent);
-            default -> throw new UnsupportedOperationException("Operation with these types together not supported yet");
+            default -> throw new UnsupportedOperationException(
+                    "Operation with these types together not supported yet");
         };
     }
     public int compareTo(ScalarAtom other) {
@@ -107,8 +113,7 @@ public class LargeFraction extends ScalarAtom {
                 // compare x ? other.exponent
                 int cmp = x.compareTo(RT.exponent);
                 // because x = (F - A) / B
-                if (RT.coefficient.sign().equals(LargeInteger.NEGATIVE_ONE))
-                    cmp = -cmp;
+                if (RT.coefficient.lessThan(ZERO)) cmp = -cmp;
                 yield cmp;
             }default -> throw new UnsupportedOperationException(
                     "Operation with these types together not supported yet");

@@ -106,51 +106,57 @@ public class LargeVector extends TensorAtom {
         for (LargeInteger f: list) if (f.doesntEqual(LargeInteger.ZERO)) return false;
         return true;
     }
+    @SuppressWarnings("unused")
     public boolean isUnit(){return this.magnitude().equals(LargeInteger.ONE);}
+    public LargeVector add(LargeVector other){
+        if(other.isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
+        LargeList<LargeFraction> liste = new LargeList<>();
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
+            liste.add((LargeFraction) list.get(i).multiply(factor).add(other.list.get(i).multiply(other.factor)));
+        return new LargeVector(liste);
+    }
     @Override
     public TensorAtom add(TensorAtom other) {
-        if(other instanceof LargeVector){
-            if(((LargeVector) other).isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
-            LargeList<LargeFraction> liste = new LargeList<>();
-            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
-                liste.add((LargeFraction) list.get(i).multiply(factor).add(((LargeVector) other).list.get(i).multiply(((LargeVector) other).factor)));
-            return new LargeVector(liste);
-        }
+        if(other instanceof LargeVector LV)
+            return add(LV);
         throw new UnsupportedOperationException("Operation with these types together not supported yet");
+    }
+    public LargeVector subtract(LargeVector other){
+        if(other.isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
+        LargeList<LargeFraction> liste = new LargeList<>();
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
+            liste.add((LargeFraction) list.get(i).multiply(factor).subtract(
+                    other.list.get(i).multiply(other.factor)));
+        return new LargeVector(liste);
     }
     @Override
     public TensorAtom subtract(TensorAtom other) {
-        if(other instanceof LargeVector){
-            if(((LargeVector) other).isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
-            LargeList<LargeFraction> liste = new LargeList<>();
-            for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
-                liste.add((LargeFraction) list.get(i).multiply(factor).subtract(((LargeVector) other).list.get(i).multiply(((LargeVector) other).factor)));
-            return new LargeVector(liste);
-        }
-        throw new UnsupportedOperationException("Operation with these types together not supported yet");
+        if(other instanceof LargeVector lv) return subtract(lv);
+        else throw new UnsupportedOperationException("Operation with these types together not supported yet");
+    }
+    public LargeVector hadamardProduct(LargeVector LV){
+        if (LV.isDifferentDimension(this))
+            throw new IllegalArgumentException("Dimension mismatch");
+        LargeList<LargeInteger> result = new LargeList<>();
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
+            result.add((LargeInteger) this.get(i).multiply(LV.get(i)));
+        return new LargeVector(result, (LargeFraction) this.factor.multiply(LV.factor));
     }
     @Override
     public TensorAtom multiply(TensorAtom other) {
-        if(other instanceof LargeVector){
-            if (((LargeVector) other).isDifferentDimension(this))
-                throw new IllegalArgumentException("Dimension mismatch");
-            LargeList<LargeInteger> result = new LargeList<>();
-            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
-                result.add((LargeInteger) this.get(i).multiply(((LargeVector) other).get(i)));
-            return new LargeVector(result, (LargeFraction) this.factor.multiply(((LargeVector) other).factor));
-        }
+        if(other instanceof LargeVector LV) return hadamardProduct(LV);
         throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public LargeFraction dotProduct(LargeVector other){
         if (other.isDifferentDimension(this))
             throw new IllegalArgumentException("Dimension mismatch");
         LargeFraction result = LargeFraction.ZERO;
-        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
-            result = (LargeFraction) result.add(this.get(i).multiply(other.get(i)));
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(dimension()); i = i.add(1))
+            result = (LargeFraction) result.add(get(i).multiply(other.get(i)));
         return result;
     }
     public LargeVector crossProduct(LargeVector v) {
-        if (this.dimension().doesntEqual(LargeInteger.THREE) || v.dimension().doesntEqual(LargeInteger.THREE))
+        if (dimension().doesntEqual(LargeInteger.THREE) || v.dimension().doesntEqual(LargeInteger.THREE))
             throw new IllegalArgumentException("Cross product only defined for 3D vectors");
         LargeFraction a1 = (LargeFraction) list.getFirst().multiply(factor), a2 = (LargeFraction) list.get(LargeInteger.ONE).multiply(factor), a3 = (LargeFraction) list.get(LargeInteger.TWO).multiply(factor);
         LargeFraction b1 = (LargeFraction) v.list.getFirst().multiply(v.factor), b2 = (LargeFraction) v.list.get(LargeInteger.ONE).multiply(v.factor), b3 = (LargeFraction) v.list.get(LargeInteger.TWO).multiply(v.factor);
@@ -180,18 +186,26 @@ public class LargeVector extends TensorAtom {
         }
         return false;
     }
-    public boolean isPerpendicularTo(LargeVector other){return this.dotProduct(other).equals(LargeInteger.ZERO);}
+    @SuppressWarnings("unused")
+    public boolean isPerpendicularTo(LargeVector other){return dotProduct(other).equals(LargeFraction.ZERO);}
+    @SuppressWarnings("unused")
     public boolean isParallelTo(LargeVector other){
         if (this.dimension() != other.dimension()) return false;
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
             if(this.list.get(i).mod(other.list.get(i)).doesntEqual(LargeInteger.ZERO)
-                    && other.list.get(i).mod(this.list.get(i)).doesntEqual(LargeInteger.ZERO))
+                    && other.list.get(i).mod(list.get(i)).doesntEqual(LargeInteger.ZERO))
                 return false;
         return true;
     }
-    public boolean isOrthonormalTo(LargeVector other){return this.dotProduct(other).equals(LargeFraction.ZERO) && this.magnitude().equals(LargeInteger.ONE) && other.magnitude().equals(LargeInteger.ONE);}
-    public RadicalTerm magnitude(){return new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, this.dotProduct(this).power(LargeFraction.HALF));}
-    public RadicalTerm distanceTo(LargeVector other){return ((LargeVector)this.subtract(other)).magnitude();}
+    public boolean isOrthonormalTo(LargeVector other){
+        return this.dotProduct(other).equals(LargeFraction.ZERO)
+                && this.magnitude().equals(LargeInteger.ONE) && other.magnitude().equals(LargeInteger.ONE);}
+    public RadicalTerm magnitude(){
+        return new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE,
+                this.dotProduct(this).power(LargeFraction.HALF));}
+    @SuppressWarnings("unused")
+    public RadicalTerm distanceTo(LargeVector other){return subtract(other).magnitude();}
+    @SuppressWarnings("unused")
     public static LargeVector standardBasis(LargeInteger dimension, LargeInteger index) {
         if (dimension.lessThan(LargeInteger.ZERO))
             throw new IllegalArgumentException("Dimension cannot be negative");
@@ -204,6 +218,7 @@ public class LargeVector extends TensorAtom {
         }
         return new LargeVector(values);
     }
+    @SuppressWarnings("unused")
     public LargeMatrix outerProduct(LargeVector other) {
         LargeList<LargeList<LargeFraction>> rows = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1)) {

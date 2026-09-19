@@ -33,7 +33,7 @@ public class RadicalTerm extends ScalarAtom{
             LargeInteger basTemp = I.clone();
             while(expTemp.doesntEqual(LargeInteger.ZERO)){
                 if(expTemp.isOdd()){
-                    if(expTemp.lessThan(LargeInteger.ZERO))
+                    if(expTemp.negative)
                         tempC = (LargeFraction) tempC.divide(basTemp);
                     else tempC = (LargeFraction) tempC.multiply(basTemp);
                     if(expTemp.abs().equals(LargeInteger.ONE)) break;
@@ -44,7 +44,7 @@ public class RadicalTerm extends ScalarAtom{
             pr.put(I, pr.get(I).fracPart());
         }
         Enum = LargePowerMonomial.buildFromFactors(pr);
-        if(Enum.equals(LargeInteger.ONE)){
+        if(Enum.equals(LargePowerMonomial.ONE)){
             rationalPart = (LargeFraction) tempR.add(tempC);
             coefficient = LargeFraction.ZERO;
             exponent = LargePowerMonomial.ZERO;

@@ -66,7 +66,7 @@ public class RadicalTermSum extends ScalarAtom{
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(rt.size().subtract(LargeInteger.ONE)); i = i.add(1)){
             for(LargeInteger j = i.add(1); j.lessThan(rt.size()); j = j.add(1)){
                 if(rt.keyAtIndex(j).compareMagnitudes(rt.keyAtIndex(i)) < 0)
-                    rt.swap(rt.keyAtIndex(i), rt.keyAtIndex(j));
+                    rt.swapIndices(i, j);
             }
         }
         sum = rt;
@@ -133,7 +133,7 @@ public class RadicalTermSum extends ScalarAtom{
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(rt.size().subtract(1)); i = i.add(1)){
             for(LargeInteger j = i.add(1); j.lessThan(rt.size()); j = j.add(1)){
                 if(rt.keyAtIndex(j).compareMagnitudes(rt.keyAtIndex(i)) < 0)
-                    rt.swap(rt.keyAtIndex(i), rt.keyAtIndex(j));
+                    rt.swapIndices(i, j);
             }
         }
         this.sum = rt;
@@ -477,7 +477,7 @@ public class RadicalTermSum extends ScalarAtom{
         LargeList<LargePowerMonomial> merged = new LargeList<>();
         for (LargeFraction base : baseToDenominator.keys()) {
             LargeInteger denominator = baseToDenominator.get(base);
-            merged.add(new LargePowerMonomial(base, new LargeFraction(LargeInteger.ONE, denominator)));
+            merged.add(new LargePowerMonomial(base, denominator.reciprocal()));
         }
         gens = merged;
         for (LargePowerMonomial g : gens) {
@@ -493,7 +493,7 @@ public class RadicalTermSum extends ScalarAtom{
             LargeList<LargePowerMonomial> reordered = new LargeList<>();
             reordered.add(LargePowerMonomial.ONE);
             for (LargePowerMonomial b : next) {
-                if (b.doesntEqual(LargeInteger.ONE))
+                if (b.doesntEqual(LargePowerMonomial.ONE))
                     reordered.add(b);
             }
             basis = reordered;
