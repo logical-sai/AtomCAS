@@ -374,7 +374,10 @@ public class DevPlayground {
                     "ANOTHER P43. why me"
             ));
     static void main() {
-        System.out.println(new LargeInteger("10^157-1").factor());
+        for(int k = 1; k <= 121; k++) {
+            LargeInteger N = new LargeInteger("10^" + k + "+1");
+            System.out.println(N + " = " + N.factor());
+        }
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
