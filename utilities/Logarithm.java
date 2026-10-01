@@ -3,15 +3,13 @@ public class Logarithm extends ScalarAtom {
     public ScalarAtom argument;
     public Logarithm(ScalarAtom a){argument = (ScalarAtom) a.clone();}
     @Override
-    public ScalarAtom clone() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
+    public ScalarAtom clone() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
     @Override
-    public LargeInteger floor() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
+    public LargeInteger floor() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
     @Override
-    public LargeInteger ceil() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
+    public LargeInteger ceil() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
     @Override
-    public ScalarAtom abs() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
-    @Override
-    public int compareMagnitudes(ScalarAtom other) {return 0;}
+    public ScalarAtom abs() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
     @Override
     public int compareTo(ScalarAtom other) {return 0;}
     @Override
@@ -44,4 +42,6 @@ public class Logarithm extends ScalarAtom {
     public String toLatex() {return "";}
     @Override
     public boolean equals(Atom other) {return false;}
+    @Override
+    public boolean isZero() {return argument.isOne();}
 }

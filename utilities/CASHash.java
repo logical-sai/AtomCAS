@@ -1,6 +1,5 @@
 package com.AtomCAS.utilities;
-
-public final class CASHash {
+final class CASHash {
     private CASHash(){}
     static int mix(int h, int... xs) {
         for (int x : xs) {
@@ -33,15 +32,11 @@ public final class CASHash {
             case LargeMatrix x        -> matrix(x);
             case RadicalExpression x  -> radicalExpression(x);
             case AlgebraicNumber x    -> algebraicNumber(x);
-
             default -> throw new UnsupportedOperationException("Hashing not implemented for " + a.getClass());
         };
     }
     static int integer(LargeInteger x) {
-        int h = 0;
-        for (int i = x.limbs.length - 1; i >= 0; i--)
-            h = 31 * h + Long.hashCode(x.limbs[i]);
-        return x.negative ? -h : h;
+        return x.hashCode();
     }
     static int rational(LargeInteger numerator, LargeInteger denominator){
         if (denominator.equals(LargeInteger.ONE))

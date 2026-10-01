@@ -17,13 +17,13 @@ public class LargePowerNode extends ScalarAtom{
             this.signFactor = signFactor.multiply(new LargePowerMonomial(LargeFraction.NEGATIVE_ONE, L.exponent2));
             return;
         }else if(base instanceof RadicalTerm R){
-            if(R.rationalPart.equals(LargeInteger.ZERO)){
+            if(R.rationalPart.isZero()){
                 LargePowerMonomial L = (LargePowerMonomial) R.exponent.power(exponent).multiply(new LargePowerMonomial(R.coefficient, exponent));
                 this.base = L.base;
                 this.exponent = L.exponent;
                 this.signFactor = signFactor.multiply(new LargePowerMonomial(LargeFraction.NEGATIVE_ONE, L.exponent2));
                 return;
-            }else if(R.coefficient.equals(LargeInteger.ZERO)){
+            }else if(R.coefficient.isZero()){
                 LargePowerMonomial L = R.rationalPart.power(exponent);
                 this.base = L.base;
                 this.exponent = L.exponent;
@@ -38,7 +38,7 @@ public class LargePowerNode extends ScalarAtom{
                 LargeFraction A = R.rationalPart.clone();
                 LargeFraction BCoefficient = R.coefficient.clone();
                 LargeFraction C = R.exponent.base.clone();
-                if(R.lessThan(LargeInteger.ZERO)){
+                if(R.isNegative()){
                     signFactor = signFactor.multiply(LargePowerMonomial.I);
                     A = A.negate();
                     BCoefficient = BCoefficient.negate();
@@ -50,7 +50,7 @@ public class LargePowerNode extends ScalarAtom{
 
                 RadicalTerm xAtom = (RadicalTerm) A.add(sqrtDisc).divide(LargeInteger.TWO);
                 RadicalTerm yAtom = (RadicalTerm) A.subtract(sqrtDisc).divide(LargeInteger.TWO);
-                if (xAtom.lessThan(LargeInteger.ZERO) || yAtom.lessThan(LargeInteger.ZERO)) {
+                if (xAtom.isNegative() || yAtom.isNegative()) {
                     this.base = base;
                     this.exponent = exponent;
                     this.signFactor = signFactor;
@@ -74,13 +74,13 @@ public class LargePowerNode extends ScalarAtom{
                 }
             }
         }else if(base instanceof RadicalTermSum R){
-            if(R.sum.size().equals(LargeInteger.ZERO)){
+            if(R.sum.size().isZero()){
                 LargePowerNode G = new LargePowerNode(R.constant, exponent, signFactor);
                 this.base = G.base;
                 this.exponent = G.exponent;
                 this.signFactor = G.signFactor;
                 return;
-            }else if(R.sum.size().equals(LargeInteger.ONE)){
+            }else if(R.sum.size().isOne()){
                 LargePowerNode G = new LargePowerNode(R.constant.add(R.sum.keyAtIndex(LargeInteger.ZERO).multiply(R.sum.get(R.sum.keyAtIndex(LargeInteger.ZERO)))), exponent, signFactor);
                 this.base = G.base;
                 this.exponent = G.exponent;
@@ -94,7 +94,7 @@ public class LargePowerNode extends ScalarAtom{
         while(true){
             if(expTemp.isOdd()){
                 res = res.multiply(basTemp);
-                if(expTemp.equals(LargeInteger.ONE)) break;
+                if(expTemp.isOne()) break;
             }
             basTemp = basTemp.square();
             expTemp = expTemp.shiftRight(1);
@@ -108,18 +108,18 @@ public class LargePowerNode extends ScalarAtom{
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        if(base.equals(LargeInteger.ZERO)){
+        if(base.isZero()){
             str.append(base);
             return str.toString();
         }
         if(signFactor.equals(LargeFraction.NEGATIVE_ONE)){
-            if(exponent.equals(LargeInteger.ONE)){
+            if(exponent.isOne()){
                 str.append(base.negate());
                 return str.toString();
             }else str.append("-");
         }
         else if(signFactor.doesntEqual(LargeFraction.ONE)) str.append(signFactor);
-        if(base.equals(LargeInteger.ONE)){
+        if(base.isOne()){
             if(str.isEmpty() || str.toString().equals("-")) str.append("1");
             return str.toString();
         }
@@ -127,17 +127,17 @@ public class LargePowerNode extends ScalarAtom{
             switch (base) {
                 case LargeInteger _ -> str.append(base);
                 case LargeFraction largeFraction -> {
-                    if (largeFraction.denominator.equals(LargeInteger.ONE) || exponent.denominator.equals(LargeInteger.ONE) && signFactor.equals(LargeFraction.ONE))
+                    if (largeFraction.denominator.isOne() || exponent.denominator.isOne() && signFactor.equals(LargeFraction.ONE))
                         str.append(base);
                     else str.append("(").append(base).append(")");
                 }
                 case RadicalTerm radicalTerm -> {
-                    if (radicalTerm.coefficient.equals(LargeFraction.ZERO) && radicalTerm.rationalPart.denominator.equals(LargeInteger.ONE) && signFactor.equals(LargeFraction.ONE))
+                    if (radicalTerm.coefficient.equals(LargeFraction.ZERO) && radicalTerm.rationalPart.denominator.isOne() && signFactor.equals(LargeFraction.ONE))
                         str.append(base);
                     else str.append("(").append(base).append(")");
                 }
                 case RadicalTermSum rt -> {
-                    if (rt.sum.size().equals(LargeInteger.ZERO) && rt.constant.denominator.equals(LargeInteger.ONE) && signFactor.equals(LargeFraction.ONE))
+                    if (rt.sum.size().isZero() && rt.constant.denominator.isOne() && signFactor.equals(LargeFraction.ONE))
                         str.append(base);
                     else str.append("(").append(base).append(")");
                 }
@@ -158,19 +158,22 @@ public class LargePowerNode extends ScalarAtom{
     @Override
     public boolean equals(Atom other) {
         if(!(other instanceof ScalarAtom)) return false;
-        if(other.equals(LargeInteger.ZERO)) return base.equals(LargeInteger.ZERO);
-        if (other instanceof LargeInteger || other instanceof LargeFraction)
-            return base.equals(((ScalarAtom) other).abs()) && exponent.equals(LargeInteger.ONE) && signFactor.equals(((ScalarAtom) other).sign());
-        else if (other instanceof LargePowerNode h)
-            return this.base.equals(h.base) && this.exponent.equals(h.exponent) && this.signFactor.equals(h.signFactor);
-        throw new UnsupportedOperationException("Operation with these types together not supported yet");
+        return switch (other) {
+            case LargeInteger I ->
+                    base.equals(I.abs()) && exponent.isOne() && signFactor.equals(I.sign());
+            case LargeFraction F ->
+                    base.equals(F.abs()) && exponent.isOne() && signFactor.equals(F.sign());
+            case LargePowerNode h ->
+                    this.base.equals(h.base) && this.exponent.equals(h.exponent) && this.signFactor.equals(h.signFactor);
+            default -> throw new UnsupportedOperationException("Operation with these types together not supported yet");
+        };
     }
+    @Override
+    public boolean isZero() {return base.isZero();}
     @Override
     public ScalarAtom negate() {return new LargePowerNode(base, exponent, signFactor.negate());}
     @Override
     public ScalarAtom abs() {return new LargePowerNode(base, exponent, LargeInteger.ONE);}
-    @Override
-    public int compareMagnitudes(ScalarAtom other){return 0;}
     @Override
     public int compareTo(ScalarAtom other){return 0;}
     @Override
@@ -178,13 +181,11 @@ public class LargePowerNode extends ScalarAtom{
         return null;
     }
     @Override
-    public LargeInteger ceil() {
-        return null;
-    }
+    public LargeInteger ceil() {return null;}
     @Override
-    public boolean isRational() {return base.isRational() && exponent.equals(LargeInteger.ONE) && (signFactor.equals(LargeInteger.ONE) || signFactor.equals(LargeInteger.ZERO));}
+    public boolean isRational() {return base.isRational() && exponent.isOne() && (signFactor.isOne() || signFactor.isZero());}
     @Override
-    public boolean isReal() {return signFactor.equals(LargeInteger.ONE) || signFactor.equals(LargeInteger.NEGATIVE_ONE);}
+    public boolean isReal() {return signFactor.isOne() || signFactor.equals(LargeInteger.NEGATIVE_ONE);}
     @Override
     public boolean isAlgebraic() {return base.isAlgebraic() && signFactor.isAlgebraic();}
     @Override
@@ -202,8 +203,8 @@ public class LargePowerNode extends ScalarAtom{
     }
     @Override
     public ScalarAtom multiply(ScalarAtom other) {
-        if(other.equals(LargeInteger.ZERO)) return LargeInteger.ZERO;
-        else if(other.equals(LargeInteger.ONE)) return this.clone();
+        if(other.isZero()) return LargeInteger.ZERO;
+        else if(other.isOne()) return this.clone();
         if (other instanceof LargePowerNode h){
             if (this.base.equals(h.base))
                 return new LargePowerNode(this.base, (LargeFraction) this.exponent.add(h.exponent), this.signFactor.multiply(h.signFactor));
@@ -215,10 +216,10 @@ public class LargePowerNode extends ScalarAtom{
             ScalarAtom basTemp = (ScalarAtom) base.clone();
             while(true){
                 if(expTemp.isOdd()){
-                    if(expTemp.lessThan(LargeInteger.ZERO))
+                    if(expTemp.isNegative())
                         result = result.divide(basTemp);
                     else result = result.multiply(basTemp);
-                    if(expTemp.abs().equals(LargeInteger.ONE)) break;
+                    if(expTemp.abs().isOne()) break;
                 }
                 basTemp = basTemp.square();
                 expTemp = expTemp.shiftRight(1);
@@ -227,10 +228,10 @@ public class LargePowerNode extends ScalarAtom{
             basTemp = (ScalarAtom) h.base.clone();
             while(true){
                 if(expTemp.isOdd()){
-                    if(expTemp.lessThan(LargeInteger.ZERO))
+                    if(expTemp.isNegative())
                         result = result.divide(basTemp);
                     else result = result.multiply(basTemp);
-                    if(expTemp.abs().equals(LargeInteger.ONE)) break;
+                    if(expTemp.abs().isOne()) break;
                 }
                 basTemp = basTemp.square();
                 expTemp = expTemp.shiftRight(1);

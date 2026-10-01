@@ -7,34 +7,37 @@ package com.AtomCAS.utilities;
 public abstract class ScalarAtom extends Atom implements Comparable<ScalarAtom>{
     public abstract LargeInteger floor();
     public abstract LargeInteger ceil();
-    public abstract int compareMagnitudes(ScalarAtom other);
+    public int compareMagnitudes(ScalarAtom other) {return abs().compareTo(other.abs());}
     public abstract int compareTo(ScalarAtom other);
-    public boolean greaterThan(ScalarAtom other){return compareTo(other) > 0;}
-    public boolean lessThan(ScalarAtom other){return compareTo(other) < 0;}
-    public boolean greaterThanOrEqualTo(ScalarAtom other){return compareTo(other) >= 0;}
-    public boolean lesserThanOrEqualTo(ScalarAtom other){return compareTo(other) <= 0;}
+    public boolean greaterThan(ScalarAtom other) {return compareTo(other) > 0;}
+    public boolean lessThan(ScalarAtom other) {return compareTo(other) < 0;}
+    public boolean greaterThanOrEqualTo(ScalarAtom other) {return compareTo(other) >= 0;}
+    public boolean lesserThanOrEqualTo(ScalarAtom other) {return compareTo(other) <= 0;}
     public abstract ScalarAtom negate();
-    public ScalarAtom sign(){
+    public ScalarAtom sign() {
         if(equals(LargeInteger.ZERO)) return LargeInteger.ZERO;
-        return divide(abs());
+        else return divide(abs());
     }
+    public boolean isZero() {return equals(LargeInteger.ZERO);}
+    public boolean isOne() {return equals(LargeInteger.ONE);}
+    public boolean isNegative() {return lessThan(LargeInteger.ZERO);}
     public abstract ScalarAtom abs();
     public abstract boolean isRational();
     public abstract boolean isReal();
-    public boolean isNotReal(){return !isReal();}
+    public boolean isNotReal() {return !isReal();}
     public abstract boolean isAlgebraic();
     public abstract ScalarAtom realPart();
     public abstract ScalarAtom imagPart();
     public abstract ScalarAtom add(ScalarAtom other);
-    public ScalarAtom subtract(ScalarAtom other){return add(other.negate());}
+    public ScalarAtom subtract(ScalarAtom other) {return add(other.negate());}
     public abstract ScalarAtom multiply(ScalarAtom other);
-    public ScalarAtom divide(ScalarAtom other){return multiply(other.reciprocal());}
+    public ScalarAtom divide(ScalarAtom other) {return multiply(other.reciprocal());}
     public abstract ScalarAtom reciprocal();
-    public ScalarAtom mod(ScalarAtom other){return subtract(divide(other).floor().multiply(other));}
-    public ScalarAtom square(){return multiply(this);}
-    public ScalarAtom cube(){return multiply(this.square());}
-    public ScalarAtom percent(){return multiply(SI.centi);}
-    public ScalarAtom permille(){return multiply(SI.milli);}
+    public ScalarAtom mod(ScalarAtom other) {return subtract(divide(other).floor().multiply(other));}
+    public ScalarAtom square() {return multiply(this);}
+    public ScalarAtom cube() {return multiply(this.square());}
+    public ScalarAtom percent() {return multiply(SI.centi);}
+    public ScalarAtom permille() {return multiply(SI.milli);}
     public abstract ScalarAtom power(LargeFraction f);
     public abstract LargeDecimal approximateToDecimal(LargeInteger precision);
 }

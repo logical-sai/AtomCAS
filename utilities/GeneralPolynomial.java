@@ -7,7 +7,7 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial(LargeList<ScalarAtom> coefficients){
         //trim leading zeros
-        while(coefficients.getFirst().equals(LargeInteger.ZERO) && coefficients.size().greaterThan(LargeInteger.ONE))
+        while(coefficients.getFirst().isZero() && coefficients.size().greaterThan(LargeInteger.ONE))
             coefficients.removeFirst();
         this.coefficients = new LargeList<>();
         for(ScalarAtom coefficient : coefficients){
@@ -38,12 +38,12 @@ public class GeneralPolynomial{
 
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1)){
             ScalarAtom c = coefficients.get(i);
-            if(c.equals(LargeInteger.ZERO)) continue;
+            if(c.isZero()) continue;
             LargeInteger power = deg.subtract(i);
             if(!str.isEmpty()) str.append(" + ");
-            if(power.equals(LargeInteger.ZERO))
+            if(power.isZero())
                 str.append(c);
-            else if(power.equals(LargeInteger.ONE)){
+            else if(power.isOne()){
                 str.append(c).append("*x");
             }else
                 str.append(c).append("*x^").append(power);
@@ -87,7 +87,7 @@ public class GeneralPolynomial{
     }
     public LargeInteger degree(){return coefficients.size().subtract(1);}
     public GeneralPolynomial increaseDegree(LargeInteger i){
-        if(i.lessThan(LargeInteger.ZERO)) throw new IllegalArgumentException("Input means decreasing the degree");
+        if(i.isNegative()) throw new IllegalArgumentException("Input means decreasing the degree");
         if(this.isZero()) return new GeneralPolynomial();
         LargeList<ScalarAtom> cands = new LargeList<>();
         for(ScalarAtom I: coefficients) cands.add(I);
@@ -166,7 +166,7 @@ public class GeneralPolynomial{
         return new GeneralPolynomial(cands);
     }
     public GeneralPolynomial multiply(ScalarAtom other){
-        if(other.equals(LargeInteger.ZERO) || isZero()) return new GeneralPolynomial();
+        if(other.isZero() || isZero()) return new GeneralPolynomial();
         LargeList<ScalarAtom> cands = new LargeList<>();
         for(ScalarAtom I: coefficients)
             cands.add(I.multiply(other));
@@ -182,10 +182,9 @@ public class GeneralPolynomial{
     }
     public GeneralPolynomial square(){return this.multiply(this);}
     public GeneralPolynomial monomialPower(LargeInteger I){
-        if(I.lessThan(LargeInteger.ZERO)) throw new ArithmeticException("Rational functions not implemented yet");
-        if(I.equals(LargeInteger.ZERO)){
+        if(I.isNegative()) throw new ArithmeticException("Rational functions not implemented yet");
+        if(I.isZero())
             return new GeneralPolynomial().add(LargeInteger.ONE);
-        }
         GeneralPolynomial P = new GeneralPolynomial();
         P = P.add(LargeFraction.ONE);
         LargeInteger expTemp = I.clone();
@@ -193,7 +192,7 @@ public class GeneralPolynomial{
         while(true){
             if(expTemp.isOdd()){
                 P = P.multiply(basTemp);
-                if(expTemp.equals(LargeInteger.ONE)) break;
+                if(expTemp.isOne()) break;
             }
             basTemp = basTemp.square();
             expTemp = expTemp.shiftRight(1);

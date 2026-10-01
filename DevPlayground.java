@@ -90,20 +90,22 @@ public class DevPlayground {
     static void testMultiply(){
         int BI_Wins = 0;
         int LI_Wins = 0;
-        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048,
-                3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536};
+        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536,
+                2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536, 98304, 131072, 196608,
+                262144, 393216, 524288, 786432, 1048576};
         int pairs = 10;
         double[] ratios = new double[sizes.length*pairs];
         for (int k = 0; k < sizes.length; k++) {
-            int trials = 3145728/sizes[k];
-            System.out.println("Chunks tried: " + sizes[k] + " with " + pairs + " pairs and " + trials + " trials per pair");
+            int trials = (3 << 21)/sizes[k];
+            System.out.println("Bits tried: " + sizes[k] + " with " + pairs + " pairs and " + trials + " trials per pair");
             double[] sizeRatios = new double[pairs];
             for (int l = 0; l < pairs; l++) {
-                LargeInteger A = LargeInteger.randomChunks(sizes[k]);
-                LargeInteger B = A.clone();
+                LargeInteger A = LargeInteger.randomBits(sizes[k]);
+                LargeInteger B = LargeInteger.randomBits(sizes[k]);
                 BigInteger BA = A.toBigInteger();
+                BigInteger BB = B.toBigInteger();
                 LargeInteger LResult = A.multiply(B);
-                BigInteger BResult = BA.multiply(BA);
+                BigInteger BResult = BA.multiply(BB);
                 if (!LResult.toBigInteger().equals(BResult))
                     throw new AssertionError("Product is wrong");
                 long liTime;
@@ -113,7 +115,7 @@ public class DevPlayground {
                 if (((k * pairs + l) & 1) == 1){
                     for (int i = 0; i < trials; i++) {
                         sink = A.multiply(B);
-                        sink = BA.multiply(BA);
+                        sink = BA.multiply(BB);
                     }
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
@@ -123,19 +125,19 @@ public class DevPlayground {
 
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
-                        sink = BA.multiply(BA);
+                        sink = BA.multiply(BB);
                     t1 = System.nanoTime();
                     biTime = t1 - t0;
 
                 } else {
                     for (int i = 0; i < trials; i++) {
-                        sink = BA.multiply(BA);
+                        sink = BA.multiply(BB);
                         sink = A.multiply(B);
                     }
 
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
-                        sink = BA.multiply(BA);
+                        sink = BA.multiply(BB);
                     t1 = System.nanoTime();
                     biTime = t1 - t0;
                     t0 = System.nanoTime();
@@ -178,35 +180,22 @@ public class DevPlayground {
             boolean bi = b.isProbablePrime(100);
             long t3 = System.nanoTime();
 
-            System.out.printf(
-                    "p=%d limbs=%d LI=%.6fms BI=%.6fms ",
-                    i,
-                    i/64,
-                    (t2 - t1) / 1e6,
-                    (t3 - t2) / 1e6
-            );
-
-            if (li != bi) {
-                System.out.println("Mismatch:");
-                System.out.println(n);
-                System.out.println("LI = " + li);
-                System.out.println("BI = " + bi);
-                throw new AssertionError();
-            }
+            System.out.printf("p=%d limbs=%d LI=%.6fms BI=%.6fms ", i, i/64, (t2 - t1) / 1e6, (t3 - t2) / 1e6);
+            if (li != bi)
+                throw new AssertionError("Mismatch on " + n + "\nLI = " + li + " \nBI = " + bi);
             System.out.println("Prime? " + li);
         }
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
     static void testPowMod(){
-        for(int k: new int[]{64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
+        for(int k: new int[]{2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
             long LI_time = 0;
             long BI_time = 0;
-            int trials = 32768/k;
-            System.out.println("Bits tested: " + k);
+            int trials = 12288/k;
             for(int j = 0; j < 100; j++){
                 LargeInteger base = LargeInteger.randomBits(k);
-                LargeInteger exponent = LargeInteger.randomBits(k);
+                LargeInteger exponent = LargeInteger.powerOfTwo(k).subtract(LargeInteger.ONE);
                 LargeInteger modulus = LargeInteger.randomBits(k).or(LargeInteger.ONE);
                 BigInteger bigBase = base.toBigInteger();
                 BigInteger bigExponent = exponent.toBigInteger();
@@ -230,6 +219,7 @@ public class DevPlayground {
                 LI_time += t1 - t0;
                 BI_time += t2 - t1;
             }
+            System.out.println("Bits tested: " + k);
             System.out.println("Average LI time: " + LI_time/1e9/(100.0*trials) + " seconds/trial");
             System.out.println("Average BI time: " + BI_time/1e9/(100.0*trials) + " seconds/trial");
             System.out.println("LI/BI = " + LI_time*1.0/BI_time);
@@ -237,17 +227,17 @@ public class DevPlayground {
         }
     }
 
-    static void testPower() {
+    static void testToString() {
         for (int size : new int[]{1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}) {
             long LI_time = 0;
             long BI_time = 0;
             int trials;
-            if (size <= 16)       trials = 5000;
-            else if (size <= 64)  trials = 2000;
-            else if (size <= 256) trials = 500;
-            else if (size <= 512) trials = 200;
+            if (size <= 16)        trials = 5000;
+            else if (size <= 64)   trials = 2000;
+            else if (size <= 256)  trials = 500;
+            else if (size <= 512)  trials = 200;
             else if (size <= 1024) trials = 50;
-            else                  trials = 20;
+            else                   trials = 20;
             System.out.println("Chunk size: " + size);
             for (int k = 0; k < 100; k++) {
                 LargeInteger L5 = LargeInteger.randomChunks(size);
@@ -297,7 +287,7 @@ public class DevPlayground {
             System.out.println();
         }
     }
-    static void testBinaryGCD(){
+    static void testGCD(){
         int trials = 150;
         int total = 101;
         long[] LI_times = new long[total];
@@ -350,20 +340,41 @@ public class DevPlayground {
     static final List<FactorBoss> factorBosses = List.of(
             new FactorBoss(
                     "6428380277058512877402805374285161923129703426793563359435194951116582476919717925450545523629758567927222158921007107167940393067361029334463486674570492299456886839634573238186015211",
-                    "10^303 + 1",
-                    "Extremely difficult factorization with ECM"),
+                    "184-digit factor of 10^303 + 1",
+                    "I just need to discover P43"),
             new FactorBoss(
                     "18748342930951187059699050387401582462321458294019614481729930646671266182084358057158477154583753264703849269569462288159923316207103194097051657281",
-                    "10^280 + 1",
-                    "Extremely difficult factorization"),
+                    "149-digit factor of 10^280 + 1",
+                    "It has P37. Which seems reasonable. Then P48"),
             new FactorBoss(
-                    "92556179448994367391887834053878562534782033760810527051075248738484727059555245899601591",
-                    "10^97-1",
-                    "Might require higher bounds or more curves than the first one on this list")
-    );
+                    "95494137605894520631622200650595911876626195592470868465557173785682624796482816755939080254946071115981326539067",
+                    "113-digit factor of 10^151-1",
+                    "IT'S P56*P58 GODDAMMIT"),
+            new FactorBoss(
+                    "40653466930429226524139946783940405680173423825383413355502398916999414232462980261469717875397319849",
+                    "101-digit factor of 10^202+1",
+                    "P42...what am I even doing"),
+            new FactorBoss(
+                    "2545241670696632645269668355010308228766321362213342156837791748326503601516964035735193056580722339586143704344727531879151925475323882002596146504110565298175061722110514393341647789457609",
+                    "190-digit factor of 10^194+1",
+                    "IT HAS A P53 BRAH"),
+            new FactorBoss(
+                    "453006805906714884411502853326668790794086913203640988280372355951493593240466603283669916463694317597801206598870997639207",
+                    "123-digit factor of 10^149+1",
+                    "A P48...boss is an underestimation"
+            ),
+            new FactorBoss(
+                    "406623275067201682254683703114316127837343365549390196607664401587666091311498883684456642992878373814596442915923300647087133811461834509716351212001",
+                    "150-digit factor of 10^200+1",
+                    "Same class as the first guy; has another P43"
+            ),
+            new FactorBoss(
+                    "37003987476536590423023035714448973085384312366814142865897305180077123128921707342015931540949401",
+                    "98-digit factor of 10^134+1",
+                    "ANOTHER P43. why me"
+            ));
     static void main() {
-        System.out.println(new LargeInteger("881975966463387623401550621533024970899955250627528568187087047")
-                .quadraticSieveWithoutConstraints());
+        System.out.println(new LargeInteger("10^157-1").factor());
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
@@ -475,11 +486,11 @@ public class DevPlayground {
         System.out.println("=== Vector / Matrix Demo ===");
 
         LargeList<LargeFraction> entries = new LargeList<>();
-        entries.add(new LargeFraction(1));
-        entries.add(new LargeFraction(2));
-        entries.add(new LargeFraction(3));
-        entries.add(new LargeFraction(4));
-        entries.add(new LargeFraction(5));
+        entries.add(new LargeFraction(LargeInteger.ONE));
+        entries.add(new LargeFraction(LargeInteger.TWO));
+        entries.add(new LargeFraction(LargeInteger.THREE));
+        entries.add(new LargeFraction(LargeInteger.FOUR));
+        entries.add(new LargeFraction(LargeInteger.FIVE));
 
         LargeVector v = new LargeVector(entries);
 
@@ -502,13 +513,9 @@ public class DevPlayground {
                 "√(5+2√6)",
                 "(1+√7)^8"
         };
-        for (String input : inputs) {
-            try {
-                System.out.println(input + " -> " + Parser.parse(input));
-            } catch (Exception e) {
-                System.out.println(input + " -> ERROR: " + e.getMessage());
-            }
-        }
+        for (String input : inputs)
+            try {System.out.println(input + " -> " + Parser.parse(input));}
+            catch (Exception e) {System.out.println(input + " -> ERROR: " + e.getMessage());}
         System.out.println();
     }
 

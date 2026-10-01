@@ -1,67 +1,64 @@
 package com.AtomCAS.utilities;
 
-public class LargeFraction extends ScalarAtom {
+public final class LargeFraction extends ScalarAtom {
     final LargeInteger numerator;
     final LargeInteger denominator;
     public static final LargeFraction NEGATIVE_ONE = new LargeFraction(LargeInteger.NEGATIVE_ONE);
     public static final LargeFraction ZERO = new LargeFraction(LargeInteger.ZERO);
-    public static final LargeFraction HALF = new LargeFraction(LargeInteger.ONE, LargeInteger.TWO);
-    public static final LargeFraction ONE = new LargeFraction(1L);
-    public static final LargeFraction TWO = new LargeFraction(2L);
-    public LargeFraction(LargeInteger in){
+    public static final LargeFraction HALF = LargeInteger.TWO.reciprocal();
+    public static final LargeFraction ONE = new LargeFraction(LargeInteger.ONE);
+    public static final LargeFraction TWO = new LargeFraction(LargeInteger.TWO);
+    public LargeFraction(LargeInteger in) {
         numerator = in;
         denominator = LargeInteger.ONE;
     }
     public LargeFraction(LargeInteger numerator, LargeInteger denominator) {
-        if (denominator.negative) {
+        if (denominator.isNegative()) {
             numerator = numerator.negate();
             denominator = denominator.negate();
         }
         LargeInteger g = numerator.gcd(denominator);
         this.numerator = numerator.divide(g);
         this.denominator = denominator.divide(g);
-        if (LargeInteger.isZeroArray(this.denominator.limbs))
+        if (denominator.isZero())
             throw new ArithmeticException("Cannot divide by 0");
     }
-    public LargeFraction(String str){
+    public LargeFraction(String str) {
         ScalarAtom R = Parser.parse(str);
-        if(R instanceof LargeInteger I){
+        if(R instanceof LargeInteger I) {
             numerator = I;
             denominator = LargeInteger.ONE;
             return;
-        }else if(R instanceof LargeFraction F){
+        }else if(R instanceof LargeFraction F) {
             numerator = F.numerator;
             denominator = F.denominator;
             return;
         }
         R = Parser.parse(R.toString());
-        if(R instanceof LargeInteger I){
+        if(R instanceof LargeInteger I) {
             numerator = I;
             denominator = LargeInteger.ONE;
             return;
-        }else if(R instanceof LargeFraction F){
+        }else if(R instanceof LargeFraction F) {
             numerator = F.numerator;
             denominator = F.denominator;
             return;
         }
         throw new IllegalArgumentException("Inputted expression does not evaluate to a rational number");
     }
-    public LargeFraction(long num) {
-        numerator = LargeInteger.valueOf(num);
-        denominator = LargeInteger.ONE;
-    }
+    public static LargeFraction valueOf(long n) {return new LargeFraction(LargeInteger.valueOf(n));}
     @Override
     public LargeFraction clone() {return new LargeFraction(numerator.clone(), denominator.clone());}
     @Override
     public String toString() {
-        if(LargeInteger.isOneArray(denominator.limbs))
+        if(denominator.isOne())
             return numerator.toString();
         return numerator + "/" + denominator;
     }
-    public int hashCode(){return CASHash.rational(numerator, denominator);}
+    public int hashCode() {return CASHash.rational(numerator, denominator);}
     @Override
-    public String toLatex(){
-        if (LargeInteger.isOneArray(denominator.limbs))
+    public String toLatex() {
+        if (denominator.isOne())
             return numerator.toLatex();
         return "\\frac{" + numerator.toLatex() + "}{" + denominator.toLatex() + "}";
     }
@@ -69,13 +66,21 @@ public class LargeFraction extends ScalarAtom {
     public boolean equals(Atom other) {
         if (!(other instanceof ScalarAtom)) return false;
         if(other instanceof LargeInteger I)
-            return numerator.equals(I) && LargeInteger.isOneArray(denominator.limbs);
+            return numerator.equals(I) && denominator.isOne();
         else if(other instanceof LargeFraction F)
             return numerator.equals(F.numerator) && denominator.equals(F.denominator);
         return this.compareTo((ScalarAtom) other) == 0L;
     }
     @Override
+    public boolean isZero() {return numerator.isZero();}
+    @Override
+    public boolean isOne() {return numerator.isOne();}
+    @Override
+    public boolean isNegative() {return numerator.isNegative();}
+    @Override
     public LargeFraction abs() {return new LargeFraction(numerator.abs(), denominator);}
+    @Override
+    public LargeInteger sign() {return numerator.sign();}
     @Override
     public int compareMagnitudes(ScalarAtom other) {
         return switch (other) {
@@ -100,10 +105,10 @@ public class LargeFraction extends ScalarAtom {
             case LargePowerMonomial largePowerMonomial -> {
                 int C = this.compareMagnitudes(largePowerMonomial);
                 if (C == 1) {
-                    if (this.numerator.negative) yield -C;
+                    if (this.numerator.isNegative()) yield -C;
                     yield C;
                 } else if (C == -1) {
-                    if (other.lessThan(ZERO)) yield C;
+                    if (other.isNegative()) yield C;
                     yield C;
                 }
                 yield C;
@@ -113,7 +118,7 @@ public class LargeFraction extends ScalarAtom {
                 // compare x ? other.exponent
                 int cmp = x.compareTo(RT.exponent);
                 // because x = (F - A) / B
-                if (RT.coefficient.lessThan(ZERO)) cmp = -cmp;
+                if (RT.coefficient.isNegative()) cmp = -cmp;
                 yield cmp;
             }default -> throw new UnsupportedOperationException(
                     "Operation with these types together not supported yet");
@@ -134,7 +139,7 @@ public class LargeFraction extends ScalarAtom {
     @Override
     public LargeInteger floor() {
         LargeInteger[] pair = numerator.quotientAndRemainder(denominator);
-        if (pair[1].negative) return pair[0].subtract(1);
+        if (pair[1].isNegative()) return pair[0].subtract(1);
         return pair[0];
     }
     public LargeInteger intPart() {return numerator.divide(denominator);}
@@ -143,14 +148,14 @@ public class LargeFraction extends ScalarAtom {
     public LargeInteger ceil() {
         LargeInteger[] DR = numerator.quotientAndRemainder(denominator);
         LargeInteger result = DR[0];
-        if (this.greaterThan(ZERO) && !LargeInteger.isZeroArray(DR[1].limbs))
+        if (greaterThan(ZERO) && !DR[1].isZero())
             result = result.add(1);
         return result;
     }
     public LargeMap<LargeInteger, LargeFraction> factor() {
         LargeMap<LargeInteger, LargeFraction> N = numerator.factor();
-        if(LargeInteger.isOneArray(denominator.limbs)) return N;
-        if(LargeInteger.isOneArray(numerator.limbs)) N.remove(LargeInteger.ONE);
+        if(denominator.isOne()) return N;
+        if(numerator.isOne()) N.remove(LargeInteger.ONE);
         LargeMap<LargeInteger, LargeFraction> D = denominator.factor();
         for(LargeInteger I: D.keys()) N.put(I, D.get(I).negate());
         return N;
@@ -158,8 +163,8 @@ public class LargeFraction extends ScalarAtom {
     public static LargeFraction buildFromFactors(LargeMap<LargeInteger, LargeFraction> pr) {
         LargeMap<LargeInteger, LargeFraction> N = new LargeMap<>();
         LargeMap<LargeInteger, LargeFraction> D = new LargeMap<>();
-        for(LargeInteger I: pr.keys()){
-            if(!pr.get(I).numerator.negative)
+        for(LargeInteger I: pr.keys()) {
+            if(!pr.get(I).numerator.isNegative())
                 N.put(I, pr.get(I).clone());
             else D.put(I, pr.get(I).negate());
         }
@@ -168,8 +173,7 @@ public class LargeFraction extends ScalarAtom {
     @Override
     public ScalarAtom add(ScalarAtom other) {
         return switch (other) {
-            case LargeInteger I -> new LargeFraction(numerator.add(I.multiply(denominator)),
-                    denominator);
+            case LargeInteger I -> new LargeFraction(numerator.add(I.multiply(denominator)), denominator);
             case LargeFraction F -> {
                 LargeInteger l = denominator.lcm(F.denominator);
                 yield new LargeFraction(this.numerator.multiply(l.divide(denominator))
@@ -183,8 +187,8 @@ public class LargeFraction extends ScalarAtom {
                     "Operation with these types together not supported yet");
         };
     }
-    public LargeFraction add(long other) {return new LargeFraction(numerator.add(denominator.multiply(other)),
-            denominator);}
+    LargeFraction add(long other) {
+        return new LargeFraction(numerator.add(denominator.multiply(other)), denominator);}
     public ScalarAtom add(ScalarAtom... other) {
         ScalarAtom result = this.clone();
         for (ScalarAtom atom : other) result = result.add(atom);
@@ -213,9 +217,9 @@ public class LargeFraction extends ScalarAtom {
         return result;
     }
     @Override
-    public LargeFraction square(){return new LargeFraction(numerator.square(), denominator.square());}
+    public LargeFraction square() {return new LargeFraction(numerator.square(), denominator.square());}
     @Override
-    public LargeFraction cube(){return new LargeFraction(numerator.cube(), denominator.cube());}
+    public LargeFraction cube() {return new LargeFraction(numerator.cube(), denominator.cube());}
     public LargePowerMonomial power(LargeFraction exp) {return new LargePowerMonomial(this, exp);}
     @Override
     public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
@@ -225,11 +229,11 @@ public class LargeFraction extends ScalarAtom {
         return (LargeFraction) n.divide(d);
     }
     @Override
-    public LargeFraction reciprocal(){return new LargeFraction(denominator, numerator);}
+    public LargeFraction reciprocal() {return new LargeFraction(denominator, numerator);}
     public LargeFraction gcd(LargeFraction other) {
         LargeFraction copy = this.abs();
         LargeFraction copy2 = other.abs();
-        while (!LargeInteger.isZeroArray(copy2.numerator.limbs)){
+        while (!copy2.isZero()) {
             LargeFraction temp = new LargeFraction(copy.numerator, copy.denominator);
             copy = new LargeFraction(copy2.numerator, copy2.denominator);
             copy2 = (LargeFraction) temp.mod(copy2);

@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class LargeDecimal extends ScalarAtom{
+public final class LargeDecimal extends ScalarAtom{
     boolean sign;
     LargeList<Long> intPart; //little-endian; base 2^64
     LargeList<Long> decPart; //big-endian; base 10^18
@@ -13,6 +13,7 @@ public class LargeDecimal extends ScalarAtom{
         if(list.intSized()) return list.intSize() != 1 || list.getFirst() != 0;
         return true;
     }
+    public boolean isZero() {return !isNonZeroList(intPart) && isNonZeroList(decPart) && isNonZeroList(intPart);}
     @Override
     public LargeDecimal clone() {return new LargeDecimal(intPart, decPart, sign);}
     @Override
@@ -46,12 +47,6 @@ public class LargeDecimal extends ScalarAtom{
     public LargeInteger ceil() {
         return null;
     }
-
-    @Override
-    public int compareMagnitudes(ScalarAtom other) {
-        return 0;
-    }
-
     @Override
     public int compareTo(ScalarAtom other) {
         return 0;

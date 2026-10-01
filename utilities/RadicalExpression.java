@@ -22,11 +22,6 @@ public class RadicalExpression extends ScalarAtom{
     }
 
     @Override
-    public int compareMagnitudes(ScalarAtom other) {
-        return 0;
-    }
-
-    @Override
     public int compareTo(ScalarAtom other) {
         return 0;
     }

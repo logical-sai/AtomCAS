@@ -7,12 +7,12 @@ public class RadicalTermNode extends ScalarAtom{
         LargeFraction R = rationalPart.clone();
         LargeFraction C = coefficient.clone();
         LargePowerNode K = base.clone();
-        if(K.equals(LargeInteger.ONE)){
+        if(K.isOne()){
             this.rationalPart = (LargeFraction) R.add(C);
             this.coefficient = LargeFraction.ZERO;
             this.exponent = new LargePowerNode(LargeFraction.ZERO, LargeFraction.ONE, LargeFraction.ONE);
             return;
-        }else if(K.equals(LargeInteger.ZERO) || C.equals(LargeInteger.ZERO)){
+        }else if(K.isZero() || C.isZero()){
             this.rationalPart = R;
             this.coefficient = LargeFraction.ZERO;
             this.exponent = new LargePowerNode(K.base, LargeFraction.ONE, LargeInteger.ONE);
@@ -25,19 +25,19 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
-        if(rationalPart.doesntEqual(LargeInteger.ZERO))
+        if(!rationalPart.isZero())
             str.append(rationalPart);
-        if(coefficient.equals(LargeInteger.ZERO)){
+        if(coefficient.isZero()){
             if(str.isEmpty()) str.append(rationalPart);
             return str.toString();
         }else if(coefficient.greaterThan(LargeInteger.ZERO)){
-            if(rationalPart.doesntEqual(LargeInteger.ZERO)) str.append(" + ");
-            if(coefficient.doesntEqual(LargeInteger.ONE)) str.append(coefficient);
+            if(!rationalPart.isZero()) str.append(" + ");
+            if(!coefficient.isOne()) str.append(coefficient);
         }else if(coefficient.lessThan(LargeInteger.ZERO)){
-            if(rationalPart.doesntEqual(LargeInteger.ZERO)) str.append(" - ");
-            if(coefficient.doesntEqual(LargeInteger.ONE)) str.append(coefficient.abs());
+            if(!rationalPart.isZero()) str.append(" - ");
+            if(!coefficient.isOne()) str.append(coefficient.abs());
         }
-        if(coefficient.doesntEqual(LargeInteger.ONE))
+        if(!coefficient.isOne())
             str.append("*");
         str.append(exponent);
         return str.toString();
@@ -48,7 +48,7 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public RadicalTermNode clone() {return new RadicalTermNode(rationalPart, coefficient, exponent);}
     @Override
-    public boolean isRational(){return coefficient.equals(LargeInteger.ZERO);}
+    public boolean isRational(){return coefficient.isZero();}
     @Override
     public boolean isReal() {return !isNotReal();}
     @Override
@@ -63,8 +63,6 @@ public class RadicalTermNode extends ScalarAtom{
     public LargeInteger floor() {throw new UnsupportedOperationException("Operation with this type not supported yet");}
     @Override
     public LargeInteger ceil() {throw new UnsupportedOperationException("Operation with this type together not supported yet");}
-    @Override
-    public int compareMagnitudes(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
     @Override
     public int compareTo(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
     @Override

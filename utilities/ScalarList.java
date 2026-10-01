@@ -2,7 +2,7 @@ package com.AtomCAS.utilities;
 import java.util.ArrayList;
 public class ScalarList{
     public LargeList<ScalarAtom> list;
-    public ScalarList(LargeList<ScalarAtom> list) throws CloneNotSupportedException {this.list = list.copy();}
+    public ScalarList(LargeList<ScalarAtom> list) {this.list = list.copy();}
     public ScalarAtom get(int i) {return list.get(i);}
     public ScalarAtom get(LargeInteger i){return list.get(i);}
     public LargeInteger size(){return list.size();}
@@ -100,7 +100,7 @@ public class ScalarList{
         sort();
         return list.getLast();
     }
-    public ScalarAtom IQR() throws CloneNotSupportedException {
+    public ScalarAtom IQR() {
         requireReal("IQR");
         if (list.size().lessThan(LargeInteger.TWO))
             throw new IllegalArgumentException("Need at least 2 values in list");
@@ -113,7 +113,7 @@ public class ScalarList{
             copy2.add(list.get(i));
         return new ScalarList(copy2).median().subtract(new ScalarList(copy).median());
     }
-    public ScalarAtom mad() throws CloneNotSupportedException {
+    public ScalarAtom mad() {
         requireReal("mad");
         LargeList<ScalarAtom> copy = new LargeList<>();
         ScalarAtom m = this.median();

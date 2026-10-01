@@ -25,7 +25,8 @@ public class AlgebraicNumber extends ScalarAtom{
     public boolean equals(Atom other) {
         return false;
     }
-
+    @Override
+    public boolean isZero() {return minimalPolynomial.isZero();}
     @Override
     public LargeInteger floor() {
         return null;
@@ -34,11 +35,6 @@ public class AlgebraicNumber extends ScalarAtom{
     @Override
     public LargeInteger ceil() {
         return null;
-    }
-
-    @Override
-    public int compareMagnitudes(ScalarAtom other) {
-        return 0;
     }
 
     @Override

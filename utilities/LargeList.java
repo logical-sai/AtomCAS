@@ -4,13 +4,12 @@ public class LargeList<T> implements Iterable<T>{
     private static final int CHUNK_SIZE = 1000;
 
     private LargeInteger size = LargeInteger.ZERO;
-    private int sizeInt = 0;
+    private int sizeInt = 0; // -1 means size overflows int
 
     private int height = 0; // 0 means root is a leaf Object[1000]
     private Object[] root = new Object[CHUNK_SIZE];
-    @SuppressWarnings("unchecked")
-    public LargeList<T> copy() throws CloneNotSupportedException {
-        LargeList<T> clone = (LargeList<T>) super.clone();
+    public LargeList<T> copy(){
+        LargeList<T> clone = new LargeList<>();
         clone.sizeInt = this.sizeInt;
         clone.height = this.height;
         clone.size = this.size;
@@ -68,7 +67,7 @@ public class LargeList<T> implements Iterable<T>{
         set(LargeInteger.ZERO, value);
     }
     public void set(LargeInteger index, T value){
-        if (index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
+        if (index.isNegative() || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         setRaw(index, value);
     }
@@ -126,7 +125,7 @@ public class LargeList<T> implements Iterable<T>{
     }
     @SuppressWarnings("unchecked")
     public T get(LargeInteger index) {
-        if (index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
+        if (index.isNegative() || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         if(intSized()) return get(Integer.parseInt(index.toString()));
         int[] path = base1000Digits(index);
@@ -172,7 +171,7 @@ public class LargeList<T> implements Iterable<T>{
     }
     public void addAll(LargeList<T> other){for(T I: other) this.add(I);}
     public void remove(LargeInteger index){
-        if(index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(size))
+        if(index.isNegative() || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
         for(LargeInteger i = index; i.lessThan(this.size().subtract(LargeInteger.ONE)); i = i.add(1))
             this.set(i, this.get(i.add(1)));
@@ -181,8 +180,8 @@ public class LargeList<T> implements Iterable<T>{
         if(intSized())
             sizeInt--;
         else
-            if(size.equals(LargeInteger.valueOf(2147483647)))
-                sizeInt = 2147483647;
+            if(size.equals(LargeInteger.valueOf(Integer.MAX_VALUE)))
+                sizeInt = Integer.MAX_VALUE;
     }
     public void remove(int index){
         if(index < 0 || index >= sizeInt)
@@ -213,7 +212,7 @@ public class LargeList<T> implements Iterable<T>{
     }
     public boolean isEmpty(){return sizeInt==0;}
     private int[] base1000Digits(LargeInteger index) {
-        if (index.equals(LargeInteger.ZERO))
+        if (index.isZero())
             return new int[]{0};
         int[] temp = new int[height + 1];
         LargeInteger copy = index;
@@ -282,7 +281,7 @@ public class LargeList<T> implements Iterable<T>{
     @Override
     public Iterator<T> iterator() {
         if (intSized())
-            return new Iterator<>() {
+            return new Iterator<T>() {
                 private int index = 0;
                 @Override
                 public boolean hasNext() {return index < sizeInt;}
@@ -291,13 +290,17 @@ public class LargeList<T> implements Iterable<T>{
                     if (!hasNext()) throw new NoSuchElementException("You've reached the end of the list");
                     return get(index++);
                 }
+                public boolean hasPrevious() {return index > 0;}
+                public T previous(){
+                    if(!hasPrevious()) throw new NoSuchElementException("You've reached the beginning of the list");
+                    return get(index--);
+                }
                 @Override
                 public void remove() {
-                    LargeList.this.remove(index);
-                    index--;
+                    LargeList.this.remove(index--);
                 }
             };
-        else return new Iterator<>() {
+        else return new Iterator<T>() {
             private LargeInteger index = LargeInteger.ZERO;
             @Override
             public boolean hasNext() {return index.lessThan(size);}
@@ -306,6 +309,13 @@ public class LargeList<T> implements Iterable<T>{
                 if (!hasNext()) throw new NoSuchElementException("You've reached the end of the list");
                 T value = get(index);
                 index = index.add(1);
+                return value;
+            }
+            public boolean hasPrevious() {return index.greaterThan(LargeInteger.ZERO);}
+            public T previous(){
+                if(!hasPrevious()) throw new NoSuchElementException("You've reached the beginning of the list");
+                T value = get(index);
+                index = index.subtract(1);
                 return value;
             }
             @Override

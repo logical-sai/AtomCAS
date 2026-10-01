@@ -40,6 +40,8 @@ public class Exp extends ScalarAtom {
         return false;
     }
     @Override
+    public boolean isZero() {return addend.isZero() && coefficient.isZero();}
+    @Override
     public LargeInteger floor() {
         return null;
     }
@@ -52,11 +54,6 @@ public class Exp extends ScalarAtom {
     @Override
     public ScalarAtom abs() {
         return null;
-    }
-
-    @Override
-    public int compareMagnitudes(ScalarAtom other) {
-        return 0;
     }
 
     @Override

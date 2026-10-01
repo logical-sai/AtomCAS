@@ -13,7 +13,7 @@ public class LargeMap<K, V>{
         this.values = values;
     }
     public LargeMap<K, V> copy(){
-        return new LargeMap<>(keys, values);
+        return new LargeMap<>(keys.copy(), values.copy());
     }
     public String toString(){
         StringBuilder sb = new StringBuilder();
@@ -44,10 +44,10 @@ public class LargeMap<K, V>{
 //        }
 //        return CASHash.finish(h);
     }
-    public LargeList<K> keys(){return keys;}
-    public LargeList<V> values(){return values;}
-    public K keyAtIndex(LargeInteger index){return keys.get(index);}
-    public LargeInteger size(){return keys.size();}
+    public LargeList<K> keys() {return keys;}
+    public LargeList<V> values() {return values;}
+    K keyAtIndex(LargeInteger index) {return keys.get(index);}
+    public LargeInteger size() {return keys.size();}
     private void checkInvariant() {
         if (!keys.size().equals(values.size()))
             throw new IllegalStateException("LargeMap corrupted: key/value size mismatch");
@@ -56,11 +56,10 @@ public class LargeMap<K, V>{
         if (key == null || value == null)
             throw new IllegalArgumentException("Null keys/values not allowed");
         LargeInteger index = indexOfKey(key);
-        if(index.lessThan(LargeInteger.ZERO)){
+        if(index.isNegative()){
             keys.add(key);
             values.add(value);
-        }else
-            values.set(index, value);
+        }else values.set(index, value);
         checkInvariant();
     }
     public void replace(LargeInteger index, K key, V value){
@@ -72,7 +71,7 @@ public class LargeMap<K, V>{
     }
     public void remove(K key) {
         LargeInteger index = indexOfKey(key);
-        if (index.equals(LargeInteger.NEGATIVE_ONE)) return;
+        if (index.isNegative()) return;
         keys.remove(index);
         values.remove(index);
         checkInvariant();
@@ -84,16 +83,16 @@ public class LargeMap<K, V>{
                 return i;
         return LargeInteger.NEGATIVE_ONE;
     }
-    public boolean isEmpty() {return keys.size().equals(LargeInteger.ZERO);}
+    public boolean isEmpty() {return keys.size().isZero();}
     public V get(K key) {
         LargeInteger index = indexOfKey(key);
-        if (index.equals(LargeInteger.NEGATIVE_ONE))
+        if (index.isNegative())
             throw new IllegalArgumentException("Key not found");
         return values.get(index);
     }
     public V getOrDefault(K key, V defaultValue) {
         LargeInteger index = indexOfKey(key);
-        if (index.equals(LargeInteger.NEGATIVE_ONE))
+        if (index.isNegative())
             return defaultValue;
         return values.get(index);
     }

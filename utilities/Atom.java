@@ -44,7 +44,7 @@ Vector + Scalar → probably forbidden; (Do not question these guys back here. I
 Vector + Matrix -> forbiden... (You sure you wanna go with this?)
 Exponentiation on Tensors → yeah no
  **/
-public abstract class Atom {
+public abstract class Atom implements Cloneable {
     @Override
     public abstract Atom clone();
     @Override

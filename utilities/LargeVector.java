@@ -4,7 +4,7 @@ public class LargeVector extends TensorAtom {
     public LargeFraction factor;
     public LargeVector(LargeList<LargeInteger> list, LargeFraction factor){
         this.list = new LargeList<>();
-        if(list.size().equals(LargeInteger.ZERO)){
+        if(list.size().isZero()){
             this.factor = LargeFraction.ONE;
             return;
         }
@@ -13,7 +13,7 @@ public class LargeVector extends TensorAtom {
             this.list.add(I);
         LargeInteger lc = list.getFirst();
         for(LargeInteger I: list) lc = lc.gcd(I);
-        if(lc.equals(LargeInteger.ZERO)){
+        if(lc.isZero()){
             this.factor = LargeFraction.ONE;
             return;
         }
@@ -38,7 +38,7 @@ public class LargeVector extends TensorAtom {
         list = new LargeList<>();
         factor = LargeFraction.ONE;
     }
-    public LargeVector clone(){return new LargeVector(list,factor);}
+    public LargeVector clone(){return new LargeVector(list.copy(),factor.clone());}
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -107,7 +107,7 @@ public class LargeVector extends TensorAtom {
         return true;
     }
     @SuppressWarnings("unused")
-    public boolean isUnit(){return this.magnitude().equals(LargeInteger.ONE);}
+    public boolean isUnit(){return this.magnitude().isOne();}
     public LargeVector add(LargeVector other){
         if(other.isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
         LargeList<LargeFraction> liste = new LargeList<>();
@@ -158,8 +158,12 @@ public class LargeVector extends TensorAtom {
     public LargeVector crossProduct(LargeVector v) {
         if (dimension().doesntEqual(LargeInteger.THREE) || v.dimension().doesntEqual(LargeInteger.THREE))
             throw new IllegalArgumentException("Cross product only defined for 3D vectors");
-        LargeFraction a1 = (LargeFraction) list.getFirst().multiply(factor), a2 = (LargeFraction) list.get(LargeInteger.ONE).multiply(factor), a3 = (LargeFraction) list.get(LargeInteger.TWO).multiply(factor);
-        LargeFraction b1 = (LargeFraction) v.list.getFirst().multiply(v.factor), b2 = (LargeFraction) v.list.get(LargeInteger.ONE).multiply(v.factor), b3 = (LargeFraction) v.list.get(LargeInteger.TWO).multiply(v.factor);
+        LargeFraction a1 = (LargeFraction) list.getFirst().multiply(factor),
+                a2 = (LargeFraction) list.get(LargeInteger.ONE).multiply(factor),
+                a3 = (LargeFraction) list.get(LargeInteger.TWO).multiply(factor);
+        LargeFraction b1 = (LargeFraction) v.list.getFirst().multiply(v.factor),
+                b2 = (LargeFraction) v.list.get(LargeInteger.ONE).multiply(v.factor),
+                b3 = (LargeFraction) v.list.get(LargeInteger.TWO).multiply(v.factor);
         LargeList<LargeFraction> result = new LargeList<>();
         result.add((LargeFraction) a2.multiply(b3).subtract(a3.multiply(b2)));
         result.add((LargeFraction) a3.multiply(b1).subtract(a1.multiply(b3)));
@@ -168,28 +172,29 @@ public class LargeVector extends TensorAtom {
     }
     public LargeVector projectionOnto(LargeVector v) {
         LargeFraction denom = v.dotProduct(v);
-        if (denom.equals(LargeInteger.ZERO))
+        if (denom.isZero())
             throw new ArithmeticException("Cannot project onto ZERO vector");
         LargeFraction factor = (LargeFraction) this.dotProduct(v).divide(denom);
         return v.scale(factor);
     }
     @Override
-    public LargeVector scale(LargeFraction scalar) {return new LargeVector(this.list, (LargeFraction) scalar.multiply(factor));}
+    public LargeVector scale(LargeFraction scalar) {
+        return new LargeVector(this.list, (LargeFraction) scalar.multiply(factor));}
     @Override
     public boolean equals(Atom other) {
-        if(other instanceof  LargeVector){
-            if (((LargeVector) other).isDifferentDimension(this))
+        if(other instanceof LargeVector LV) {
+            if (LV.isDifferentDimension(this))
                 return false;
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
-                if(this.list.get(i).doesntEqual(((LargeVector) other).list.get(i))) return false;
-            return this.factor.equals(((LargeVector) other).factor);
+                if(this.list.get(i).doesntEqual(LV.list.get(i))) return false;
+            return this.factor.equals(LV.factor);
         }
         return false;
     }
     @SuppressWarnings("unused")
-    public boolean isPerpendicularTo(LargeVector other){return dotProduct(other).equals(LargeFraction.ZERO);}
+    public boolean isPerpendicularTo(LargeVector other) {return dotProduct(other).isZero();}
     @SuppressWarnings("unused")
-    public boolean isParallelTo(LargeVector other){
+    public boolean isParallelTo(LargeVector other) {
         if (this.dimension() != other.dimension()) return false;
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
             if(this.list.get(i).mod(other.list.get(i)).doesntEqual(LargeInteger.ZERO)
@@ -197,19 +202,19 @@ public class LargeVector extends TensorAtom {
                 return false;
         return true;
     }
-    public boolean isOrthonormalTo(LargeVector other){
-        return this.dotProduct(other).equals(LargeFraction.ZERO)
-                && this.magnitude().equals(LargeInteger.ONE) && other.magnitude().equals(LargeInteger.ONE);}
-    public RadicalTerm magnitude(){
+    public boolean isOrthonormalTo(LargeVector other) {
+        return this.dotProduct(other).isZero()
+                && this.magnitude().isOne() && other.magnitude().isOne();}
+    public RadicalTerm magnitude() {
         return new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE,
                 this.dotProduct(this).power(LargeFraction.HALF));}
     @SuppressWarnings("unused")
-    public RadicalTerm distanceTo(LargeVector other){return subtract(other).magnitude();}
+    public RadicalTerm distanceTo(LargeVector other) {return subtract(other).magnitude();}
     @SuppressWarnings("unused")
     public static LargeVector standardBasis(LargeInteger dimension, LargeInteger index) {
-        if (dimension.lessThan(LargeInteger.ZERO))
+        if (dimension.isNegative())
             throw new IllegalArgumentException("Dimension cannot be negative");
-        if (index.lessThan(LargeInteger.ZERO) || index.greaterThanOrEqualTo(dimension))
+        if (index.isNegative() || index.greaterThanOrEqualTo(dimension))
             throw new IndexOutOfBoundsException("Basis index out of range");
         LargeList<LargeFraction> values = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(dimension); i = i.add(1)){
@@ -221,10 +226,10 @@ public class LargeVector extends TensorAtom {
     @SuppressWarnings("unused")
     public LargeMatrix outerProduct(LargeVector other) {
         LargeList<LargeList<LargeFraction>> rows = new LargeList<>();
-        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1)) {
+        for (LargeInteger largeInteger: list) {
             LargeList<LargeFraction> row = new LargeList<>();
-            for (LargeInteger j = LargeInteger.ZERO; j.lessThan(other.dimension()); j = j.add(1))
-                row.add((LargeFraction) this.get(i).multiply(other.get(j)));
+            for (LargeInteger integer: other.list)
+                row.add((LargeFraction) largeInteger.multiply(factor).multiply(integer.multiply(other.factor)));
             rows.add(row);
         }
         return new LargeMatrix(rows);
