@@ -12,8 +12,8 @@ public class LargeList<T> implements Iterable<T>{
         LargeList<T> clone = new LargeList<>();
         clone.sizeInt = this.sizeInt;
         clone.height = this.height;
-        clone.size = this.size;
-        clone.root = this.root;
+        clone.size = this.size.clone();
+        clone.root = this.root.clone();
         return clone;
     }
     public String toString() {
@@ -53,6 +53,18 @@ public class LargeList<T> implements Iterable<T>{
             if(sizeInt == -2147483648)
                 sizeInt = -1;
         }
+    }
+    public void add(int index, T value) {
+        add(null);
+        if (intSized()) {
+            for (int i = sizeInt - 1; i > index; i--)
+                set(i, get(i - 1));
+            set(0, value);
+            return;
+        }
+        for (LargeInteger i = size.subtract(1); i.greaterThan(LargeInteger.valueOf(index)); i = i.subtract(1))
+            set(i, get(i.subtract(1)));
+        set(LargeInteger.ZERO, value);
     }
     public void addFirst(T value) {
         add(null);
@@ -279,9 +291,9 @@ public class LargeList<T> implements Iterable<T>{
         }
     }
     @Override
-    public Iterator<T> iterator() {
+    public ListIterator<T> iterator() {
         if (intSized())
-            return new Iterator<T>() {
+            return new ListIterator<>() {
                 private int index = 0;
                 @Override
                 public boolean hasNext() {return index < sizeInt;}
@@ -296,11 +308,26 @@ public class LargeList<T> implements Iterable<T>{
                     return get(index--);
                 }
                 @Override
-                public void remove() {
-                    LargeList.this.remove(index--);
+                public int nextIndex() {
+                    return index+1;
+                }
+                @Override
+                public int previousIndex() {
+                    return index-1;
+                }
+
+                @Override
+                public void remove() {LargeList.this.remove(index--);}
+                @Override
+                public void set(T t) {
+                    LargeList.this.set(index, t);
+                }
+                @Override
+                public void add(T t) {
+                    LargeList.this.add(index, t);
                 }
             };
-        else return new Iterator<T>() {
+        else return new ListIterator<>() {
             private LargeInteger index = LargeInteger.ZERO;
             @Override
             public boolean hasNext() {return index.lessThan(size);}
@@ -319,9 +346,29 @@ public class LargeList<T> implements Iterable<T>{
                 return value;
             }
             @Override
+            public int nextIndex() {
+                return 0;
+            }
+
+            @Override
+            public int previousIndex() {
+                return 0;
+            }
+
+            @Override
             public void remove() {
                 LargeList.this.remove(index);
                 index = index.subtract(1);
+            }
+
+            @Override
+            public void set(T t) {
+
+            }
+
+            @Override
+            public void add(T t) {
+
             }
         };
     }

@@ -33,8 +33,7 @@ final class FactorCacheDatabase implements AutoCloseable {
      * constructed only when instance() is first called.
      */
     private static final class Holder {
-        private static final FactorCacheDatabase INSTANCE = new FactorCacheDatabase();
-    }
+        private static final FactorCacheDatabase INSTANCE = new FactorCacheDatabase();}
     static FactorCacheDatabase instance() {return Holder.INSTANCE;}
     private void configureConnection() throws SQLException {
         try (Statement statement = connection.createStatement()) {
@@ -77,16 +76,14 @@ final class FactorCacheDatabase implements AutoCloseable {
                 }
             }
             return null;
-        } catch (SQLException e) {
-            throw new IllegalStateException("Could not query factor cache", e);
-        }
+        } catch (SQLException e) {throw new IllegalStateException("Could not query factor cache", e);}
     }
     synchronized void save(LargeInteger n, LargeInteger factor, LargeInteger.AlgorithmChoice method) {
         if (factor.lesserThanOrEqualTo(LargeInteger.ONE) || factor.greaterThanOrEqualTo(n)
-                || n.mod(factor).doesntEqual(LargeInteger.ZERO))
+                || !n.remainder(factor).isZero())
             throw new IllegalArgumentException("Attempted to cache an invalid factor");
         LargeInteger cofactor = n.divide(factor);
-        // Store ONE canonical side of the split.
+        // Store one canonical side of the split.
         if (cofactor.lessThan(factor))
             factor = cofactor;
         try {
@@ -105,9 +102,5 @@ final class FactorCacheDatabase implements AutoCloseable {
         insertFactorStatement.close();
         connection.close();
     }
-    private void closeQuietly() {
-        try {
-            close();
-        } catch (SQLException ignored) {}
-    }
+    private void closeQuietly() {try {close();} catch (SQLException _) {}}
 }

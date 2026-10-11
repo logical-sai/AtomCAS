@@ -9,10 +9,10 @@ public class SI extends PhysicalAtom{
     public static final LargeInteger tera = LargeInteger.valueOf(1000000000000L);
     public static final LargeInteger peta = LargeInteger.valueOf(1000000000000000L);
     public static final LargeInteger exa = LargeInteger.valueOf(1000000000000000000L);
-    public static final LargeInteger zetta = (LargeInteger) Parser.parse("10^21");
-    public static final LargeInteger yotta = (LargeInteger) Parser.parse("10^24");
-    public static final LargeInteger ronna = (LargeInteger) Parser.parse("10^27");
-    public static final LargeInteger quetta = (LargeInteger) Parser.parse("10^30");
+    public static final LargeInteger zetta = new LargeInteger("10^21");
+    public static final LargeInteger yotta = new LargeInteger("10^24");
+    public static final LargeInteger ronna = new LargeInteger("10^27");
+    public static final LargeInteger quetta = new LargeInteger("10^30");
     public static final LargeFraction deci = deka.reciprocal();
     public static final LargeFraction centi = hecto.reciprocal();
     public static final LargeFraction milli = kilo.reciprocal();
@@ -26,7 +26,8 @@ public class SI extends PhysicalAtom{
     public static final LargeFraction ronto = ronna.reciprocal();
     public static final LargeFraction quecto = quetta.reciprocal();
     @Override
-    public Atom clone() {throw new UnsupportedOperationException("Error: Operation with these TWO types together not supported yet");}
+    public Atom clone() {
+        throw new UnsupportedOperationException("Error: Operation with this type not supported yet");}
     @Override
     public String toString() {return "";}
     @Override

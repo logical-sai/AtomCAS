@@ -9,84 +9,6 @@ public class DevPlayground {
         x.reciprocal();
     }
     static volatile Object sink = new Object();
-    static void benchmarkModMagnitudes() {
-        SplittableRandom rng = new SplittableRandom(123456789L);
-
-        int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 160, 192, 256, 384, 512, 768, 1024};
-        System.out.printf("%6s %6s %8s %12s %12s %9s%n", "div", "num", "reps", "Knuth(ns)", "BZ(ns)", "BZ/Knuth");
-        long sink = 0;
-        for (int dLen : sizes) {
-            int[] dividendLengths = {dLen + 32, dLen * 2, dLen * 4};
-            for (int nLen : dividendLengths) {
-                long[] divisor = randomBenchmarkMag(dLen, rng);
-                long[] dividend = randomBenchmarkMag(nLen, rng);
-
-                // Make sure dividend >= divisor.
-                dividend[nLen - 1] |= 1L << 63;
-                divisor[dLen - 1] |= 1L << 63;
-
-                // Roughly constant amount of Knuth work per test point.
-                int reps = Math.clamp(
-                        4_000_000L / ((long)nLen * dLen),
-                        2,
-                        2000
-                );
-
-                // warmup
-                for (int i = 0; i < Math.min(50, reps); i++) {
-                    sink ^= LargeInteger.knuthRemainder(dividend, divisor)[0];
-                    sink ^= LargeInteger.burnikelZieglerRemainder(dividend, divisor)[0];
-                }
-
-                // correctness once, outside timing
-                long[] rk = LargeInteger.knuthRemainder(dividend, divisor);
-                long[] rb = LargeInteger.burnikelZieglerRemainder(dividend, divisor);
-
-                if (!Arrays.equals(rk, rb))
-                    throw new AssertionError(
-                            "Remainder disagreement at " +
-                                    nLen + " / " + dLen
-                    );
-
-                long t0 = System.nanoTime();
-                for (int i = 0; i < reps; i++)
-                    sink ^= LargeInteger.knuthRemainder(dividend, divisor)[0];
-                long knuth = System.nanoTime() - t0;
-
-                t0 = System.nanoTime();
-                for (int i = 0; i < reps; i++)
-                    sink ^= LargeInteger.burnikelZieglerRemainder(dividend, divisor)[0];
-                long bz = System.nanoTime() - t0;
-
-                double kNs = (double)knuth / reps;
-                double bNs = (double)bz / reps;
-
-                System.out.printf(
-                        "%6d %6d %8d %12.0f %12.0f %9.3f%n",
-                        dLen,
-                        nLen,
-                        reps,
-                        kNs,
-                        bNs,
-                        bNs / kNs
-                );
-            }
-        }
-        // Keep HotSpot from deciding results don't matter.
-        if (sink == 0x123456789ABCDEFL)
-            System.out.println(sink);
-    }
-    private static long[] randomBenchmarkMag(int limbs, SplittableRandom rng) {
-        long[] x = new long[limbs];
-
-        for (int i = 0; i < limbs; i++)
-            x[i] = rng.nextLong();
-
-        // Guarantee exact requested limb length.
-        x[limbs - 1] |= 1L << 63;
-
-        return x;
-    }
     static void testMultiply(){
         int BI_Wins = 0;
         int LI_Wins = 0;
@@ -192,7 +114,7 @@ public class DevPlayground {
         for(int k: new int[]{2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
             long LI_time = 0;
             long BI_time = 0;
-            int trials = 12288/k;
+            int trials = 32768/k;
             for(int j = 0; j < 100; j++){
                 LargeInteger base = LargeInteger.randomBits(k);
                 LargeInteger exponent = LargeInteger.powerOfTwo(k).subtract(LargeInteger.ONE);
@@ -220,8 +142,8 @@ public class DevPlayground {
                 BI_time += t2 - t1;
             }
             System.out.println("Bits tested: " + k);
-            System.out.println("Average LI time: " + LI_time/1e9/(100.0*trials) + " seconds/trial");
-            System.out.println("Average BI time: " + BI_time/1e9/(100.0*trials) + " seconds/trial");
+            System.out.println("Average LI time: " + LI_time/1e9/(100*trials) + " seconds/trial");
+            System.out.println("Average BI time: " + BI_time/1e9/(100*trials) + " seconds/trial");
             System.out.println("LI/BI = " + LI_time*1.0/BI_time);
             System.out.println();
         }
@@ -337,47 +259,79 @@ public class DevPlayground {
     }
     record FactorBoss(String value, String origin, String notes) {}
     @SuppressWarnings("unused")
-    static final List<FactorBoss> factorBosses = List.of(
+    static final List<FactorBoss> ECMFactorBosses = List.of(
             new FactorBoss(
                     "6428380277058512877402805374285161923129703426793563359435194951116582476919717925450545523629758567927222158921007107167940393067361029334463486674570492299456886839634573238186015211",
-                    "184-digit factor of 10^303 + 1",
-                    "I just need to discover P43"),
+                    "184-digit factor of 10^303+1",
+                    "The reason I made ECM in the first place"),
             new FactorBoss(
-                    "18748342930951187059699050387401582462321458294019614481729930646671266182084358057158477154583753264703849269569462288159923316207103194097051657281",
-                    "149-digit factor of 10^280 + 1",
-                    "It has P37. Which seems reasonable. Then P48"),
+                    "17329683219061543002422421228779516108730216118351629631525988433124595828881651243776644793221812900676299259681",
+                    "113-digit factor of 10^280+1",
+                    "It has P48 ;-;"),
             new FactorBoss(
                     "95494137605894520631622200650595911876626195592470868465557173785682624796482816755939080254946071115981326539067",
                     "113-digit factor of 10^151-1",
                     "IT'S P56*P58 GODDAMMIT"),
             new FactorBoss(
-                    "40653466930429226524139946783940405680173423825383413355502398916999414232462980261469717875397319849",
-                    "101-digit factor of 10^202+1",
-                    "P42...what am I even doing"),
-            new FactorBoss(
                     "2545241670696632645269668355010308228766321362213342156837791748326503601516964035735193056580722339586143704344727531879151925475323882002596146504110565298175061722110514393341647789457609",
                     "190-digit factor of 10^194+1",
-                    "IT HAS A P53 BRAH"),
+                    "IT HAS A P71 BRAH"),
             new FactorBoss(
                     "453006805906714884411502853326668790794086913203640988280372355951493593240466603283669916463694317597801206598870997639207",
                     "123-digit factor of 10^149+1",
-                    "A P48...boss is an underestimation"
-            ),
+                    "Another P48..."),
             new FactorBoss(
-                    "406623275067201682254683703114316127837343365549390196607664401587666091311498883684456642992878373814596442915923300647087133811461834509716351212001",
-                    "150-digit factor of 10^200+1",
-                    "Same class as the first guy; has another P43"
-            ),
+                    "65501941944313206950705851760705669113582631270934567573786629910626991261428869184178218403813518055772508847597858150001",
+                    "122-digit factor of 10^300+1",
+                    "P49 now. not going for that"),
             new FactorBoss(
-                    "37003987476536590423023035714448973085384312366814142865897305180077123128921707342015931540949401",
-                    "98-digit factor of 10^134+1",
-                    "ANOTHER P43. why me"
-            ));
+                    "300932863707222380064047767986506993480747134074482327493193906987568752931846264493277211892465666521176460891605373427957891512801",
+                    "132-digit factor of 10^370+1",
+                    "\"insanity is doing the same thing over and over and expecting different results\" -this P66*P67"),
+            new FactorBoss(
+                    "7116358583820815230485577071371499492658805655376731460183714191537953545676401541260609682180476819865103852372657674234185998498337772047",
+                    "139-digit factor of 10^163+1",
+                    "A P47. What did I expect"),
+            new FactorBoss(
+                    "192765138747618664658708619609149325554035237425929935887315879260862972540025154612659873734596956586713945640750799208135282412056415351",
+                    "138-digit factor of 10^163-1",
+                    "P63*P75. These numbers are way too hard"),
+            new FactorBoss(
+                    "4507841767620154777691376885052292431233465072658754301801002791829306068995480121896964468514459503528632140714078303",
+                    "118-digit factor of 10^167+1",
+                    "If I see another P57 I am going to say no"),
+            new FactorBoss(
+                    "99009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009901",
+                    "164-digit factor of 10^166+1",
+                    "Hey look a RAW cyclotomic result. Fine-tailored with P44"),
+            new FactorBoss(
+                    "45032210066506069256826272734972918887334048441151951782829437603679673895864323327927303771353309461952652208440573593921168571395063494292741911733731775383",
+                    "158-digit factor of 10^181+1",
+                    "do NOT attempt this P74*P84 you will heavily regret it"),
+            new FactorBoss(
+                    "84523708900354999577381456343504352971092891556081489307750824107007015467838813287127039142929591750486856563265996196433099484413828078776097540360071",
+                    "152-digit factor of 10^169-1",
+                    "A perfect-square exponent does not guarantee ease. Sometimes it can yield P49"),
+            new FactorBoss(
+                    "1496558280854452426177935255386940584258573648331944343019881625583325531570112963563951422005189461786234963804668662694845539823312397215285049",
+                    "145-digit factor of 10^169+1",
+                    "This guy and his twin say the same thing. Except this guy says P55"),
+            new FactorBoss(
+                    "342594358689357800535632642961144086146356092203500784425797707669595872827197291891165896611202348682216686730018255401",
+                    "120-digit factor of 10^158+1",
+                    "A P51 after all this time"),
+            new FactorBoss(
+                    "115803748393662249221904430519040355618527394268823242649175806830408102188348254509315050886227655112116740491407543143760599096075587645629094643688352623",
+                    "156-digit factor of 10^191+1",
+                    "IT HAS A P76...AAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGGGGGGHHHHHHHHHHHHHH")
+            );
     static void main() {
-        for(int k = 1; k <= 121; k++) {
+        /*for (int k = 184; ; k++) {
             LargeInteger N = new LargeInteger("10^" + k + "+1");
             System.out.println(N + " = " + N.factor());
-        }
+        }*/
+        LargeInteger N = new LargeInteger("10^303+1");
+        System.out.println(N + " = " + N.factor());
     }
     private static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");

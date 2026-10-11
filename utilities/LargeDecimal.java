@@ -104,16 +104,6 @@ public final class LargeDecimal extends ScalarAtom{
     }
 
     @Override
-    public ScalarAtom square() {
-        return null;
-    }
-
-    @Override
-    public ScalarAtom cube() {
-        return null;
-    }
-
-    @Override
     public ScalarAtom power(LargeFraction f) {
         return null;
     }

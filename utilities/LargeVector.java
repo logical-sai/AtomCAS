@@ -2,7 +2,7 @@ package com.AtomCAS.utilities;
 public class LargeVector extends TensorAtom {
     private LargeList<LargeInteger> list;
     public LargeFraction factor;
-    public LargeVector(LargeList<LargeInteger> list, LargeFraction factor){
+    LargeVector(LargeList<LargeInteger> list, LargeFraction factor){
         this.list = new LargeList<>();
         if(list.size().isZero()){
             this.factor = LargeFraction.ONE;
@@ -139,8 +139,8 @@ public class LargeVector extends TensorAtom {
             throw new IllegalArgumentException("Dimension mismatch");
         LargeList<LargeInteger> result = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
-            result.add((LargeInteger) this.get(i).multiply(LV.get(i)));
-        return new LargeVector(result, (LargeFraction) this.factor.multiply(LV.factor));
+            result.add(this.get(i).multiply(LV.get(i)).numerator);
+        return new LargeVector(result, this.factor.multiply(LV.factor));
     }
     @Override
     public TensorAtom multiply(TensorAtom other) {
@@ -152,7 +152,7 @@ public class LargeVector extends TensorAtom {
             throw new IllegalArgumentException("Dimension mismatch");
         LargeFraction result = LargeFraction.ZERO;
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(dimension()); i = i.add(1))
-            result = (LargeFraction) result.add(get(i).multiply(other.get(i)));
+            result = result.add(get(i).multiply(other.get(i)));
         return result;
     }
     public LargeVector crossProduct(LargeVector v) {
@@ -165,21 +165,21 @@ public class LargeVector extends TensorAtom {
                 b2 = (LargeFraction) v.list.get(LargeInteger.ONE).multiply(v.factor),
                 b3 = (LargeFraction) v.list.get(LargeInteger.TWO).multiply(v.factor);
         LargeList<LargeFraction> result = new LargeList<>();
-        result.add((LargeFraction) a2.multiply(b3).subtract(a3.multiply(b2)));
-        result.add((LargeFraction) a3.multiply(b1).subtract(a1.multiply(b3)));
-        result.add((LargeFraction) a1.multiply(b2).subtract(a2.multiply(b1)));
+        result.add(a2.multiply(b3).subtract(a3.multiply(b2)));
+        result.add(a3.multiply(b1).subtract(a1.multiply(b3)));
+        result.add(a1.multiply(b2).subtract(a2.multiply(b1)));
         return new LargeVector(result);
     }
     public LargeVector projectionOnto(LargeVector v) {
         LargeFraction denom = v.dotProduct(v);
         if (denom.isZero())
             throw new ArithmeticException("Cannot project onto ZERO vector");
-        LargeFraction factor = (LargeFraction) this.dotProduct(v).divide(denom);
+        LargeFraction factor = this.dotProduct(v).divide(denom);
         return v.scale(factor);
     }
     @Override
     public LargeVector scale(LargeFraction scalar) {
-        return new LargeVector(this.list, (LargeFraction) scalar.multiply(factor));}
+        return new LargeVector(this.list, scalar.multiply(factor));}
     @Override
     public boolean equals(Atom other) {
         if(other instanceof LargeVector LV) {

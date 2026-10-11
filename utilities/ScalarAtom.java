@@ -14,10 +14,7 @@ public abstract class ScalarAtom extends Atom implements Comparable<ScalarAtom>{
     public boolean greaterThanOrEqualTo(ScalarAtom other) {return compareTo(other) >= 0;}
     public boolean lesserThanOrEqualTo(ScalarAtom other) {return compareTo(other) <= 0;}
     public abstract ScalarAtom negate();
-    public ScalarAtom sign() {
-        if(equals(LargeInteger.ZERO)) return LargeInteger.ZERO;
-        else return divide(abs());
-    }
+    public ScalarAtom sign() {return isZero() ? LargeInteger.ZERO : divide(abs());}
     public boolean isZero() {return equals(LargeInteger.ZERO);}
     public boolean isOne() {return equals(LargeInteger.ONE);}
     public boolean isNegative() {return lessThan(LargeInteger.ZERO);}

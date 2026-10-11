@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class Parser{
+public final class Parser{
     private Parser() {
         throw new UnsupportedOperationException(
                 "N O  P A R S E R  I N S T A N C E S  F O R  Y O U,  Y O U  D I R T Y  T H I E F");

@@ -332,7 +332,7 @@ public class LargePolynomial{
                 P = P.multiply(new LargeFraction(F.denominator, LargeInteger.ONE));
                 P = P.add(new LargeFraction(F.numerator, LargeInteger.NEGATIVE_ONE));
                 yield P.primitivePart();
-            }case LargePowerMonomial L -> {
+            } case LargePowerMonomial L -> {
                 //x = (-1)^(p/q) * b^(r/s)
                 LargeInteger I = L.exponent2.denominator.lcm(L.exponent.denominator);
                 P = P.monomialPower(I);
@@ -340,7 +340,7 @@ public class LargePolynomial{
                 if (M.exponent2.isOne()) P = P.add(M.base);
                 else P = P.add(M.base.negate());
                 yield P.primitivePart();
-            }case RadicalTerm R -> annihilatingPolynomial(new RadicalTermSum().add(R));
+            } case RadicalTerm R -> annihilatingPolynomial(new RadicalTermSum().add(R));
             case RadicalTermSum R -> {
                 if(R.sum.isEmpty()) yield annihilatingPolynomial(R.constant);
                 LargeList<LargePowerMonomial> basis = new LargeList<>();
@@ -477,12 +477,12 @@ public class LargePolynomial{
                     M.appendRow(colAsRow);
                 }
                 yield M.transpose().characteristicPolynomial().primitivePart();
-            }case LargePowerNode n -> {
+            } case LargePowerNode n -> {
                 LargePolynomial PS = minimalPolynomial(n.signFactor);
                 LargePolynomial PM = minimalPolynomial(n.base).composeXPower(n.exponent.denominator);
                 if(PS.equals(xMinus(LargeFraction.ONE))) yield PM;
                 yield null;
-            }default -> throw new UnsupportedOperationException(
+            } default -> throw new UnsupportedOperationException(
                     "Annihilating polynomial does not support this type yet");
         };
     }
