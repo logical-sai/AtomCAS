@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class LargeInteger extends ScalarAtom {
     private static final long MAX_BITS = 1L << 37;
-    private static final boolean PRINTING = true;
+    private static final boolean PRINTING = false;
     private static void reportOverflow() {
         throw new ArithmeticException("Result exceeds supported range: |X| < 2^(2^37)");}
     /**
