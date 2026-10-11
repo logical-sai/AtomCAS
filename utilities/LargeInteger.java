@@ -10,7 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * This is supposed to be an attempt at a big-integer class that supports factoring
+ * This is supposed to be an attempt at a big-integer class that supports factoring. Please do not change anything
  */
 public final class LargeInteger extends ScalarAtom {
     private static final long MAX_BITS = 1L << 37;
