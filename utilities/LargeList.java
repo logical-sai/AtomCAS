@@ -8,7 +8,7 @@ public class LargeList<T> implements Iterable<T>{
 
     private int height = 0; // 0 means root is a leaf Object[1000]
     private Object[] root = new Object[CHUNK_SIZE];
-    public LargeList<T> copy(){
+    public LargeList<T> copy() {
         LargeList<T> clone = new LargeList<>();
         clone.sizeInt = this.sizeInt;
         clone.height = this.height;
@@ -50,7 +50,7 @@ public class LargeList<T> implements Iterable<T>{
         size = size.add(1);
         if(intSized()){
             sizeInt++;
-            if(sizeInt == -2147483648)
+            if(sizeInt == Integer.MIN_VALUE)
                 sizeInt = -1;
         }
     }
@@ -114,6 +114,35 @@ public class LargeList<T> implements Iterable<T>{
         int leafSlot = height < leadingZeros ? 0 : digits[height - leadingZeros];
         node[leafSlot] = value;
     }
+
+    private Object[] leafForDigits(int[] digits) {
+        Object[] node = root;
+        int leadingZeros = height + 1 - digits.length;
+        for (int level = 0; level < height; level++) {
+            int slot = level < leadingZeros ? 0 : digits[level - leadingZeros];
+            if (node[slot] == null)
+                node[slot] = new Object[CHUNK_SIZE];
+            node = (Object[]) node[slot];
+        }
+        return node;
+    }
+    private Object[] leafAt(int index) {return leafForDigits(base1000Digits(index));}
+    private Object[] leafAt(LargeInteger index) {
+        int[] digits = new int[height + 1];
+        LargeInteger n = index;
+        for (int i = height; i >= 0 && !n.isZero(); i--) {
+            LargeInteger[] qr =
+                    n.quotientAndRemainder(LargeInteger.THOUSAND);
+            digits[i] = qr[1].intValue();
+            n = qr[0];
+        }
+
+        if (!n.isZero())
+            throw new IndexOutOfBoundsException("Index exceeds tree capacity");
+
+        return leafForDigits(digits);
+    }
+
     public LargeInteger size() {return size;}
     public boolean intSized() {return sizeInt != -1;}
     public int intSize() {
@@ -122,18 +151,13 @@ public class LargeList<T> implements Iterable<T>{
         throw new ArithmeticException("List too large to fit in int");
     }
     private void ensureCapacity(LargeInteger index) {
-        while (index.greaterThanOrEqualTo(capacity())) {
-            Object[] newRadicalTerm = new Object[CHUNK_SIZE];
-            newRadicalTerm[0] = root;
-            root = newRadicalTerm;
+        LargeInteger capacity = LargeInteger.valueOf(CHUNK_SIZE).power(height+1).numerator;
+        while (index.greaterThanOrEqualTo(capacity)) {
+            Object[] newRoot = new Object[CHUNK_SIZE];
+            newRoot[0] = root;
+            root = newRoot;
             height++;
         }
-    }
-    private LargeInteger capacity() {
-        LargeInteger result = LargeInteger.ONE;
-        for (int i = 0; i < height + 1; i++)
-            result = result.multiply(CHUNK_SIZE);
-        return result;
     }
     @SuppressWarnings("unchecked")
     public T get(LargeInteger index) {
@@ -152,6 +176,7 @@ public class LargeList<T> implements Iterable<T>{
     }
     @SuppressWarnings("unchecked")
     public T get(int index) {
+        if(!intSized()) return get(LargeInteger.valueOf(index));
         if (index < 0 || index >= sizeInt)
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + sizeInt + ")");
         int[] digits = base1000Digits(index);
@@ -166,28 +191,25 @@ public class LargeList<T> implements Iterable<T>{
         int leafSlot = height < leadingZeros ? 0 : digits[height - leadingZeros];
         return (T) node[leafSlot];
     }
-    public void swap(LargeInteger index1, LargeInteger index2){
+    public void swap(LargeInteger index1, LargeInteger index2) {
         T temp = get(index1);
         set(index1, get(index2));
         set(index2, temp);
     }
-    public void swap(int index1, int index2){
+    public void swap(int index1, int index2) {
         T temp = get(index1);
         set(index1, get(index2));
         set(index2, temp);
     }
-    public T getFirst(){return this.get(0);}
-    public T getLast(){
-        if(intSized()) return get(sizeInt-1);
-        return get(size.subtract(1));
-    }
-    public void addAll(LargeList<T> other){for(T I: other) this.add(I);}
-    public void remove(LargeInteger index){
+    public T getFirst() {return this.get(0);}
+    public T getLast() {return intSized() ? get(sizeInt-1) : get(size.subtract(1));}
+    public void addAll(LargeList<T> other) {for(T I: other) add(I);}
+    public void remove(LargeInteger index) {
         if(index.isNegative() || index.greaterThanOrEqualTo(size))
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + size + ")");
-        for(LargeInteger i = index; i.lessThan(this.size().subtract(LargeInteger.ONE)); i = i.add(1))
-            this.set(i, this.get(i.add(1)));
-        this.set(this.size().subtract(1), null);
+        for(LargeInteger i = index; i.lessThan(size.subtract(1)); i = i.add(1))
+            set(i, this.get(i.add(1)));
+        set(size.subtract(1), null);
         size = size.subtract(1);
         if(intSized())
             sizeInt--;
@@ -195,7 +217,7 @@ public class LargeList<T> implements Iterable<T>{
             if(size.equals(LargeInteger.valueOf(Integer.MAX_VALUE)))
                 sizeInt = Integer.MAX_VALUE;
     }
-    public void remove(int index){
+    public void remove(int index) {
         if(index < 0 || index >= sizeInt)
             throw new IndexOutOfBoundsException("Index " + index + " out of bounds for range [0, " + sizeInt + ")");
         if(intSized()) {
@@ -205,7 +227,7 @@ public class LargeList<T> implements Iterable<T>{
         }else{
             for(LargeInteger i = LargeInteger.valueOf(index); i.lessThan(size.subtract(1)); i = i.add(1))
                 this.set(i, this.get(i.add(1)));
-            this.set(this.size().subtract(LargeInteger.ONE), null);
+            this.set(size.subtract(1), null);
         }
         size = size.subtract(1);
         if(intSized())
@@ -263,7 +285,7 @@ public class LargeList<T> implements Iterable<T>{
                     return false;
             return true;
         }
-        if(other.size().doesntEqual(size))
+        if(other.size.doesntEqual(size))
             return false;
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size); i = i.add(1))
             if(!this.get(i).equals(other.get(i)))
@@ -282,94 +304,117 @@ public class LargeList<T> implements Iterable<T>{
         return Arrays.copyOf(root, sizeInt);
     }
     public void reverse(){
-        if(intSized()){
+        if(intSized())
             for(int i = 0; i < this.sizeInt/2; i++)
                 swap(i, this.sizeInt-i-1);
-        }else{
+        else
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(size.shiftRight(1)); i = i.add(1))
-                swap(i, size().subtract(i));
-        }
+                swap(i, size.subtract(i));
     }
-    @Override
-    public ListIterator<T> iterator() {
-        if (intSized())
-            return new ListIterator<>() {
-                private int index = 0;
-                @Override
-                public boolean hasNext() {return index < sizeInt;}
-                @Override
-                public T next() {
-                    if (!hasNext()) throw new NoSuchElementException("You've reached the end of the list");
-                    return get(index++);
-                }
-                public boolean hasPrevious() {return index > 0;}
-                public T previous(){
-                    if(!hasPrevious()) throw new NoSuchElementException("You've reached the beginning of the list");
-                    return get(index--);
-                }
-                @Override
-                public int nextIndex() {
-                    return index+1;
-                }
-                @Override
-                public int previousIndex() {
-                    return index-1;
-                }
 
+    @Override
+    public Iterator<T> iterator() {
+        if (intSized()) {
+            return new Iterator<>() {
+                private int nextIndex = 0;
+                private int lastReturned = -1;
+                private Object[] leaf;
+                private int offset = 0;
                 @Override
-                public void remove() {LargeList.this.remove(index--);}
+                public boolean hasNext() {return nextIndex < sizeInt;}
                 @Override
-                public void set(T t) {
-                    LargeList.this.set(index, t);
+                @SuppressWarnings("unchecked")
+                public T next() {
+                    if (!hasNext())
+                        throw new NoSuchElementException();
+                    if (leaf == null || offset == CHUNK_SIZE) {
+                        leaf = leafAt(nextIndex);
+                        offset = nextIndex % CHUNK_SIZE;
+                    }
+                    lastReturned = nextIndex++;
+                    return (T) leaf[offset++];
                 }
                 @Override
-                public void add(T t) {
-                    LargeList.this.add(index, t);
+                public void remove() {
+                    if (lastReturned < 0)
+                        throw new IllegalStateException();
+                    LargeList.this.remove(lastReturned);
+                    nextIndex = lastReturned;
+                    lastReturned = -1;
+                    // Reposition after elements shift.
+                    leaf = null;
+                    offset = 0;
                 }
             };
-        else return new ListIterator<>() {
-            private LargeInteger index = LargeInteger.ZERO;
+        }
+        return new Iterator<>() {
+            private static final int BLOCK_SIZE = CHUNK_SIZE;
+            private LargeInteger blockStart = LargeInteger.ZERO;
+            private Object[] leaf;
+            private int offset;
+            private int limit;
+            private boolean hasMore;
+            private LargeInteger lastReturnedBlock;
+            private int lastReturnedOffset;
+            private boolean canRemove = false;
+            {
+                loadAt(LargeInteger.ZERO);
+            }
+            private void loadBlock(LargeInteger start, int startOffset) {
+                blockStart = start;
+                leaf = leafAt(start);
+                offset = startOffset;
+                LargeInteger remaining = size.subtract(start);
+                limit = remaining.lessThan(LargeInteger.THOUSAND) ? remaining.intValue() : BLOCK_SIZE;
+                hasMore = true;
+            }
+            private void loadAt(LargeInteger position) {
+                if (!position.lessThan(size)) {
+                    leaf = null;
+                    hasMore = false;
+                    return;
+                }
+                LargeInteger[] qr = position.quotientAndRemainder(LargeInteger.THOUSAND);
+                LargeInteger start = qr[0].multiply(1000);
+                loadBlock(start, qr[1].intValue());
+            }
+            private void advanceBlock() {
+                LargeInteger nextBlock = blockStart.add(1000);
+                if (nextBlock.lessThan(size))
+                    loadBlock(nextBlock, 0);
+                else {
+                    leaf = null;
+                    hasMore = false;
+                }
+            }
             @Override
-            public boolean hasNext() {return index.lessThan(size);}
+            public boolean hasNext() {return hasMore;}
             @Override
+            @SuppressWarnings("unchecked")
             public T next() {
-                if (!hasNext()) throw new NoSuchElementException("You've reached the end of the list");
-                T value = get(index);
-                index = index.add(1);
+                if (!hasMore)
+                    throw new NoSuchElementException();
+
+                lastReturnedBlock = blockStart;
+                lastReturnedOffset = offset;
+                canRemove = true;
+                T value = (T) leaf[offset++];
+                if (offset == limit)
+                    advanceBlock();
                 return value;
             }
-            public boolean hasPrevious() {return index.greaterThan(LargeInteger.ZERO);}
-            public T previous(){
-                if(!hasPrevious()) throw new NoSuchElementException("You've reached the beginning of the list");
-                T value = get(index);
-                index = index.subtract(1);
-                return value;
-            }
-            @Override
-            public int nextIndex() {
-                return 0;
-            }
-
-            @Override
-            public int previousIndex() {
-                return 0;
-            }
-
             @Override
             public void remove() {
-                LargeList.this.remove(index);
-                index = index.subtract(1);
-            }
-
-            @Override
-            public void set(T t) {
-
-            }
-
-            @Override
-            public void add(T t) {
-
+                if (!canRemove)
+                    throw new IllegalStateException();
+                LargeInteger removedIndex = lastReturnedBlock.add(LargeInteger.valueOf(lastReturnedOffset));
+                LargeList.this.remove(removedIndex);
+                canRemove = false;
+                // Continue from the element shifted into
+                // the removed position.
+                loadAt(removedIndex);
             }
         };
     }
+
 }

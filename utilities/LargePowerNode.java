@@ -88,7 +88,7 @@ public class LargePowerNode extends ScalarAtom{
                 return;
             }
         }
-        ScalarAtom basTemp = (ScalarAtom) base.clone();
+        ScalarAtom basTemp = base.clone();
         LargeInteger expTemp = exponent.numerator.clone();
         ScalarAtom res = LargeFraction.ONE;
         while(true){
@@ -213,7 +213,7 @@ public class LargePowerNode extends ScalarAtom{
             LargeFraction GC = exponent.gcd(h.exponent);
             ScalarAtom result = LargeInteger.ONE;
             LargeInteger expTemp = exponent.divide(GC).numerator;
-            ScalarAtom basTemp = (ScalarAtom) base.clone();
+            ScalarAtom basTemp = base.clone();
             while(true){
                 if(expTemp.isOdd()){
                     if(expTemp.isNegative())
@@ -225,7 +225,7 @@ public class LargePowerNode extends ScalarAtom{
                 expTemp = expTemp.shiftRight(1);
             }
             expTemp = h.exponent.divide(GC).numerator;
-            basTemp = (ScalarAtom) h.base.clone();
+            basTemp = h.base.clone();
             while(true){
                 if(expTemp.isOdd()){
                     if(expTemp.isNegative())

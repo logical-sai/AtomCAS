@@ -1,7 +1,7 @@
 package com.AtomCAS.utilities;
-public final class AurifeuilleanFactorization {
+final class AurifeuilleanFactorization {
     private AurifeuilleanFactorization() {}
-    public record Factorization(LargeInteger value, LargeInteger factor1, LargeInteger factor2) {
+    record Factorization(LargeInteger value, LargeInteger factor1, LargeInteger factor2) {
         public boolean isNonTrivial() {return factor1.greaterThan(LargeInteger.ONE) && factor2.greaterThan(LargeInteger.ONE);}
     }
     /**
@@ -9,7 +9,7 @@ public final class AurifeuilleanFactorization {
      * a^4 + 4b^4
      * = (a^2 - 2ab + 2b^2)(a^2 + 2ab + 2b^2)
      */
-    public static Factorization factorFourthPlusFourFourth(LargeInteger a, LargeInteger b) {
+    static Factorization factorFourthPlusFourFourth(LargeInteger a, LargeInteger b) {
         if (a == null || b == null)
             throw new IllegalArgumentException("a and b cannot be null");
         // Fourth powers ignore signs. Normalizing also prevents the TWO
@@ -20,22 +20,22 @@ public final class AurifeuilleanFactorization {
         LargeInteger aSquared = A.square();
         LargeInteger bSquared = B.square();
 
-        LargeInteger twoAB = (LargeInteger) A.multiply(B).multiply(LargeInteger.TWO);
+        LargeInteger twoAB = A.multiply(B).shiftLeft(1);
 
-        LargeInteger twoBSquared = bSquared.multiply(2);
+        LargeInteger twoBSquared = bSquared.shiftLeft(1);
 
         // a^2 + 2b^2
-        LargeInteger center = (LargeInteger) aSquared.add(twoBSquared);
+        LargeInteger center = aSquared.add(twoBSquared);
 
-        LargeInteger factor1 = (LargeInteger) center.subtract(twoAB);
+        LargeInteger factor1 = center.subtract(twoAB);
 
-        LargeInteger factor2 = (LargeInteger) center.add(twoAB);
+        LargeInteger factor2 = center.add(twoAB);
 
-        LargeInteger value = (LargeInteger) aSquared.square().add(bSquared.square().multiply(4));
+        LargeInteger value = aSquared.square().add(bSquared.square().shiftLeft(2));
 
         // Defensive verification. This should never fail unless an
         // underlying arithmetic operation is incorrect.
-        LargeInteger reconstructed = (LargeInteger) factor1.multiply(factor2);
+        LargeInteger reconstructed = factor1.multiply(factor2);
         if (reconstructed.doesntEqual(value))
             throw new IllegalStateException("Sophie Germain factorization verification failed: " + factor1 + " * " + factor2 + " != " + value);
         return new Factorization(value, factor1, factor2);

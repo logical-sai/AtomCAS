@@ -31,12 +31,14 @@ public final class Parser{
             char c = str.charAt(i);
             if (i > 0) {
                 char prev = str.charAt(i - 1);
-                if((prev == ')' || prev == ']' || prev == '}') && str.substring(i, i+1).matches("[0-9(]")) result.append("*");
+                if((prev == ')' || prev == ']' || prev == '}') && str.substring(i, i+1).matches("[0-9(]"))
+                    result.append("*");
             }
             result.append(c);
             if(i < str.length() - 1) {
                 char next = str.charAt(i + 1);
-                if((next == '(' || next == '[' || next == '√') && (str.substring(i, i+1).matches("\\d"))) result.append("*");
+                if((next == '(' || next == '[' || next == '√') && (str.substring(i, i+1).matches("\\d")))
+                    result.append("*");
             }
         }
         return result.toString();
@@ -70,8 +72,7 @@ public final class Parser{
             if(leftText.isEmpty()) return parse(rightText).negate();
             ScalarAtom left = parse(leftText);
             ScalarAtom right = parse(rightText);
-            if (op == '+') return left.add(right);
-            return left.subtract(right);
+            return op == '+' ? left.add(right) : left.subtract(right);
         });
     }
     private static ScalarAtom parseMod(String str){
@@ -80,8 +81,7 @@ public final class Parser{
             if (index == -1) return parseMultiplyDivide(str);
             String leftText = str.substring(0, index);
             String rightText = str.substring(index + 1);
-            char op = str.charAt(index);
-            CASTrace.step("Found main operator", String.valueOf(op));
+            CASTrace.step("Found main operator", str.substring(index, index + 1));
             ScalarAtom left = parse(leftText);
             ScalarAtom right = parse(rightText);
             return left.mod(right);
@@ -104,7 +104,7 @@ public final class Parser{
     }
 
     private static ScalarAtom parsePercent(String str){
-        return CASTrace.call("Parser.parsePercent", str, ()->{
+        return CASTrace.call("Parser.parsePercent", str, () -> {
             int index = findMainOperator(str, "%", "‰");
             if (index == -1) return parseSquareRoot(str);
             String left = str.substring(0, index);
@@ -114,19 +114,18 @@ public final class Parser{
                 if (right.isEmpty()) return parse(left).percent();
                 return parse(left).percent().multiply(parse(right));
             }
-            if (right.isEmpty()) return parse(left).permille();
-            return parse(left).permille().multiply(parse(right));
+            return (right.isEmpty()) ? parse(left).permille() : parse(left).permille().multiply(parse(right));
         });
     }
     private static ScalarAtom parseFactorial(String str){
-        return CASTrace.call("Parser.parseFactorial", str, ()->{
+        return CASTrace.call("Parser.parseFactorial", str, () -> {
             int index = findMainOperator(str, "!");
             if (index == -1) throw new IllegalArgumentException("Invalid input");
             String left = str.substring(0, index);
             String right = str.substring(index + 1);
             ScalarAtom S;
             if (left.matches("-?\\d+"))
-                S = ((LargeInteger) parse(left)).factorial();
+                S = new LargeInteger(left).factorial();
             else throw new IllegalArgumentException("Factorial currently only defined for positive integers");
             if (right.isEmpty()) return S;
             return S.multiply(parse(right));
@@ -143,36 +142,29 @@ public final class Parser{
             else leftAtom = parse(left);
             StringBuilder right = new StringBuilder();
             int index2 = index + 1;
-            int depth = 0;
             if (str.charAt(index2) == '(') {
-                depth++;
+                int depth = 1;
                 while (index2 < str.length() && depth != 0) {
                     right.append(str.charAt(index2));
                     if (str.charAt(index2) == '(') depth++;
                     else if (str.charAt(index2) == ')') depth--;
                     index2++;
                 }
-            } else {
-                while (index2 < str.length() && (str.substring(index2, index2 + 1).matches("\\d") || str.charAt(index2) == '.' || str.charAt(index2) == '{' || str.charAt(index2) == '}' || str.charAt(index2) == '-' || str.charAt(index2) == '√' || str.charAt(index2) == '^')) {
-                    right.append(str.charAt(index2));
-                    index2++;
-                }
-            }
+            } else while (index2 < str.length() && (str.substring(index2, index2 + 1).matches("\\d")
+                        || str.charAt(index2) == '.' || str.charAt(index2) == '{' || str.charAt(index2) == '}'
+                        || str.charAt(index2) == '-' || str.charAt(index2) == '√' || str.charAt(index2) == '^'))
+                    right.append(str.charAt(index2++));
             ScalarAtom rightAtom = parse(right.toString());
-            if (rightAtom.isRational()) {
-                switch (rightAtom) {
-                    case LargeInteger largeInteger ->
-                            rightAtom = new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, new LargePowerMonomial(new LargeFraction(largeInteger, LargeInteger.ONE), LargeFraction.HALF));
-                    case LargeFraction largeFraction ->
-                            rightAtom = new LargePowerMonomial(largeFraction, LargeFraction.HALF).add(LargeInteger.ZERO);
-                    case LargePowerMonomial L -> rightAtom = L.power(LargeFraction.HALF).add(LargeInteger.ZERO);
-                    case RadicalTerm RT ->
-                            rightAtom = new LargePowerMonomial(RT.rationalPart, LargeFraction.HALF).add(LargeInteger.ZERO);
-                    case RadicalTermSum RTS ->
-                            rightAtom = new LargePowerMonomial(RTS.constant, LargeFraction.HALF).add(LargeInteger.ZERO);
-                    default -> {}
-                }
-            }else rightAtom = rightAtom.power(LargeFraction.HALF);
+            if (rightAtom.isRational())
+                rightAtom = switch (rightAtom) {
+                    case LargeInteger largeInteger -> new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, new LargePowerMonomial(LargeFraction.valueOf(largeInteger), LargeFraction.HALF));
+                    case LargeFraction largeFraction -> new LargePowerMonomial(largeFraction, LargeFraction.HALF).add(LargeInteger.ZERO);
+                    case LargePowerMonomial L -> L.power(LargeFraction.HALF).add(LargeInteger.ZERO);
+                    case RadicalTerm RT -> new LargePowerMonomial(RT.rationalPart, LargeFraction.HALF).add(LargeInteger.ZERO);
+                    case RadicalTermSum RTS -> new LargePowerMonomial(RTS.constant, LargeFraction.HALF).add(LargeInteger.ZERO);
+                    default -> rightAtom;
+                };
+            else rightAtom = rightAtom.power(LargeFraction.HALF);
             if (index2 != str.length()) {
                 ScalarAtom righter = parse(str.substring(index2 + 1));
                 return leftAtom.multiply(rightAtom).add(righter);
@@ -187,35 +179,36 @@ public final class Parser{
             ScalarAtom base = parse(str.substring(0, index));
             ScalarAtom exp = parse(str.substring(index + 1));
             exp = parse(exp.toString());
-            if (exp.equals(LargeInteger.ZERO) && base.equals(LargeInteger.ZERO))
+            if (exp.isZero() && base.isZero())
                 throw new ArithmeticException("Indeterminate form: 0^0");
             switch (exp) {
-                case LargeInteger _ -> {
+                case LargeInteger I -> {
                     if (base.equals(LargeInteger.TWO))
-                        return LargeInteger.powerOfTwo(Long.parseLong(exp.toString()));
-                    else if (exp.equals(LargeInteger.ZERO)) return LargeInteger.ONE;
-                    else if (base.equals(LargeInteger.ZERO)) return LargeInteger.ZERO;
-                    else if (base.equals(LargeInteger.ONE)) return LargeInteger.ONE;
+                        return LargeInteger.powerOfTwo(Long.parseLong(I.toString()));
+                    else if (I.isZero()) return LargeInteger.ONE;
+                    else if (base.isZero()) return LargeInteger.ZERO;
+                    else if (base.isOne()) return LargeInteger.ONE;
                     else if (base.equals(LargeInteger.NEGATIVE_ONE))
-                        return ((LargeInteger) exp).isOdd() ? LargeInteger.NEGATIVE_ONE : LargeInteger.ONE;
-                    LargeInteger expTemp = (LargeInteger) exp.abs();
+                        return I.isOdd() ? LargeInteger.NEGATIVE_ONE : LargeInteger.ONE;
+                    LargeInteger expTemp = I.clone();
                     ScalarAtom basTemp = (ScalarAtom) base.clone();
                     ScalarAtom res = LargeInteger.ONE;
-                    while (expTemp.greaterThan(LargeInteger.ZERO)) {
+                    while (!expTemp.isZero()) {
                         if (expTemp.isOdd()) {
                             res = res.multiply(basTemp);
-                            if (expTemp.equals(LargeInteger.ONE)) break;
+                            if (expTemp.isOne()) break;
                         }
                         basTemp = basTemp.square();
-                        expTemp = expTemp.divide(LargeInteger.TWO);
+                        expTemp = expTemp.shiftRight(1);
                     }
-                    if (exp.lessThan(LargeInteger.ZERO)) return res.reciprocal();
-                    return res;
+                    return I.isNegative() ? res.reciprocal() : res;
                 }
                 case LargeFraction largeFraction -> {
-                    if (base instanceof LargeInteger || base instanceof LargeFraction)
-                        return new LargePowerMonomial((LargeFraction) base.divide(LargeInteger.ONE), largeFraction).add(LargeInteger.ZERO);
-                    return new LargePowerNode(base, largeFraction, LargeFraction.ONE);
+                    return switch (base) {
+                        case LargeInteger I -> new LargePowerMonomial(LargeFraction.valueOf(I), largeFraction).add(LargeInteger.ZERO);
+                        case LargeFraction F -> new LargePowerMonomial(F, largeFraction).add(LargeInteger.ZERO);
+                        default -> new LargePowerNode(base, largeFraction, LargeFraction.ONE);
+                    };
                 }
                 default -> throw new IllegalArgumentException("Power must be rational");
             }
@@ -237,18 +230,17 @@ public final class Parser{
                 if(repeat.isEmpty()) repeat += 0;
                 if (whole.isEmpty()) whole += 0;
                 int expTemp = repeat.length();
-                LargeInteger basTemp = LargeInteger.TEN;
-                while(true){
-                    if(expTemp % 2 == 1){
+                LargeInteger basTemp = LargeInteger.valueOf(10);
+                while(expTemp > 0){
+                    if(expTemp % 2 == 1)
                         dem = dem.multiply(basTemp);
-                        if(expTemp == 1) break;
-                    }
-                    basTemp = basTemp.square();
+                    if(expTemp > 1)
+                        basTemp = basTemp.square();
                     expTemp /= 2;
                 }
                 dem = dem.subtract(1);
                 expTemp = nonRepeat.length();
-                basTemp = LargeInteger.TEN;
+                basTemp = LargeInteger.valueOf(10);
                 while(expTemp != 0) {
                     if ((expTemp & 1) == 1){
                         dem = dem.multiply(basTemp);
@@ -259,7 +251,7 @@ public final class Parser{
                 }
                 if(nonRepeat.isEmpty()) nonRepeat += 0;
                 num = new LargeInteger(nonRepeat + repeat).subtract(new LargeInteger(nonRepeat));
-                if(whole.charAt(0) == '-') num = num.multiply(-1);
+                if(whole.charAt(0) == '-') num = num.negate();
                 num = num.add(new LargeInteger(whole).multiply(dem));
             } else if (str.contains("}") && !str.contains("{"))
                 throw new IllegalArgumentException("Invalid Input");

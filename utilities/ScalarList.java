@@ -2,7 +2,7 @@ package com.AtomCAS.utilities;
 import java.util.ArrayList;
 public class ScalarList{
     public LargeList<ScalarAtom> list;
-    public ScalarList(LargeList<ScalarAtom> list) {this.list = list.copy();}
+    public ScalarList(LargeList<ScalarAtom> list) {this.list = list;}
     public ScalarAtom get(int i) {return list.get(i);}
     public ScalarAtom get(LargeInteger i){return list.get(i);}
     public LargeInteger size(){return list.size();}

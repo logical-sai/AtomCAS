@@ -42,7 +42,7 @@ Layer × Layer → maybe composition, maybe forbidden; (do not question these. N
 WE DON'T TALK ABOUT THESE
 Vector + Scalar → probably forbidden; (Do not question these guys back here. It's for your own good.)
 Vector + Matrix -> forbiden... (You sure you wanna go with this?)
-Exponentiation on Tensors → yeah no
+Exponentiation on Tensors → Technically exists, but relies on eigenvectors
  **/
 public abstract class Atom implements Cloneable {
     @Override
@@ -51,13 +51,9 @@ public abstract class Atom implements Cloneable {
     public abstract String toString();
     public abstract String toLatex();
     @Override
-    public final boolean equals(Object other) {
-        if (other instanceof Atom A)
-            return equals(A);
-        return false;
-    }
+    public final boolean equals(Object other) {return other instanceof Atom A && equals(A);}
     public abstract boolean equals(Atom other);
-    public boolean doesntEqual(Object other){return !equals(other);}
+    public boolean doesntEqual(Object other) {return !equals(other);}
     @Override
     public int hashCode(){return CASHash.hash(this);}
 }

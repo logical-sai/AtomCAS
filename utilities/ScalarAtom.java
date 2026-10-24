@@ -5,9 +5,11 @@ package com.AtomCAS.utilities;
  * approximateToDecimal is still a stub. I'll implement that later.
  */
 public abstract class ScalarAtom extends Atom implements Comparable<ScalarAtom>{
+    @Override
+    public abstract ScalarAtom clone();
     public abstract LargeInteger floor();
     public abstract LargeInteger ceil();
-    public int compareMagnitudes(ScalarAtom other) {return abs().compareTo(other.abs());}
+    int compareMagnitudes(ScalarAtom other) {return abs().compareTo(other.abs());}
     public abstract int compareTo(ScalarAtom other);
     public boolean greaterThan(ScalarAtom other) {return compareTo(other) > 0;}
     public boolean lessThan(ScalarAtom other) {return compareTo(other) < 0;}

@@ -3,13 +3,16 @@ import com.AtomCAS.utilities.*;
 import java.math.BigInteger;
 import java.util.*;
 
-public class DevPlayground {
-    private static void testReciprocal(String input) {
+class DevPlayground {
+    public static void testReciprocal(String input) {
         ScalarAtom x = Parser.parse(input);
-        x.reciprocal();
+        ScalarAtom y = x.reciprocal();
+        if(x.multiply(y).doesntEqual(LargeInteger.ONE))
+            throw new AssertionError("Reciprocal of " + x + " is wrong");
+        System.out.println("1/(" + x + ") = " + y);
     }
-    static volatile Object sink = new Object();
-    static void testMultiply(){
+    public static volatile Object sink = new Object();
+    public static void testMultiply(){
         int BI_Wins = 0;
         int LI_Wins = 0;
         int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536,
@@ -86,7 +89,7 @@ public class DevPlayground {
         Arrays.sort(ratios);
         System.out.println("Median ratio: " + (ratios[ratios.length/2-1] + ratios[ratios.length/2])/2.0);
     }
-    static void testPrimeExponents(){
+    public static void testPrimeExponents(){
         long startTime = System.nanoTime();
         for (int i: LargeInteger.sieve(10000)) {
             LargeInteger n = LargeInteger.powerOfTwo(i).subtract(LargeInteger.ONE);
@@ -110,11 +113,11 @@ public class DevPlayground {
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
-    static void testPowMod(){
-        for(int k: new int[]{2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}){
+    public static void testPowMod(){
+        for(int k: new int[]{32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224}){
             long LI_time = 0;
             long BI_time = 0;
-            int trials = 32768/k;
+            int trials = 49152/k;
             for(int j = 0; j < 100; j++){
                 LargeInteger base = LargeInteger.randomBits(k);
                 LargeInteger exponent = LargeInteger.powerOfTwo(k).subtract(LargeInteger.ONE);
@@ -148,8 +151,7 @@ public class DevPlayground {
             System.out.println();
         }
     }
-
-    static void testToString() {
+    public static void testToString() {
         for (int size : new int[]{1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}) {
             long LI_time = 0;
             long BI_time = 0;
@@ -209,7 +211,7 @@ public class DevPlayground {
             System.out.println();
         }
     }
-    static void testGCD(){
+    public static void testGCD(){
         int trials = 150;
         int total = 101;
         long[] LI_times = new long[total];
@@ -257,29 +259,26 @@ public class DevPlayground {
         System.out.println("BI median: " + BI_times[BI_times.length / 2]/1e9/trials + " seconds/trial");
         System.out.println("Median LI/BI ratio: " + ratios[total / 2]);
     }
+
     record FactorBoss(String value, String origin, String notes) {}
     @SuppressWarnings("unused")
     static final List<FactorBoss> ECMFactorBosses = List.of(
             new FactorBoss(
-                    "6428380277058512877402805374285161923129703426793563359435194951116582476919717925450545523629758567927222158921007107167940393067361029334463486674570492299456886839634573238186015211",
-                    "184-digit factor of 10^303+1",
-                    "The reason I made ECM in the first place"),
-            new FactorBoss(
                     "17329683219061543002422421228779516108730216118351629631525988433124595828881651243776644793221812900676299259681",
                     "113-digit factor of 10^280+1",
-                    "It has P48 ;-;"),
+                    "It has P50 ;-;"),
             new FactorBoss(
                     "95494137605894520631622200650595911876626195592470868465557173785682624796482816755939080254946071115981326539067",
                     "113-digit factor of 10^151-1",
-                    "IT'S P56*P58 GODDAMMIT"),
+                    "IT'S P56 * P58 GODDAMMIT"),
             new FactorBoss(
                     "2545241670696632645269668355010308228766321362213342156837791748326503601516964035735193056580722339586143704344727531879151925475323882002596146504110565298175061722110514393341647789457609",
                     "190-digit factor of 10^194+1",
-                    "IT HAS A P71 BRAH"),
+                    "IT HAS A P71...*despair*"),
             new FactorBoss(
                     "453006805906714884411502853326668790794086913203640988280372355951493593240466603283669916463694317597801206598870997639207",
                     "123-digit factor of 10^149+1",
-                    "Another P48..."),
+                    "A P48..."),
             new FactorBoss(
                     "65501941944313206950705851760705669113582631270934567573786629910626991261428869184178218403813518055772508847597858150001",
                     "122-digit factor of 10^300+1",
@@ -287,27 +286,27 @@ public class DevPlayground {
             new FactorBoss(
                     "300932863707222380064047767986506993480747134074482327493193906987568752931846264493277211892465666521176460891605373427957891512801",
                     "132-digit factor of 10^370+1",
-                    "\"insanity is doing the same thing over and over and expecting different results\" -this P66*P67"),
+                    "\"insanity is doing the same thing over and over and expecting different results\" -this BALANCED P66*P67"),
             new FactorBoss(
-                    "7116358583820815230485577071371499492658805655376731460183714191537953545676401541260609682180476819865103852372657674234185998498337772047",
-                    "139-digit factor of 10^163+1",
-                    "A P47. What did I expect"),
+                    "1542640683424132399232471221044907051052572151832476120359456130667480485184999280119584639349554309571691938515526407159478857314501",
+                    "133-digit factor of 10^182+1",
+                    "A P64 * P69..."),
             new FactorBoss(
                     "192765138747618664658708619609149325554035237425929935887315879260862972540025154612659873734596956586713945640750799208135282412056415351",
                     "138-digit factor of 10^163-1",
-                    "P63*P75. These numbers are way too hard"),
+                    "P63*P75. These numbers are WAY too hard"),
             new FactorBoss(
                     "4507841767620154777691376885052292431233465072658754301801002791829306068995480121896964468514459503528632140714078303",
                     "118-digit factor of 10^167+1",
-                    "If I see another P57 I am going to say no"),
-            new FactorBoss(
-                    "99009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009900990099009901",
-                    "164-digit factor of 10^166+1",
-                    "Hey look a RAW cyclotomic result. Fine-tailored with P44"),
+                    "If I see another P57 I am going to say NO"),
             new FactorBoss(
                     "45032210066506069256826272734972918887334048441151951782829437603679673895864323327927303771353309461952652208440573593921168571395063494292741911733731775383",
                     "158-digit factor of 10^181+1",
-                    "do NOT attempt this P74*P84 you will heavily regret it"),
+                    "do NOT even attempt this P74*P84 you will heavily regret it"),
+            new FactorBoss(
+                    "99999999000000009999999900000000999999990000000099999999000000009999999900000000999999990000000099999999000000009999999900000000999999990000000099999999000000009999999900000001",
+                    "176-digit factor of 10^184+1",
+                    "A P66 in a raw cyclotomic result. I do not want to be the next B. Dodson"),
             new FactorBoss(
                     "84523708900354999577381456343504352971092891556081489307750824107007015467838813287127039142929591750486856563265996196433099484413828078776097540360071",
                     "152-digit factor of 10^169-1",
@@ -323,17 +322,46 @@ public class DevPlayground {
             new FactorBoss(
                     "115803748393662249221904430519040355618527394268823242649175806830408102188348254509315050886227655112116740491407543143760599096075587645629094643688352623",
                     "156-digit factor of 10^191+1",
-                    "IT HAS A P76...AAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGGGGGGHHHHHHHHHHHHHH")
+                    "IT HAS A P76...AAAAAAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGGGGGGGHHHHHHHHHHHHHH"),
+            new FactorBoss(
+                    "18946045266864079447749952129297405359583272502326386935207566955946398049786420518369090889686059502391624781043612268906774013174683868338923394524031201737",
+                    "158-digit factor of 10^196+1",
+                    "These damn guys with their P64s and whatnot are saying 'you will not complete this triangle with your frugal methods'"),
+            new FactorBoss(
+                    "257151137227669163459078372107635123438302660448129776040255217899013443107781377045296816007267173658585082212816158474903682305884153564617",
+                    "141-digit factor of 10^212+1",
+                    "I'm just going through the triangle because ye. P65s can wait"),
+            new FactorBoss(
+                    "4699647704310958756172428094989827379269964500718279672842668516597679787731613620656744089391648173777",
+                    "103-digit factor of 10^216+1",
+                    "FINALLY another P47. At peace again"),
+            new FactorBoss(
+                    "497589584370643651833411052136403857469855512021216681367094246340846264306841359259739399116532272051367234127695381400591250742929694843555904520509603702962028539798720834254409924410330623440892183",
+                    "201-digit factor of 10^223+1",
+                    "P. seventy. three."),
+            new FactorBoss(
+                    "14188188836968705250117711741499944698487714862142939263488190699603257680334448968531423820453615812952863324879504234349910697001471647658310156271402955153602671554331811547256147592874775035781",
+                    "197-digit factor of 10^226+1",
+                    "STOP. YOUR. DAMN. WASTE. OF. TIME. especially when one target has a F##KING P80"),
+            new FactorBoss(
+                    "392341376282551597853225488244320429407492675293824468308234708890386715143464851563136496549187240385763178553846210338740834833642810743816248430253285047235830732149562248523725576650081305575723632459",
+                    "204-digit factor of 10^229+1",
+                    "A P41. Then a P59"),
+            new FactorBoss(
+                    "1098901098901098901098901098901098901098901098901098901098901098901098901098901098901098901098900989010989010989010989010989010989010989010989010989010989010989010989010989010989010989010989011",
+                    "193-digit factor of 10^291+1",
+                    "P43 this time. My next target is obvious"),
+            new FactorBoss(
+                    "23745522635916420509212937025036341721288549626793287444171791964097702703756675293617858214186414108961",
+                    "104-digit factor 3^370+1",
+                    "BALANCED: is P52*P52. Wait until GNFS is complete")
             );
+
     static void main() {
-        /*for (int k = 184; ; k++) {
-            LargeInteger N = new LargeInteger("10^" + k + "+1");
-            System.out.println(N + " = " + N.factor());
-        }*/
-        LargeInteger N = new LargeInteger("10^303+1");
+        LargeInteger N = new LargeInteger("10^349+1");
         System.out.println(N + " = " + N.factor());
     }
-    private static void demoIntegers() {
+    public static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
 
         LargeInteger a = LargeInteger.valueOf(1234567890L);
@@ -355,8 +383,7 @@ public class DevPlayground {
         System.out.println("totient(a+b+c) = " + a.add(b).add(c).totient());
         System.out.println();
     }
-
-    private static void demoFractions() {
+    public static void demoFractions() {
         System.out.println("=== LargeFraction Demo ===");
 
         LargeFraction f = new LargeFraction(LargeInteger.valueOf(6), LargeInteger.valueOf(8));
@@ -367,11 +394,10 @@ public class DevPlayground {
         System.out.println("6/8 + 5/120 = " + f.add(g));
         System.out.println("6/8 * 5/120 = " + f.multiply(g));
         System.out.println("6/8 / 5/120 = " + f.divide(g));
-        System.out.println("1/5 + 1/2 = " + Parser.parse("1/5 + 1/2"));
+        System.out.println("1/5 + 1/2 = " + new LargeFraction("1/5 + 1/2"));
         System.out.println();
     }
-
-    private static void demoRadicals() {
+    public static void demoRadicals() {
         System.out.println("=== Radical / Power Demo ===");
 
         System.out.println("√72 = " + Parser.parse("√72"));
@@ -382,8 +408,8 @@ public class DevPlayground {
         System.out.println("47*(2+√3+√5)/(√6+√7+√2) = " + Parser.parse("47*(2+√3+√5)/(√6+√7+√2)"));
         System.out.println();
     }
-    private static void demoRadicalReciprocals(){
-        //System.out.println("=== Advanced reciprocal Demo ===");
+    public static void demoRadicalReciprocals(){
+        System.out.println("=== Advanced reciprocal Demo ===");
         // Rational-only
         testReciprocal("2");
         testReciprocal("-3/7");
@@ -409,7 +435,7 @@ public class DevPlayground {
 
         // Products that should simplify after reciprocal
         testReciprocal("(1+√2)(3-√2)");
-        testReciprocal("(√2+√3)(√5-1)");
+        testReciprocal("(√2+√3)(√5-7)");
 
         //Hidden generators
         testReciprocal("√10 - √2 + √15 - √3");
@@ -421,8 +447,8 @@ public class DevPlayground {
         testReciprocal("2^(1/3) + 4^(1/3)");
         testReciprocal("8^(1/3) + 2^(1/3)");
         testReciprocal("16^(1/4) - 2^(1/2)");
-        testReciprocal("27^(1/6) + 3^(1/3)");
-        testReciprocal("-5^(99/100) + 5");
+        testReciprocal("27^(1/7) + 3^(1/3)");
+        testReciprocal("-5^(99/50) + 5");
 
         // Powers / fractional exponents
         testReciprocal("2^(1/3)+1");
@@ -437,17 +463,17 @@ public class DevPlayground {
         testReciprocal("1+√-1");
         testReciprocal("(-1)^(1/3) - (-1)^(1/4)");
         testReciprocal("(-1)^(1/5) - (-1)^(4/5)");
-        //System.out.println();
+        System.out.println();
     }
-    private static void demoVectorsMatrices() {
+    public static void demoVectorsMatrices() {
         System.out.println("=== Vector / Matrix Demo ===");
 
         LargeList<LargeFraction> entries = new LargeList<>();
-        entries.add(new LargeFraction(LargeInteger.ONE));
-        entries.add(new LargeFraction(LargeInteger.TWO));
-        entries.add(new LargeFraction(LargeInteger.THREE));
-        entries.add(new LargeFraction(LargeInteger.FOUR));
-        entries.add(new LargeFraction(LargeInteger.FIVE));
+        entries.add(LargeFraction.ONE);
+        entries.add(LargeFraction.TWO);
+        entries.add(LargeFraction.valueOf(LargeInteger.THREE));
+        entries.add(LargeFraction.valueOf(LargeInteger.FOUR));
+        entries.add(LargeFraction.valueOf(LargeInteger.FIVE));
 
         LargeVector v = new LargeVector(entries);
 
@@ -456,7 +482,7 @@ public class DevPlayground {
         System.out.println("|v| = " + v.magnitude());
         System.out.println();
     }
-    private static void demoParser() {
+    public static void demoParser() {
         System.out.println("=== Parser Demo ===");
 
         String[] inputs = {
@@ -475,8 +501,7 @@ public class DevPlayground {
             catch (Exception e) {System.out.println(input + " -> ERROR: " + e.getMessage());}
         System.out.println();
     }
-
-    private static void demoBaseConversion() {
+    public static void demoBaseConversion() {
         System.out.println("=== Base Conversion Demo ===");
         System.out.println("23/61 in base 10 = " + new Base(new LargeFraction(LargeInteger.valueOf(23), LargeInteger.valueOf(61)), 10));
         System.out.println("17495/17496 in base 3 = " + new Base((LargeFraction) Parser.parse("17495/17496"), 3));

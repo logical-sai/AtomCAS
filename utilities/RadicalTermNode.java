@@ -8,7 +8,7 @@ public class RadicalTermNode extends ScalarAtom{
         LargeFraction C = coefficient.clone();
         LargePowerNode K = base.clone();
         if(K.isOne()){
-            this.rationalPart = (LargeFraction) R.add(C);
+            this.rationalPart = R.add(C);
             this.coefficient = LargeFraction.ZERO;
             this.exponent = new LargePowerNode(LargeFraction.ZERO, LargeFraction.ONE, LargeFraction.ONE);
             return;

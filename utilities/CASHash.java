@@ -19,7 +19,7 @@ final class CASHash {
     }
     static int hash(Atom a) {
         return switch (a) {
-            case LargeInteger x       -> integer(x);
+            case LargeInteger x       -> x.hashCode();
             case LargeFraction x      -> rational(x.numerator, x.denominator);
             case LargeDecimal x       -> decimal(x);
             case LargePowerMonomial x -> powerMonomial(x);
@@ -31,18 +31,11 @@ final class CASHash {
             case LargeVector x        -> vector(x);
             case LargeMatrix x        -> matrix(x);
             case RadicalExpression x  -> radicalExpression(x);
-            case AlgebraicNumber x    -> algebraicNumber(x);
             default -> throw new UnsupportedOperationException("Hashing not implemented for " + a.getClass());
         };
     }
-    static int integer(LargeInteger x) {
-        return x.hashCode();
-    }
     static int rational(LargeInteger numerator, LargeInteger denominator){
-        if (denominator.equals(LargeInteger.ONE))
-            return integer(numerator);
-        return mix(integer(numerator), integer(denominator));
-    }
+        return (denominator.isOne()) ? numerator.hashCode() : mix(numerator.hashCode(), denominator.hashCode());}
     static int powerMonomial(LargePowerMonomial x) {
         throw new UnsupportedOperationException("LargePowerMonomial");
 //        if (x.isRational()) {
@@ -92,9 +85,6 @@ final class CASHash {
     }
     static int radicalExpression(RadicalExpression x){
         throw new UnsupportedOperationException("RadicalExpression");
-    }
-    static int algebraicNumber(AlgebraicNumber x) {
-        throw new UnsupportedOperationException("AlgebraicNumber");
     }
     static int exp(Exp x) {
         throw new UnsupportedOperationException("Exp");

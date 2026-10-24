@@ -20,7 +20,7 @@ public class Exp extends ScalarAtom {
         this.power = power;
     }
     @Override
-    public Atom clone() {return new Exp(this.addend, this.coefficient, this.power);}
+    public Exp clone() {return new Exp(this.addend, this.coefficient, this.power);}
     @Override
     public String toString() {
         StringBuilder str = new  StringBuilder();

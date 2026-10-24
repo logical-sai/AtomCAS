@@ -1,14 +1,13 @@
 package com.AtomCAS.utilities;
 public class LargeVector extends TensorAtom {
     private LargeList<LargeInteger> list;
-    public LargeFraction factor;
+    LargeFraction factor;
     LargeVector(LargeList<LargeInteger> list, LargeFraction factor){
         this.list = new LargeList<>();
-        if(list.size().isZero()){
+        if(list.isEmpty()){
             this.factor = LargeFraction.ONE;
             return;
         }
-        this.factor = factor;
         for(LargeInteger I: list)
             this.list.add(I);
         LargeInteger lc = list.getFirst();
@@ -17,9 +16,10 @@ public class LargeVector extends TensorAtom {
             this.factor = LargeFraction.ONE;
             return;
         }
-        this.factor = (LargeFraction) this.factor.multiply(lc);
+        factor = (LargeFraction) factor.multiply(lc);
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.list.size()); i = i.add(1))
             this.list.set(i, this.list.get(i).divide(lc));
+        this.factor = factor;
     }
     public LargeVector(LargeList<LargeFraction> liste){
         this.list = new LargeList<>();
@@ -70,8 +70,8 @@ public class LargeVector extends TensorAtom {
     public LargeVector negate() {return new LargeVector(list, factor.negate());}
     @Override
     public LargeInteger[] shape() {return new LargeInteger[]{this.dimension()};}
-    public LargeFraction get(LargeInteger index){return (LargeFraction) list.get(index).multiply(factor);}
-    public void append(LargeFraction f){
+    public LargeFraction get(LargeInteger index) {return (LargeFraction) list.get(index).multiply(factor);}
+    public void append(LargeFraction f) {
         LargeList<LargeFraction> lk = new  LargeList<>();
         for(LargeInteger I: this.list)
             lk.add((LargeFraction) I.multiply(factor));
@@ -89,26 +89,26 @@ public class LargeVector extends TensorAtom {
         list = vK.list;
         factor = vK.factor;
     }
-    public LargeFraction sum(){
+    public LargeFraction sum() {
         LargeFraction res = LargeFraction.ZERO;
         for(LargeInteger I: this.list) res = (LargeFraction) res.add(I.multiply(factor));
         return res;
     }
-    public LargeFraction product(){
+    public LargeFraction product() {
         LargeFraction res = LargeFraction.ONE;
         for(LargeInteger I: this.list) res = (LargeFraction) res.multiply(I.multiply(factor));
         return res;
     }
-    public void remove(LargeInteger index){list.remove(index);}
-    public LargeInteger dimension(){return list.size();}
-    public boolean isDifferentDimension(LargeVector other){return !this.dimension().equals(other.dimension());}
+    public void remove(LargeInteger index) {list.remove(index);}
+    public LargeInteger dimension() {return list.size();}
+    public boolean isDifferentDimension(LargeVector other) {return this.dimension().doesntEqual(other.dimension());}
     public boolean isZero() {
-        for (LargeInteger f: list) if (f.doesntEqual(LargeInteger.ZERO)) return false;
+        for (LargeInteger f: list) if (!f.isZero()) return false;
         return true;
     }
     @SuppressWarnings("unused")
-    public boolean isUnit(){return this.magnitude().isOne();}
-    public LargeVector add(LargeVector other){
+    public boolean isUnit() {return this.magnitude().isOne();}
+    public LargeVector add(LargeVector other) {
         if(other.isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
         LargeList<LargeFraction> liste = new LargeList<>();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
@@ -155,21 +155,23 @@ public class LargeVector extends TensorAtom {
             result = result.add(get(i).multiply(other.get(i)));
         return result;
     }
+    @SuppressWarnings("unused")
     public LargeVector crossProduct(LargeVector v) {
         if (dimension().doesntEqual(LargeInteger.THREE) || v.dimension().doesntEqual(LargeInteger.THREE))
             throw new IllegalArgumentException("Cross product only defined for 3D vectors");
         LargeFraction a1 = (LargeFraction) list.getFirst().multiply(factor),
-                a2 = (LargeFraction) list.get(LargeInteger.ONE).multiply(factor),
-                a3 = (LargeFraction) list.get(LargeInteger.TWO).multiply(factor);
+                a2 = (LargeFraction) list.get(1).multiply(factor),
+                a3 = (LargeFraction) list.get(2).multiply(factor);
         LargeFraction b1 = (LargeFraction) v.list.getFirst().multiply(v.factor),
-                b2 = (LargeFraction) v.list.get(LargeInteger.ONE).multiply(v.factor),
-                b3 = (LargeFraction) v.list.get(LargeInteger.TWO).multiply(v.factor);
+                b2 = (LargeFraction) v.list.get(1).multiply(v.factor),
+                b3 = (LargeFraction) v.list.get(2).multiply(v.factor);
         LargeList<LargeFraction> result = new LargeList<>();
         result.add(a2.multiply(b3).subtract(a3.multiply(b2)));
         result.add(a3.multiply(b1).subtract(a1.multiply(b3)));
         result.add(a1.multiply(b2).subtract(a2.multiply(b1)));
         return new LargeVector(result);
     }
+    @SuppressWarnings("unused")
     public LargeVector projectionOnto(LargeVector v) {
         LargeFraction denom = v.dotProduct(v);
         if (denom.isZero())
@@ -202,6 +204,7 @@ public class LargeVector extends TensorAtom {
                 return false;
         return true;
     }
+    @SuppressWarnings("unused")
     public boolean isOrthonormalTo(LargeVector other) {
         return this.dotProduct(other).isZero()
                 && this.magnitude().isOne() && other.magnitude().isOne();}

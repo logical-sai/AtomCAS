@@ -1,0 +1,2 @@
+package com.AtomCAS.utilities;
+public abstract class ModelAtom extends Atom {}

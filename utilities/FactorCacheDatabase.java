@@ -32,8 +32,7 @@ final class FactorCacheDatabase implements AutoCloseable {
      * Initialization-on-demand holder idiom:
      * constructed only when instance() is first called.
      */
-    private static final class Holder {
-        private static final FactorCacheDatabase INSTANCE = new FactorCacheDatabase();}
+    private static final class Holder {static final FactorCacheDatabase INSTANCE = new FactorCacheDatabase();}
     static FactorCacheDatabase instance() {return Holder.INSTANCE;}
     private void configureConnection() throws SQLException {
         try (Statement statement = connection.createStatement()) {
@@ -71,7 +70,7 @@ final class FactorCacheDatabase implements AutoCloseable {
                     LargeInteger factor = new LargeInteger(result.getString("factor"));
                     // Persisted values should still be validated.
                     if (factor.greaterThan(LargeInteger.ONE) && factor.lessThan(n)
-                            && n.remainder(factor).equals(LargeInteger.ZERO))
+                            && n.remainder(factor).isZero())
                         return factor;
                 }
             }

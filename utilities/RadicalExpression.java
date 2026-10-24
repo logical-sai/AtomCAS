@@ -87,7 +87,7 @@ public class RadicalExpression extends ScalarAtom{
     }
 
     @Override
-    public Atom clone() {
+    public RadicalExpression clone() {
         return null;
     }
 

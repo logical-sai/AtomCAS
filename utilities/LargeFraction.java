@@ -8,18 +8,11 @@ public final class LargeFraction extends ScalarAtom {
     public static final LargeFraction HALF = LargeInteger.TWO.reciprocal();
     public static final LargeFraction ONE = new LargeFraction(LargeInteger.ONE);
     public static final LargeFraction TWO = new LargeFraction(LargeInteger.TWO);
-    public static final LargeFraction THREE = new LargeFraction(LargeInteger.THREE);
-    public static final LargeFraction FOUR = new LargeFraction(LargeInteger.FOUR);
-    public static final LargeFraction FIVE = new LargeFraction(LargeInteger.FIVE);
-    public static final LargeFraction SIX = new LargeFraction(LargeInteger.SIX);
-    public static final LargeFraction SEVEN = new LargeFraction(LargeInteger.SEVEN);
-    public static final LargeFraction EIGHT = new LargeFraction(LargeInteger.EIGHT);
-    public static final LargeFraction NINE = new LargeFraction(LargeInteger.NINE);
-    public static final LargeFraction TEN = new LargeFraction(LargeInteger.TEN);
-    public LargeFraction(LargeInteger in) {
+    private LargeFraction(LargeInteger in) {
         numerator = in;
         denominator = LargeInteger.ONE;
     }
+    public static LargeFraction valueOf(LargeInteger in) {return new LargeFraction(in);}
     public LargeFraction(LargeInteger numerator, LargeInteger denominator) {
         if (denominator.isNegative()) {
             numerator = numerator.negate();
@@ -77,20 +70,20 @@ public final class LargeFraction extends ScalarAtom {
             return numerator.equals(I) && denominator.isOne();
         else if(other instanceof LargeFraction F)
             return numerator.equals(F.numerator) && denominator.equals(F.denominator);
-        return this.compareTo((ScalarAtom) other) == 0L;
+        else return this.compareTo((ScalarAtom) other) == 0L;
     }
     @Override
     public boolean isZero() {return numerator.isZero();}
     @Override
-    public boolean isOne() {return numerator.isOne();}
+    public boolean isOne() {return numerator.isOne() && denominator.isOne();}
     @Override
     public boolean isNegative() {return numerator.isNegative();}
     @Override
-    public LargeFraction abs() {return new LargeFraction(numerator.abs(), denominator);}
+    public LargeFraction abs() {return isNegative() ? negate() : this;}
     @Override
     public LargeInteger sign() {return numerator.sign();}
     @Override
-    public int compareMagnitudes(ScalarAtom other) {
+    int compareMagnitudes(ScalarAtom other) {
         return switch (other) {
             case LargeInteger I -> numerator.compareMagnitudes(I.multiply(denominator));
             case LargeFraction F -> numerator.multiply(F.denominator).compareMagnitudes(
@@ -160,6 +153,7 @@ public final class LargeFraction extends ScalarAtom {
     }
     PowerFormFraction asPowerForm() {
         PowerFormInteger num = numerator.asPowerForm();
+        if(denominator.isOne()) return new PowerFormFraction(new LargeFraction(num.base()), num.exponent());
         PowerFormInteger den = denominator.asPowerForm();
         long exponent = LargeInteger.gcdLong(num.exponent(), den.exponent());
         if (exponent == 1) return new PowerFormFraction(this, 1);
@@ -170,7 +164,6 @@ public final class LargeFraction extends ScalarAtom {
     public LargeMap<LargeInteger, LargeFraction> factor() {
         LargeMap<LargeInteger, LargeFraction> N = numerator.factor();
         if(denominator.isOne()) return N;
-        if(numerator.isOne()) N.remove(LargeInteger.ONE);
         LargeMap<LargeInteger, LargeFraction> D = denominator.factor();
         for(LargeInteger I: D.keys()) N.put(I, D.get(I).negate());
         return N;
@@ -180,7 +173,7 @@ public final class LargeFraction extends ScalarAtom {
         LargeMap<LargeInteger, LargeFraction> D = new LargeMap<>();
         for(LargeInteger I: pr.keys()) {
             if(!pr.get(I).numerator.isNegative())
-                N.put(I, pr.get(I).clone());
+                N.put(I, pr.get(I));
             else D.put(I, pr.get(I).negate());
         }
         return new LargeFraction(LargeInteger.buildFromFactors(N), LargeInteger.buildFromFactors(D));

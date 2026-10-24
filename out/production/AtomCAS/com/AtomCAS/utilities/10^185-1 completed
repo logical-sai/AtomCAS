@@ -1,0 +1,781 @@
+Fermat check time for 71375734046003068839100407794496831157838771482160430202212052665972681592997183353790047121: 3.14167E-4 seconds
+Pollard PMinusOne time for 71375734046003068839100407794496831157838771482160430202212052665972681592997183353790047121: 0.041071875 seconds
+Brent rhos time for 71375734046003068839100407794496831157838771482160430202212052665972681592997183353790047121: 0.032738334 seconds
+Number entering ECM: 71375734046003068839100407794496831157838771482160430202212052665972681592997183353790047121(92 digits)
+64 curves tried with bounds 2000 and 200000; 64 being useful
+Time for creating all the curves: 0.005458625 seconds
+Stage 1 sieve time: 2.9792E-5 seconds
+Stage 1 chain build time: 3.84583E-4 seconds
+Stage 1 chain application time: 0.0651585 seconds
+Total Stage 1 time: 0.065858375 seconds
+Stage 2 block count: 64
+Stage2State construction: 0.113206875 seconds
+Stage2State application on blocks: 0.058797417 seconds
+Total stage 2 time: 0.17507875 seconds
+Montgomery multiplications: 3675392
+Montgomery squares: 725120
+Reduction calls: 4401280
+Nonzero carries: 40354880
+Propagated limbs: 0
+Canonical subtractions: 37
+Canonical copies: 4401243
+Point doubling counts: 20224
+Point differential additions: 314176
+Point doubling + differential addition fusions: 14080
+PRAC multiplications: 19392
+PRAC case SWAP: 139328
+PRAC case 1: 6400
+PRAC case 2/4: 5824
+PRAC case 3: 191808
+PRAC case 5: 5952
+PRAC case 6: 1536
+PRAC case 7: 768
+PRAC case 8: 0
+PRAC case 9: 0
+Total time for this batch: 0.256105292 seconds
+
+64 curves tried with bounds 11000 and 1100000; 64 being useful
+Time for creating all the curves: 0.003916084 seconds
+Stage 1 sieve time: 9.4041E-5 seconds
+Stage 1 chain build time: 0.001156416 seconds
+Stage 1 chain application time: 0.211696209 seconds
+Total Stage 1 time: 0.213163458 seconds
+Stage 2 block count: 128
+Stage2State construction: 0.0698545 seconds
+Stage2State application on blocks: 0.180491042 seconds
+Total stage 2 time: 0.263442083 seconds
+Montgomery multiplications: 14840576
+Montgomery squares: 3372160
+Reduction calls: 18213696
+Nonzero carries: 165243200
+Propagated limbs: 0
+Canonical subtractions: 174
+Canonical copies: 18213522
+Point doubling counts: 86592
+Point differential additions: 1390720
+Point doubling + differential addition fusions: 104384
+PRAC multiplications: 85504
+PRAC case SWAP: 816192
+PRAC case 1: 29824
+PRAC case 2/4: 49920
+PRAC case 3: 1081152
+PRAC case 5: 38016
+PRAC case 6: 8128
+PRAC case 7: 6144
+PRAC case 8: 1088
+PRAC case 9: 1088
+Total time for this batch: 0.480805167 seconds
+
+64 curves tried with bounds 11000 and 1100000; 64 being useful
+Time for creating all the curves: 0.0035515 seconds
+Stage 1 sieve time: 4.0416E-5 seconds
+Stage 1 chain build time: 0.001760041 seconds
+Stage 1 chain application time: 0.211305959 seconds
+Total Stage 1 time: 0.213313625 seconds
+Stage 2 block count: 128
+Stage2State construction: 0.04097675 seconds
+Stage2State application on blocks: 0.174946709 seconds
+Total stage 2 time: 0.218169708 seconds
+Montgomery multiplications: 14840576
+Montgomery squares: 3372160
+Reduction calls: 18213696
+Nonzero carries: 165243200
+Propagated limbs: 0
+Canonical subtractions: 146
+Canonical copies: 18213550
+Point doubling counts: 86592
+Point differential additions: 1390720
+Point doubling + differential addition fusions: 104384
+PRAC multiplications: 85504
+PRAC case SWAP: 816192
+PRAC case 1: 29824
+PRAC case 2/4: 49920
+PRAC case 3: 1081152
+PRAC case 5: 38016
+PRAC case 6: 8128
+PRAC case 7: 6144
+PRAC case 8: 1088
+PRAC case 9: 1088
+Total time for this batch: 0.437514791 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001652792 seconds
+Stage 1 sieve time: 1.48333E-4 seconds
+Stage 1 chain build time: 0.003059667 seconds
+Stage 1 chain application time: 0.829185 seconds
+Total Stage 1 time: 0.832633917 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.0371675 seconds
+Stage2State application on blocks: 0.703079208 seconds
+Total stage 2 time: 0.741729041 seconds
+Montgomery multiplications: 63393728
+Montgomery squares: 14891648
+Reduction calls: 78286912
+Nonzero carries: 708376000
+Propagated limbs: 0
+Canonical subtractions: 690
+Canonical copies: 78286222
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.576365875 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001464125 seconds
+Stage 1 sieve time: 7.8041E-5 seconds
+Stage 1 chain build time: 0.001192416 seconds
+Stage 1 chain application time: 0.833348959 seconds
+Total Stage 1 time: 0.834872625 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.036202292 seconds
+Stage2State application on blocks: 0.721164042 seconds
+Total stage 2 time: 0.758721458 seconds
+Montgomery multiplications: 63393728
+Montgomery squares: 14891648
+Reduction calls: 78286912
+Nonzero carries: 708376000
+Propagated limbs: 0
+Canonical subtractions: 760
+Canonical copies: 78286152
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.595361333 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.0017935 seconds
+Stage 1 sieve time: 8.8375E-5 seconds
+Stage 1 chain build time: 0.001186625 seconds
+Stage 1 chain application time: 0.828418417 seconds
+Total Stage 1 time: 0.829964375 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.03524975 seconds
+Stage2State application on blocks: 0.690445125 seconds
+Total stage 2 time: 0.727071417 seconds
+Montgomery multiplications: 63393728
+Montgomery squares: 14891648
+Reduction calls: 78286912
+Nonzero carries: 708376000
+Propagated limbs: 0
+Canonical subtractions: 695
+Canonical copies: 78286217
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.5592 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.00137375 seconds
+Stage 1 sieve time: 8.0167E-5 seconds
+Stage 1 chain build time: 0.001094916 seconds
+Stage 1 chain application time: 0.824846709 seconds
+Total Stage 1 time: 0.826247584 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.036184042 seconds
+Stage2State application on blocks: 0.690639958 seconds
+Total stage 2 time: 0.72822425 seconds
+Montgomery multiplications: 63393728
+Montgomery squares: 14891648
+Reduction calls: 78286912
+Nonzero carries: 708376000
+Propagated limbs: 0
+Canonical subtractions: 668
+Canonical copies: 78286244
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.5562585 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001623166 seconds
+Stage 1 sieve time: 8.8166E-5 seconds
+Stage 1 chain build time: 6.59042E-4 seconds
+Stage 1 chain application time: 0.82108975 seconds
+Total Stage 1 time: 0.822034458 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.035115458 seconds
+Stage2State application on blocks: 0.695188208 seconds
+Total stage 2 time: 0.731687458 seconds
+Montgomery multiplications: 63393728
+Montgomery squares: 14891648
+Reduction calls: 78286912
+Nonzero carries: 708376000
+Propagated limbs: 0
+Canonical subtractions: 680
+Canonical copies: 78286232
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.555698875 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001681209 seconds
+Stage 1 sieve time: 9.0125E-5 seconds
+Stage 1 chain build time: 6.41334E-4 seconds
+Stage 1 chain application time: 0.833392667 seconds
+Total Stage 1 time: 0.834355958 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.035204666 seconds
+Stage2State application on blocks: 0.700135791 seconds
+Total stage 2 time: 0.736724291 seconds
+Montgomery multiplications: 63393728
+Montgomery squares: 14891648
+Reduction calls: 78286912
+Nonzero carries: 708376000
+Propagated limbs: 0
+Canonical subtractions: 713
+Canonical copies: 78286199
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.5730945 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001642375 seconds
+Stage 1 sieve time: 3.37334E-4 seconds
+Stage 1 chain build time: 0.003162042 seconds
+Stage 1 chain application time: 4.664854333 seconds
+Total Stage 1 time: 4.668565292 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.036632833 seconds
+Stage2State application on blocks: 3.7031975 seconds
+Total stage 2 time: 3.74123925 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172799
+Propagated limbs: 0
+Canonical subtractions: 3443
+Canonical copies: 387491981
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.411716166 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001035083 seconds
+Stage 1 sieve time: 3.41709E-4 seconds
+Stage 1 chain build time: 0.003137833 seconds
+Stage 1 chain application time: 4.452425584 seconds
+Total Stage 1 time: 4.456159583 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.037376834 seconds
+Stage2State application on blocks: 3.778368 seconds
+Total stage 2 time: 3.817147583 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3515
+Canonical copies: 387491909
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.2746115 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001366208 seconds
+Stage 1 sieve time: 3.65E-4 seconds
+Stage 1 chain build time: 0.003375708 seconds
+Stage 1 chain application time: 5.168423125 seconds
+Total Stage 1 time: 5.172381375 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038895291 seconds
+Stage2State application on blocks: 3.765070958 seconds
+Total stage 2 time: 3.805482917 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172799
+Propagated limbs: 0
+Canonical subtractions: 3358
+Canonical copies: 387492066
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.979454625 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001097541 seconds
+Stage 1 sieve time: 3.66834E-4 seconds
+Stage 1 chain build time: 0.003105875 seconds
+Stage 1 chain application time: 4.623036083 seconds
+Total Stage 1 time: 4.626771584 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038237166 seconds
+Stage2State application on blocks: 3.797361042 seconds
+Total stage 2 time: 3.837115833 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3325
+Canonical copies: 387492099
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.4653535 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.0012215 seconds
+Stage 1 sieve time: 3.81916E-4 seconds
+Stage 1 chain build time: 0.003177 seconds
+Stage 1 chain application time: 4.543526875 seconds
+Total Stage 1 time: 4.547341375 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038805459 seconds
+Stage2State application on blocks: 3.835036 seconds
+Total stage 2 time: 3.875362334 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3447
+Canonical copies: 387491977
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.424342709 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001046583 seconds
+Stage 1 sieve time: 3.50292E-4 seconds
+Stage 1 chain build time: 0.003187666 seconds
+Stage 1 chain application time: 4.573534 seconds
+Total Stage 1 time: 4.577320042 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038095 seconds
+Stage2State application on blocks: 3.753545416 seconds
+Total stage 2 time: 3.793109666 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3441
+Canonical copies: 387491983
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.371724209 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001352625 seconds
+Stage 1 sieve time: 3.60125E-4 seconds
+Stage 1 chain build time: 0.003287708 seconds
+Stage 1 chain application time: 4.533008875 seconds
+Total Stage 1 time: 4.536889291 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.037389416 seconds
+Stage2State application on blocks: 3.753367375 seconds
+Total stage 2 time: 3.792161583 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3498
+Canonical copies: 387491926
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.330739333 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001010542 seconds
+Stage 1 sieve time: 3.47583E-4 seconds
+Stage 1 chain build time: 0.0031595 seconds
+Stage 1 chain application time: 4.550634292 seconds
+Total Stage 1 time: 4.554381333 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.036932083 seconds
+Stage2State application on blocks: 3.747458292 seconds
+Total stage 2 time: 3.785848834 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3422
+Canonical copies: 387492002
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.341591708 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.00113775 seconds
+Stage 1 sieve time: 3.65166E-4 seconds
+Stage 1 chain build time: 0.003402042 seconds
+Stage 1 chain application time: 4.529807333 seconds
+Total Stage 1 time: 4.533814708 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.037476083 seconds
+Stage2State application on blocks: 3.742500542 seconds
+Total stage 2 time: 3.781456125 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3375
+Canonical copies: 387492049
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.316666708 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001102917 seconds
+Stage 1 sieve time: 3.60417E-4 seconds
+Stage 1 chain build time: 0.003278708 seconds
+Stage 1 chain application time: 4.602653958 seconds
+Total Stage 1 time: 4.606546167 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.037999417 seconds
+Stage2State application on blocks: 3.938497167 seconds
+Total stage 2 time: 3.977957791 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172799
+Propagated limbs: 0
+Canonical subtractions: 3296
+Canonical copies: 387492128
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.585804416 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001312542 seconds
+Stage 1 sieve time: 3.62875E-4 seconds
+Stage 1 chain build time: 0.003347292 seconds
+Stage 1 chain application time: 4.728807709 seconds
+Total Stage 1 time: 4.732775042 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.036920958 seconds
+Stage2State application on blocks: 3.770167333 seconds
+Total stage 2 time: 3.808561167 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172800
+Propagated limbs: 0
+Canonical subtractions: 3438
+Canonical copies: 387491986
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.542872667 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001202291 seconds
+Stage 1 sieve time: 3.48958E-4 seconds
+Stage 1 chain build time: 0.00319425 seconds
+Stage 1 chain application time: 4.552130208 seconds
+Total Stage 1 time: 4.555883375 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038527417 seconds
+Stage2State application on blocks: 3.877723959 seconds
+Total stage 2 time: 3.91770225 seconds
+Montgomery multiplications: 313143360
+Montgomery squares: 74346880
+Reduction calls: 387495424
+Nonzero carries: 3503172799
+Propagated limbs: 0
+Canonical subtractions: 3454
+Canonical copies: 387491970
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.475123792 seconds
+
+Number entering QS: 71375734046003068839100407794496831157838771482160430202212052665972681592997183353790047121(92 digits)
+Factor base build time: 0.257987375 seconds(643887 primes; 643917 relations required)
+  #                                                  A   interval   candidates         rejected         full       sing     sing merge   double   double merge     mix merge      precomputation           root       sieve         scanning    candidateScan          hitLink         smallDiv        factoring          class    processing          total          rel/s     div/poly     rel/poly   merge/poly       rel total        est. sec remaining
+   1         74545919043368817205726705262552831660849     320550          123                0           46         77              0        0              0             0            87.16788      186.08742   159.81417         19.62430         12.04347          7.51617          7.01850          0.00000        2.98616      30.19479      463.44012       99.25770  13924.33333      0.35938      0.00000              46                6628.07414
+   2         74521911254713846421832262334880204602251     320652           96                0           41         55              0        0              0             0            63.75321      113.71654   152.84121         13.06008          7.35663          5.68566          3.29059          0.00000        0.35113      17.09783      347.59849      117.95218  13947.88542      0.32031      0.00000              87                5551.20797
+   3         74232524286680759413283884093994522871079     321902          118                0           53         65              0        0              0             0            55.16375      141.30442   152.28421         13.13347          7.39567          5.72992          4.03500          0.00000        0.27850      17.71288      366.58901      144.57608  13967.03390      0.41406      0.00000             140                4572.42234
+   4         75112869216458341667084996399234653876859     318130          110                0           50         60              0        0              0             0            54.85383      133.94662   150.62383         12.88624          7.26258          5.61038          3.66792          0.00000        0.22442      16.99021      356.55796      140.22966  13839.88182      0.39063      0.00000             190                4705.90324
+   5         74620086286636688643664353914743771294351     320230          128                0           49         79              0        0              0             0            54.82817      205.10812   152.25808         13.11604          7.35345          5.74692          4.42642          0.00000        0.27083      17.95941      430.26899      113.88225  13894.70313      0.38281      0.00000             239                5788.93337
+   6         74369986061297343118194022556799114323717     321308          106                0           39         67              0        0              0             0            61.50333      115.04603   152.16863         13.25104          7.46738          5.77492          3.64834          0.00000        0.23934      17.25217      346.07737      112.69156  13923.12264      0.30469      0.00000             278                5795.46255
+   7         75705388702552787972849209282926377897461     315640          125                0           44         81              0        0              0             0            61.94713      131.31204   150.45205         12.84042          7.27908          5.55392          4.14820          0.00000        0.17267      17.38608      361.19897      121.81652  13745.80800      0.34375      0.00000             322                5391.63016
+   8         74775054828132967238202002733667526835587     319568           85                0           37         48              0        0              0             0            55.62625      117.19758   149.70746         12.91258          7.30228          5.59838          2.83233          0.00000        0.12287      15.96970      338.62045      109.26688  13904.83529      0.28906      0.00000             359                5963.09984
+   9         74765605537878088348791357994175656286207     319608          105                0           36         69              0        0              0             0            54.87742      129.47867   152.00162         13.00612          7.40754          5.59007          3.66912          0.00000        0.16441      16.94729      353.43278      101.85812  13904.04762      0.28125      0.00000             395                6388.08369
+  10         74831194845978643521694630352270981017591     319328          130                0           55         75              0        0              0             0            54.43763      126.57704   150.98759         12.98300          7.41209          5.56575          4.36605          0.00000        0.11150      17.56117      349.62755      157.31026  13893.90000      0.42969      0.00000             450                4206.28162
+  11         74787813957260900732000530709488481264467     319512          108                0           49         59              0        0              0             0            54.29850      126.42434   151.07513         12.93746          7.34805          5.58438          3.68305          0.00000        0.11042      16.82242      348.68294      140.52882  13850.75926      0.38281      0.00000             499                4689.67042
+  12         74695063972433066725108669643371921157159     319910          131                0           51         79              1        0              0             0            54.95113      153.71100   155.12067         13.27534          7.51092          5.75521          4.48459          0.00000        0.30000      18.22254      382.13954      136.07595  13913.88550      0.40625      0.00781             551                4852.64756
+  13         74489937604587801249271678359609321945377     320790          116                0           50         66              0        0              0             0            55.71675      167.76038   162.94308         13.36904          7.52529          5.83692          4.15908          0.00000        0.31353      18.10304      404.78408      123.52264  13957.96552      0.39063      0.00000             601                5337.71079
+  14         75562720829361207367840654481201031427237     316236          115                0           44         71              0        0              0             0            55.78567      138.97571   152.78116         12.90838          7.27555          5.62703          3.89346          0.00000        0.15488      17.09584      364.79679      120.61510  13743.43478      0.34375      0.00000             645                5442.27152
+  15         74527294491593495372053343320963756014643     320630          129                0           44         85              0        0              0             0            55.95813      170.26166   152.98330         13.02137          7.34908          5.66696          4.41617          0.00000        0.19521      17.75600      397.08470      110.80759  13947.79845      0.34375      0.00000             689                5920.91032
+  16         74238803559181961575759997644585092841157     321876          111                0           44         67              0        0              0             0            55.71379      130.25638   153.27775         13.19238          7.47967          5.70767          3.82888          0.00000        0.12288      17.25966      356.60696      123.38514  13997.93694      0.34375      0.00000             733                5316.31225
+  17         74301688421849284535418948101359809558491     321604          120                0           49         71              0        0              0             0            54.43183      156.05967   152.73841         13.11416          7.37475          5.73379          4.13038          0.00000        0.10646      17.47124      380.78682      128.68092  13988.94167      0.38281      0.00000             782                5118.22370
+  18         74811324236595031369475907516361422998893     319412          115                0           46         69              0        0              0             0            55.33212      162.00826   153.47842         13.22545          7.48763          5.73154          3.98500          0.00000        0.13463      17.56917      388.53522      118.39339  13879.72174      0.35938      0.00000             828                5550.65792
+  19         74514206131234847541250762309405566483419     320686          101                0           46         55              0        0              0             0            55.68183      123.38221   153.81396         13.28708          7.45304          5.82717          3.49446          0.00000        0.14229      17.06079      350.06300      131.40492  13953.95050      0.35938      0.00000             874                5000.06141
+  20         74347079478818612426513745550540737989849     321406          111                0           62         49              0        0              0             0            55.10242      165.10188   152.79433         13.15116          7.45879          5.68808          3.66741          0.00000        0.11833      17.03329      390.11146      158.92894  13945.32432      0.48438      0.00000             936                4174.82780
+  21         74504985192303768529997960107729243355243     320726          119                0           44         75              0        0              0             0            54.82717      177.59362   153.92008         13.18467          7.39963          5.78013          4.15688          0.00000        0.14091      17.58246      404.02459      108.90426  13914.97479      0.34375      0.00000             980                6021.60648
+  22         74536847769982886924508622464195307033807     320588          123                0           54         69              0        0              0             0            55.03954      171.85662   152.67013         13.00038          7.34575          5.64970          4.11179          0.00000        0.08404      17.28788      396.92091      136.04725  13943.90244      0.42188      0.00000            1034                4855.86924
+  23         74619597237691241351867408872103743094887     320232          105                0           46         59              0        0              0             0            54.44412      173.27513   152.33696         13.12662          7.43017          5.69008          3.57683          0.00000        0.19984      17.02604      397.17609      115.81765  13920.11429      0.35938      0.00000            1080                5671.42582
+  24         74281461710883239422232128842859018759603     321690          110                0           48         62              0        0              0             0            54.44696      113.18553   152.21846         13.27695          7.42295          5.84863          3.77479          0.00000        0.11487      17.25963      337.19770      142.34972  13970.58182      0.37500      0.00000            1128                4620.75023
+  25         75074876914812135103628628532583761701667     318290          105                0           46         59              0        0              0             0            55.79079      153.23846   152.97459         12.95975          7.31753          5.63708          3.44475          0.00000        0.09754      16.59592      378.72713      121.45948  13845.66667      0.35938      0.00000            1174                5408.21873
+  26         75635919129351994808268861173324106457813     315930          120                0           48         72              0        0              0             0            56.03838      111.23404   151.79925         12.99125          7.36950          5.61700          4.06208          0.00000        0.10550      17.26521      336.43472      142.67255  13761.79167      0.37500      0.00000            1222                4612.10533
+  27         75134852729315690904564283341890674517611     318036          100                0           41         59              0        0              0             0            54.02975      203.47121   157.36476         13.47508          7.60267          5.86529          3.44883          0.00000        0.14700      17.22600      432.28026       94.84588  13832.82000      0.32031      0.00000            1263                6892.94234
+  28         74923720883718853585429967023028475071587     318934          100                0           41         59              0        0              0             0            54.52688      185.67338   151.06684         12.95255          7.30142          5.64642          3.31033          0.00000        0.07508      16.41013      407.76405      100.54834  13876.83000      0.32031      0.00000            1304                6500.96799
+  29         75227372206981100321530790140873048360699     317646          105                0           42         63              0        0              0             0            53.88729      126.98725   155.34549         13.24071          7.34579          5.88880          3.67412          0.00000        0.12388      17.15050      353.50296      118.81089  13824.00952      0.32813      0.00000            1346                5507.68363
+  30         74959691115206930675664328373247025798451     318780          109                0           47         62              0        0              0             0            54.91500      158.64846   151.11967         13.03971          7.35234          5.68055          3.65487          0.00000        0.12808      16.94720      381.78675      123.10537  13869.99083      0.36719      0.00000            1393                5338.17433
+  31         74596298908526762620307430778529211110413     320332           87                1           37         49              0        0              0             0            54.27933      140.67517   154.49013         13.34237          7.53787          5.79754          2.93542          0.00000        0.12879      16.57758      366.22933      101.02959  13884.65517      0.28906      0.00000            1430                6437.96857
+  32         74516338841598725471286785262879766142293     320676          132                0           52         80              0        0              0             0            54.80167      119.94280   151.15959         12.98038          7.34004          5.63537          4.51687          0.00000        0.18279      17.77892      343.76242      151.26726  13952.95455      0.40625      0.00000            1482                4358.70495
+  33         74621349512182567707444734970720486051787     320226           97                0           40         57              0        0              0             0            57.95329      123.73209   154.31942         13.19804          7.41846          5.77358          3.34288          0.00000        0.12592      16.80125      352.98858      113.31811  13930.02062      0.31250      0.00000            1522                5759.45011
+  34         75281908902982556034135947256332650849673     317416          101                0           46         55              0        0              0             0            54.15504      188.45738   148.55754         12.86550          7.26684          5.59391          3.40038          0.00000        0.09185      16.45046      407.71193      112.82476  13818.91089      0.35938      0.00000            1568                5819.04850
+  35         74656340846647393006852578612739664238593     320076          104                0           46         58              0        0              0             0            54.06246      122.51938   151.52758         13.05325          7.33401          5.71396          3.56842          0.00000        0.09141      16.81542      345.00395      133.33181  13919.01923      0.35938      0.00000            1614                4922.42300
+  36         74493488114145559971445060704523910705393     320776          127                0           53         74              0        0              0             0            55.89829      112.37121   151.46108         12.98958          7.32341          5.66075          4.32283          0.00000        0.06509      17.45437      337.23112      157.16225  13938.16535      0.41406      0.00000            1667                4196.66907
+  37         74629633480605690195308273225810055958339     320190          119                0           46         73              0        0              0             0            54.16583      147.19151   152.24538         13.21099          7.44263          5.76253          4.16354          0.00000        0.11596      17.59625      371.30471      123.88747  13906.27731      0.35938      0.00000            1713                5296.79961
+  38         74689732153660007829286572345038743771303     319932          116                0           47         69              0        0              0             0            56.46900      115.16550   157.40133         12.91742          7.28525          5.62729          3.86221          0.00000        0.08675      16.96459      346.09292      135.80168  13918.87931      0.36719      0.00000            1760                4835.80459
+  39         74643338175930161839338929777898908926811     320132          101                0           39         62              0        0              0             0            63.07021      177.80084   152.97171         12.99284          7.32229          5.66542          3.49521          0.00000        0.08496      16.65680      410.57038       94.98981  13927.93069      0.30469      0.00000            1799                6860.14432
+  40         74748127314520479194554651135403450016797     319682          107                0           40         67              0        0              0             0            61.09375      170.78704   153.67854         13.25262          7.50358          5.74259          3.73989          0.00000        0.10158      17.20087      402.85785       99.29061  13906.94393      0.31250      0.00000            1839                6570.28389
+  41         75168605407588354393918048232259982980551     317894           97                0           34         62              1        0              0             0            55.24088      204.59484   153.43754         13.14300          7.43200          5.69646          3.21213          0.00000        0.11342      16.56979      429.96754       81.40149  13832.74227      0.27344      0.00781            1874                7965.79647
+  42         76326831897574750837163423323854800298329     313070          116                0           45         71              0        0              0             0            54.68542      181.97362   149.60387         12.82925          7.27720          5.54034          3.86379          0.00000        0.09463      16.89134      403.28104      111.58472  13625.99138      0.35156      0.00000            1919                5878.08249
+  43         74836769830910220984781388003529276084691     319304          136                0           52         84              0        0              0             0            54.29146      128.98092   151.14537         12.91625          7.29521          5.61675          4.60326          0.00000        0.08333      17.70029      352.17138      147.65538  13877.44118      0.40625      0.00000            1971                4462.45658
+  44         74298473281883880460152507933332242752533     321618           99                0           32         67              0        0              0             0            54.59196      101.45484   152.81904         13.21396          7.51013          5.69901          3.36783          0.00000        0.08379      16.74113      325.68213       98.25531  13988.73737      0.25000      0.00000            2003                6564.26752
+  45         74600741368821856710606810533693860490393     320314          128                0           46         82              0        0              0             0            54.46263      116.61392   151.79750         13.09246          7.38538          5.70162          4.45479          0.00000        0.09546      17.75013      340.70450      135.01436  13926.60938      0.35938      0.00000            2049                4857.67476
+  46         75161457861269810474488567971027238954639     317924          128                0           51         77              0        0              0             0            53.98946      143.08262   151.83717         13.11780          7.36508          5.74800          4.36050          0.00000        0.14088      17.71780      366.69413      139.08049  13832.42188      0.39844      0.00000            2100                4734.05823
+  47         77926334183813681373049588975613241636409     306644           94                0           24         70              0        0              0             0            56.25708      150.75713   147.93655         12.60558          7.07375          5.52691          3.10621          0.00000        0.08984      15.88334      370.90487       64.70662  13359.62766      0.18750      0.00000            2124                9815.08704
+  48         74854133667902367942236940917889561848791     319230          113                0           47         66              0        0              0             0            53.96758      225.22767   163.71076         14.23221          7.93438          6.28462          4.16122          0.00000        0.42184      19.04492      462.21116      101.68513  13877.95575      0.36719      0.00000            2171                6454.57274
+  49         76247121650002906500103389062139469328419     313398          101                0           41         60              0        0              0             0            56.51525      157.16588   152.68529         12.85963          7.25962          5.59155          3.44125          0.00000        0.10559      16.51671      382.99846      107.05004  13647.01980      0.32031      0.00000            2212                6101.18529
+  50         74286162458553770329482081777829869414077     321670          139                0           69         70              0        0              0             0            54.03883      157.09267   159.28375         13.48655          7.55812          5.91734          4.92604          0.00000        0.11538      18.70396      389.26763      177.25594  13929.07194      0.53906      0.00000            2281                3746.22607
+  51         74319683418054881957679407333089457421959     321526          101                0           40         61              0        0              0             0            55.97450      169.02121   159.41197         13.56562          7.68909          5.86742          3.63821          0.00000        0.11075      17.52400      402.11597       99.47379  13984.98020      0.31250      0.00000            2321                6551.91644
+  52         75278852057871978322301219304703068384793     317428          130                0           50         80              0        0              0             0            57.98083      186.86350   156.51062         13.34838          7.50743          5.83374          4.63605          0.00000        0.10813      18.31542      419.80321      119.10343  13817.13846      0.39063      0.00000            2371                5522.19987
+  53         74582371873393199378967615122420653265683     320392          119                0           53         66              0        0              0             0            55.30667      208.33175   154.40438         13.47534          7.57296          5.89491          4.01429          0.00000        0.10329      17.72633      435.90629      121.58576  13856.27731      0.41406      0.00000            2424                5418.41391
+  54         75374211957232291367662625826836312811689     317026          110                0           35         75              0        0              0             0            62.29800      225.09459   156.94737         13.33005          7.49096          5.83163          3.91067          0.00000        0.12158      17.52363      462.06691       75.74660  13718.52727      0.27344      0.00000            2459                8553.62637
+  55         75853890718293579907052629532689136780237     315022          114                0           39         75              0        0              0             0            55.06375      109.96488   151.53338         13.13366          7.39800          5.72812          3.98346          0.00000        0.09683      17.33333      334.06812      116.74266  13661.79825      0.30469      0.00000            2498                5579.06287
+  56         74371827648574329600523326306653693393869     321300          121                0           53         68              0        0              0             0            53.85787      188.55014   152.68350         13.22822          7.43850          5.78009          4.13464          0.00000        0.09779      17.56234      412.73026      128.41317  13974.95868      0.41406      0.00000            2551                5128.91959
+  57         74908186762059971770213658642237847080839     319000          114                0           47         67              0        0              0             0            54.12100      172.85895   153.06904         13.15330          7.44354          5.70425          3.90567          0.00000        0.07184      17.23429      397.36691      118.27859  13877.90351      0.36719      0.00000            2598                5545.48134
+  58         74939680714427298643998129453247882597843     318866          115                0           54         61              0        0              0             0            53.91933      142.68467   150.08963         12.96771          7.27992          5.68304          3.99513          0.00000        0.05596      17.09638      363.84122      148.41639  13872.06957      0.42188      0.00000            2652                4440.61286
+  59         74530189778596057816015918086602533157773     320618          106                0           36         70              0        0              0             0            54.03738      120.05800   152.40658         13.06258          7.38346          5.67446          3.59329          0.00000        0.06692      16.79863      343.37421      104.84189  13945.77358      0.28125      0.00000            2688                6183.39783
+  60         74347232775002604834762465503798731696561     321406          119                0           45         74              0        0              0             0            54.84183      182.86283   154.13229         13.37308          7.59363          5.77338          4.22226          0.00000        0.08408      17.80625      409.74551      109.82427  13979.04202      0.35156      0.00000            2733                5959.78074
+  61         74747616201529004260262587278918295397777     319684          113                0           48         65              0        0              0             0            54.65300      173.19617   153.79508         13.08400          7.36287          5.71612          3.74850          0.00000        0.12183      17.05787      398.79514      120.36255  13906.93805      0.37500      0.00000            2781                5451.81202
+  62         74853743320777601444927645493696599929939     319232          114                0           57         57              0        0              0             0            54.32354      180.64262   152.67667         13.03637          7.36750          5.66300          3.76817          0.00000        0.06992      16.97142      404.69530      140.84671  13808.63158      0.44531      0.00000            2838                4685.84296
+  63         74436180304188239119178639886837868974797     321022          112                0           43         69              0        0              0             0            53.49563      161.52892   151.94788         13.13187          7.39900          5.72891          3.77134          0.00000        0.06392      17.04538      384.07552      111.95715  13966.80357      0.33594      0.00000            2881                5834.47789
+  64         78012386041247004738970491143301490656451     306306          104                0           47         57              0        0              0             0            54.20850      129.80817   148.97749         12.57180          7.06854          5.49883          3.45871          0.00000        0.07084      16.18934      349.26975      134.56648  13374.93269      0.36719      0.00000            2928                4877.68290
+  65         75396356284239761216191530025477353730567     316934          108                0           48         60              0        0              0             0            55.05588      144.98438   151.78780         12.80959          7.25163          5.55421          3.71262          0.00000        0.04013      16.62413      368.49326      130.26018  13803.08333      0.37500      0.00000            2976                5037.32811
+  66         74866390603503732228172616892172650261769     319178          124                0           56         68              0        0              0             0            53.91779      143.66100   153.23804         12.95033          7.31746          5.62779          4.11183          0.00000        0.06642      17.21871      368.11463      152.12653  13885.05645      0.43750      0.00000            3032                4334.70017
+  67         75122686706912048558917500925051015492523     318088          123                0           47         76              0        0              0             0            54.07004      143.24213   155.00300         13.37650          7.54641          5.82317          4.21771          0.00000        0.09284      17.83446      370.26100      126.93748  13820.91057      0.36719      0.00000            3079                5163.77701
+  68         77010763445682786190200805411330029869159     310290          117                0           42         75              0        0              0             0            54.66058      173.34213   151.40293         12.82862          7.20913          5.61363          3.94746          0.00000        0.07137      16.95217      396.45134      105.93986  13498.87179      0.32813      0.00000            3121                6164.60784
+  69         74526548635871711437429210062055763843917     320632          104                0           48         56              0        0              0             0            55.22429      146.77729   151.11404         13.13362          7.43933          5.68937          3.62534          0.00000        0.05750      16.90571      370.10658      129.69237  13952.90385      0.37500      0.00000            3169                5056.10907
+  70         74280516669510455197483502283393552514717     321694          108                0           49         59              0        0              0             0            53.63921      123.72196   154.86754         13.32434          7.51696          5.80121          3.76776          0.00000        0.06404      17.25146      349.58125      140.16770  13993.00000      0.38281      0.00000            3218                4680.94773
+  71         74739114592647668152364950767487454602657     319720          116                0           48         68              0        0              0             0            53.61229      135.55984   150.97066         13.14138          7.42025          5.71550          3.98755          0.00000        0.06671      17.29226      357.51767      134.25910  13913.13793      0.37500      0.00000            3266                4883.80603
+  72         74430447056711853096605749056717807306883     321046          113                0           51         62              0        0              0             0            53.69921      154.73021   152.41355         13.08980          7.43128          5.65425          3.79434          0.00000        0.04455      17.00012      377.92787      134.94639  13968.97345      0.39844      0.00000            3317                4868.49449
+  73         74444610982218800627300434352946885912887     320986          129                0           57         72              0        0              0             0            54.34954      159.64950   153.31113         13.07058          7.40291          5.66288          4.36538          0.00000        0.05703      17.58675      384.95187      148.07046  13900.09302      0.44531      0.00000            3374                4452.89473
+  74         74380692749409037945129277802725970816289     321262          108                0           40         68              0        0              0             0            54.03367      154.23917   154.59234         13.29529          7.51917          5.77074          3.72255          0.00000        0.07542      17.19271      380.14309      105.22353  13975.02778      0.31250      0.00000            3414                6183.52905
+  75         76064102924084630868521034719471099749279     314152          105                0           38         67              0        0              0             0            53.57146      158.55383   153.04737         12.91309          7.29112          5.61638          3.48754          0.00000        0.07646      16.58209      381.84921       99.51572  13674.46667      0.29688      0.00000            3452                6528.16368
+  76         74362622071519673873649210267996704345251     321340          135                0           50         85              0        0              0             0            53.73354      162.06821   153.32571         13.17296          7.47545          5.69276          4.63192          0.00000        0.06062      17.94792      387.12920      129.15585  13978.96296      0.39063      0.00000            3502                5081.63244
+  77         74270219049133082531097012298802130279247     321740          135                0           57         76              2        0              0             0            53.77488      109.56418   152.51050         12.96263          7.33525          5.62313          4.54300          0.00000        0.22704      17.80755      333.70630      176.80218  13946.77778      0.46094      0.01563            3561                3731.90837
+  78         75250005033150424132818522578618725861961     317550          116                0           61         55              0        0              0             0            53.51367      193.35271   151.05317         12.81796          7.27167          5.54159          3.88158          0.00000        0.11345      16.87675      414.83324      147.04704  13769.89655      0.47656      0.00000            3622                4492.48403
+  79         74744329203698003357954274328783803660683     319698          107                0           51         56              0        0              0             0            53.24417      135.45000   151.38492         12.87649          7.29899          5.57317          3.53400          0.00000        0.04284      16.51162      356.62549      143.00716  13805.58879      0.39844      0.00000            3673                4592.06830
+  80         75310278579732926414504749051696444121609     317296           98                0           36         62              0        0              0             0            53.39650      119.09800   154.30813         13.13816          7.44179          5.69050          4.01017          0.00000        0.06800      17.30154      344.18254      104.59566  13812.96939      0.28125      0.00000            3709                6190.61888
+  81         75133665763909576581468652404885308413741     318042          122                0           50         72              0        0              0             0            55.94008      158.72354   155.16258         13.48067          7.38374          6.09154          4.13704          0.00000        0.10575      17.82842      387.73932      128.95262  13834.79508      0.39063      0.00000            3759                5089.10715
+  82         74471984779971358829436171485802757038787     320868          115                0           47         68              0        0              0             0            53.25263      196.89767   152.29788         12.94404          7.37587          5.56354          4.05191          0.00000        0.06462      17.13517      419.63347      112.00251  13960.20870      0.36719      0.00000            3806                5844.15124
+  83         74354268606683833761868467630589185164099     321376          143                0           66         77              0        0              0             0            53.43450      182.26638   151.82612         12.89929          7.35066          5.54434          4.77691          0.00000        0.05922      17.81067      405.37367      162.81275  13944.46154      0.51563      0.00000            3872                4063.72944
+  84         74679196192521792792304907526142719116659     319978          131                0           64         67              0        0              0             0            53.15579      114.35121   151.53320         12.83671          7.30533          5.52658          4.39708          0.00000        0.04516      17.34883      336.42862      190.23352  13919.03053      0.50000      0.00000            3936                3475.02705
+  85         75431156019623404087980998317341489571537     316788          122                0           59         63              0        0              0             0            53.30967      172.10558   149.54771         12.73533          7.23983          5.49125          3.95650          0.00000        0.04282      16.80179      391.79950      150.58723  13763.27869      0.46094      0.00000            3995                4380.26886
+  86         74720745449668714227258762295707891157757     319800          107                0           50         56              1        0              0             0            53.26471      148.70592   150.62575         12.83138          7.29758          5.52879          3.46545          0.00000        0.07617      16.43038      369.06026      138.18882  13909.78505      0.39844      0.00781            4046                4749.37267
+  87         74959647318812284188279325552074508422697     318780          133                0           46         87              0        0              0             0            53.21517      141.74050   150.76100         12.88454          7.34954          5.53034          4.51458          0.00000        0.05438      17.52933      363.28154      126.62356  13870.85714      0.35938      0.00000            4092                5163.85774
+  88         75280895240905500466314606034259857039699     317420          104                0           38         66              0        0              0             0            52.66042      202.63574   151.36871         12.80683          7.29512          5.50646          3.51718          0.00000        0.03829      16.42229      423.12524       89.80793  13817.89423      0.29688      0.00000            4130                7223.39882
+  89         75524609308618878171847424918232584986609     316396          135                0           59         76              0        0              0             0            53.30404      135.61455   151.83826         12.76828          7.26567          5.49862          4.59380          0.00000        0.05100      17.49445      358.29980      164.66657  13734.75556      0.46094      0.00000            4189                4004.65252
+  90         74231424475420326995650495658048398845149     321908          116                0           44         72              0        0              0             0            53.10083      130.44883   153.48915         13.12863          7.41604          5.70571          3.99942          0.00000        0.07292      17.30680      354.43227      124.14219  13999.87069      0.34375      0.00000            4233                5255.12160
+  91         74614020074128016775961462981928875403027     320256           99                0           52         47              0        0              0             0            54.67096      102.67100   156.78409         13.19558          7.47580          5.71237          3.36334          0.00000        0.07929      16.76342      330.99971      157.09983  13931.03030      0.40625      0.00000            4285                4178.72175
+  92         74347043369939316639678952414159418441377     321406          124                0           60         64              0        0              0             0            54.72242      141.81671   156.30129         13.22113          7.43287          5.78071          4.28259          0.00000        0.21358      17.85567      370.82108      161.80310  13949.94355      0.46875      0.00000            4345                4075.01750
+  93         74830898097258911649455395833521274385967     319328          108                0           46         62              0        0              0             0            54.24683      171.15479   152.34283         13.01158          7.37237          5.63516          3.63670          0.00000        0.06012      16.78883      394.59370      116.57561  13892.95370      0.35938      0.00000            4391                5606.02327
+  94         74258311561787034041835946814695273704773     321790          123                0           52         71              0        0              0             0            53.53346      152.32383   155.79767         13.27029          7.47975          5.78350          4.31817          0.00000        0.08197      17.80834      379.58513      136.99167  13960.51220      0.40625      0.00000            4443                4790.27141
+  95         74399882532923663781911402968109693812381     321178          118                0           53         65              0        0              0             0            53.71675      183.97904   151.71346         12.98462          7.34338          5.63704          3.90021          0.00000        0.05071      17.01529      406.47979      130.38779  13970.93220      0.41406      0.00000            4496                5035.97989
+  96         74475575766650008108572412028160347201141     320852          105                0           47         58              0        0              0             0            53.10029      152.41026   153.31604         13.03291          7.37500          5.65204          3.52854          0.00000        0.05666      16.70883      375.60504      125.13144  13960.09524      0.36719      0.00000            4543                5224.96135
+  97         74383983575316956277757494742505822273989     321248          111                0           46         65              0        0              0             0            53.41138      192.13125   152.86409         13.07479          7.40566          5.66325          3.70379          0.00000        0.05134      16.91704      415.39617      110.73766  13974.79279      0.35938      0.00000            4589                5898.63562
+  98         74907555536886731681880330790681879457519     319002          104                0           48         56              0        0              0             0            53.14179      121.07616   150.80442         12.89833          7.30479          5.58904          3.37334          0.00000        0.04013      16.37030      341.44092      140.58069  13875.66346      0.37500      0.00000            4637                4654.52372
+  99         74419435696173882647391775498795845270727     321094          127                0           55         72              0        0              0             0            53.25171      110.16587   152.86787         13.03367          7.36704          5.66213          4.36158          0.00000        0.04475      17.51725      333.85358      164.74288  13965.99213      0.42969      0.00000            4692                3989.45293
+ 100         74335593205454342715881720621782908692039     321456          125                0           50         74              1        0              0             0            54.18021      184.70383   151.09021         13.03305          7.36579          5.66200          4.19904          0.00000        0.07579      17.38208      407.39716      125.18497  13980.92800      0.39844      0.00781            4743                5236.24845
+ 101         75087096112525920346545209742838674285181     318240           93                0           38         55              0        0              0             0            53.04500      168.23617   151.56367         12.86329          7.29566          5.56313          3.09971          0.00000        0.04308      16.08137      388.98445       97.69028  13844.01075      0.29688      0.00000            4781                6633.16909
+ 102

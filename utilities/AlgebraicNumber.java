@@ -1,3 +1,4 @@
+/*
 package com.AtomCAS.utilities;
 public class AlgebraicNumber extends ScalarAtom{
     public final LargePolynomial minimalPolynomial;
@@ -112,4 +113,4 @@ class RationalBox{
         //Strum sequence
 
     }
-}
+}*/

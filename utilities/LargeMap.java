@@ -6,29 +6,25 @@ public class LargeMap<K, V>{
         keys = new LargeList<>();
         values = new LargeList<>();
     }
-    private LargeMap(LargeList<K> keys, LargeList<V> values){
+    private LargeMap(LargeList<K> keys, LargeList<V> values) {
         if(keys.size().doesntEqual(values.size()))
             throw new IllegalArgumentException();
         this.keys = keys;
         this.values = values;
     }
-    public LargeMap<K, V> copy(){
-        return new LargeMap<>(keys.copy(), values.copy());
-    }
+    public LargeMap<K, V> copy() {return new LargeMap<>(keys.copy(), values.copy());}
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("{");
-        if (!keys.intSized()) {
-            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(size()); i = i.add(1)) {
-                sb.append(keys.get(i)).append(" -> ").append(values.get(i));
-                if (i.doesntEqual(keys.size().subtract(1))) sb.append(", ");
-            }
-        }else{
+        if (keys.intSized())
             for(int k = 0; k < keys.intSize(); k++){
                 sb.append(keys.get(k)).append(" -> ").append(values.get(k));
                 if(k != keys.intSize()-1) sb.append(", ");
             }
-        }
+        else for (LargeInteger i = LargeInteger.ZERO; i.lessThan(size()); i = i.add(1)) {
+                sb.append(keys.get(i)).append(" -> ").append(values.get(i));
+                if (i.doesntEqual(keys.size().subtract(1))) sb.append(", ");
+            }
         sb.append("}");
         return sb.toString();
     }
@@ -52,15 +48,14 @@ public class LargeMap<K, V>{
         if (!keys.size().equals(values.size()))
             throw new IllegalStateException("LargeMap corrupted: key/value size mismatch");
     }
-    public void put(K key, V value) {
+    public boolean put(K key, V value) {
         if (key == null || value == null)
             throw new IllegalArgumentException("Null keys/values not allowed");
-        LargeInteger index = indexOfKey(key);
-        if(index.isNegative()){
-            keys.add(key);
-            values.add(value);
-        }else values.set(index, value);
+        if(containsKey(key)) return false;
+        keys.add(key);
+        values.add(value);
         checkInvariant();
+        return true;
     }
     public void replace(LargeInteger index, K key, V value){
         if (key == null || value == null)
