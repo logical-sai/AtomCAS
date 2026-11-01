@@ -1,6 +1,6 @@
 package com.AtomCAS.utilities;
-public class Logarithm extends ScalarAtom {
-    public ScalarAtom argument;
+public final class Logarithm extends ScalarAtom {
+    ScalarAtom argument;
     public Logarithm(ScalarAtom a) {argument = a;}
     @Override
     public Logarithm clone() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
@@ -23,8 +23,6 @@ public class Logarithm extends ScalarAtom {
     @Override
     public ScalarAtom realPart() {return null;}
     @Override
-    public ScalarAtom imagPart() {return null;}
-    @Override
     public ScalarAtom add(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
     public ScalarAtom multiply(ScalarAtom other) {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
@@ -32,10 +30,7 @@ public class Logarithm extends ScalarAtom {
     public ScalarAtom reciprocal() {throw new UnsupportedOperationException("Operation with these TWO types together not supported yet");}
     @Override
     public ScalarAtom power(LargeFraction f) {return null;}
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
-        return null;
-    }
+
     @Override
     public String toString() {return "";}
     @Override

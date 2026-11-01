@@ -1,6 +1,81 @@
 package com.AtomCAS.utilities;
+
+/**
+ * Provides centralized hash computation for mathematical objects
+ * in the AtomCAS type hierarchy.
+ *
+ * <p>
+ * This utility is intended to generate hash codes consistent
+ * with mathematical equality, including equality between
+ * objects with different internal representations.
+ * </p>
+ *
+ * <h3>Hashing Strategy</h3>
+ * <ul>
+ *   <li>
+ *     <b>Dispatch:</b> Selects a hashing routine according
+ *     to the concrete subclass of {@link Atom}.
+ *   </li>
+ *   <li>
+ *     <b>Component mixing:</b> Combines integer hash components
+ *     using multiplication, XOR, and unsigned bit shifts.
+ *   </li>
+ *   <li>
+ *     <b>Finalization:</b> Applies additional bit mixing
+ *     to improve the distribution of hash values.
+ *   </li>
+ *   <li>
+ *     <b>Cross-type consistency:</b> Mathematically equal
+ *     objects must produce identical hash codes regardless
+ *     of their concrete Atom subclasses.
+ *   </li>
+ * </ul>
+ *
+ * <h3>Implementation Status</h3>
+ * <p>
+ * Hashing is currently implemented for {@link LargeInteger}
+ * and {@link LargeFraction}. Other supported Atom subclasses
+ * are recognized by the dispatcher but currently throw
+ * {@link UnsupportedOperationException}.
+ * </p>
+ *
+ * <p>
+ * Hash collisions are permitted, but objects that compare
+ * equal must always produce the same hash code.
+ * </p>
+ *
+ * <h3>Restrictions</h3>
+ * <p>
+ * This class contains only static utility methods and
+ * cannot be instantiated or extended.
+ * </p>
+ *
+ * @see Atom#equals(Object)
+ * @see Atom#hashCode()
+ */
 final class CASHash {
-    private CASHash() {throw new UnsupportedOperationException("Oh no you DON'T");}
+
+    /**
+     * Prevent instantiation of this utility class.
+     *
+     * @throws AssertionError whenever construction is attempted
+     */
+    private CASHash() {throw new AssertionError("No instances");}
+
+    /**
+     * Incorporates one or more integer components into a hash
+     * accumulator using XOR, multiplication, and bit mixing.
+     *
+     * <p>
+     * Each component is mixed sequentially. The multiplication
+     * and unsigned shifts help propagate input differences
+     * across the resulting 32-bit hash value.
+     * </p>
+     *
+     * @param h the initial hash accumulator
+     * @param xs the integer components to incorporate
+     * @return the updated hash accumulator
+     */
     static int mix(int h, int... xs) {
         for (int x : xs) {
             h ^= x;
@@ -9,6 +84,19 @@ final class CASHash {
         }
         return h;
     }
+
+    /**
+     * Applies a final avalanche-mixing sequence to a hash.
+     *
+     * <p>
+     * This method combines XOR operations, unsigned shifts,
+     * and multiplication by fixed constants to distribute
+     * changes in the input hash across its output bits.
+     * </p>
+     *
+     * @param h the hash accumulator to finalize
+     * @return the finalized 32-bit hash code
+     */
     static int finish(int h) {
         h ^= h >>> 16;
         h *= 0x7feb352d;
@@ -17,6 +105,21 @@ final class CASHash {
         h ^= h >>> 16;
         return h;
     }
+
+    /**
+     * Computes a hash code for an Atom by dispatching to
+     * the hashing routine associated with its concrete type.
+     *
+     * <p>
+     * The result must be consistent with mathematical equality
+     * defined by {@link Atom#equals(Atom)}.
+     * </p>
+     *
+     * @param a the Atom to hash
+     * @return the computed hash code
+     * @throws UnsupportedOperationException if hashing has
+     *         not been implemented for the supplied Atom type
+     */
     static int hash(Atom a) {
         return switch (a) {
             case LargeInteger x       -> x.hashCode();
@@ -34,18 +137,18 @@ final class CASHash {
             default -> throw new UnsupportedOperationException("Hashing not implemented for " + a.getClass());
         };
     }
-    static int rational(LargeInteger numerator, LargeInteger denominator){
-        return (denominator.isOne()) ? numerator.hashCode() : mix(numerator.hashCode(), denominator.hashCode());}
-    static int powerMonomial(LargePowerMonomial ignored) {
-        throw new UnsupportedOperationException("LargePowerMonomial");
-//        if (x.isRational()) {
-//            LargeFraction frac = x.exponent2.equals(LargeInteger.ONE) ? x.base.negate() : x.base;
-//            return rational(frac.numerator, frac.denominator);
-//        }
-//        return mix(TAG_POWER_MONOMIAL, x.base.hashCode(), x.exponent.hashCode(), x.exponent2.hashCode());
+    private static int rational(LargeInteger numerator, LargeInteger denominator) {
+        return denominator.isOne() ? numerator.hashCode() : mix(numerator.hashCode(), denominator.hashCode());
     }
-    static int decimal(LargeDecimal ignored) {
-        throw new UnsupportedOperationException("LargeDecimal");
+    private static int powerMonomial(LargePowerMonomial x) {
+        throw new UnsupportedOperationException("Hashing not implemented for " + x.getClass());
+        /*if (x.isRational()) {
+            LargeFraction frac = x.exponent2.equals(LargeInteger.ONE) ? x.base.negate() : x.base;
+            return rational(frac.numerator, frac.denominator);
+        } else return mix(TAG_POWER_MONOMIAL, x.base.hashCode(), x.exponent.hashCode(), x.exponent2.hashCode());*/
+    }
+    private static int decimal(LargeDecimal x) {
+        throw new UnsupportedOperationException("Hashing not implemented for " + x.getClass());
 //        if(x.decPart.isEmpty())
 //            return x.intPart.hashCode();
     }
@@ -93,3 +196,4 @@ final class CASHash {
 //        return mix(TAG_EXP, x.addend.hashCode(), x.coefficient.hashCode(), x.power.hashCode());
     }
 }
+

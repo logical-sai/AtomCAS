@@ -244,7 +244,4 @@ public final class LargePowerNode extends ScalarAtom{
         return new LargePowerNode(base.reciprocal(), exponent, signFactor.reciprocal());}
     public LargePowerNode power(LargeFraction other) {
         return new LargePowerNode(base, exponent.multiply(other), signFactor.power(other));}
-
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
 }

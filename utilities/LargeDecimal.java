@@ -25,7 +25,7 @@ public final class LargeDecimal extends ScalarAtom{
             sb.append('.');
             for (Long chunk : decPart){
                 String s = Long.toString(chunk);
-                sb.repeat("0", 18 - s.length());
+                sb.repeat('0', 18 - s.length());
                 sb.append(s);
             }
         }
@@ -84,11 +84,6 @@ public final class LargeDecimal extends ScalarAtom{
     }
 
     @Override
-    public ScalarAtom imagPart() {
-        return null;
-    }
-
-    @Override
     public ScalarAtom add(ScalarAtom other) {
         return null;
     }
@@ -106,10 +101,5 @@ public final class LargeDecimal extends ScalarAtom{
     @Override
     public ScalarAtom power(LargeFraction f) {
         return null;
-    }
-
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
-        return this;
     }
 }

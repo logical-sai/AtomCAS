@@ -1,0 +1,1890 @@
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001342666 seconds
+Stage 1 sieve time: 3.41542E-4 seconds
+Stage 1 chain build time: 0.003207625 seconds
+Stage 1 chain application time: 4.928567875 seconds
+Total Stage 1 time: 4.932650625 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038424125 seconds
+Stage2State application on blocks: 3.911135625 seconds
+Total stage 2 time: 3.951037209 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120565
+Canonical copies: 387313419
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.8852375 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001615375 seconds
+Stage 1 sieve time: 3.49833E-4 seconds
+Stage 1 chain build time: 0.003392958 seconds
+Stage 1 chain application time: 5.275313625 seconds
+Total Stage 1 time: 5.279357625 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.04994325 seconds
+Stage2State application on blocks: 3.99604325 seconds
+Total stage 2 time: 4.047671125 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120137
+Canonical copies: 387313847
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.328724291 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001243416 seconds
+Stage 1 sieve time: 3.85709E-4 seconds
+Stage 1 chain build time: 0.003423333 seconds
+Stage 1 chain application time: 4.766633667 seconds
+Total Stage 1 time: 4.770721583 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.037657209 seconds
+Stage2State application on blocks: 3.99700625 seconds
+Total stage 2 time: 4.036166958 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120105
+Canonical copies: 387313879
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.80822775 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001861458 seconds
+Stage 1 sieve time: 4.1125E-4 seconds
+Stage 1 chain build time: 0.003281916 seconds
+Stage 1 chain application time: 4.58375775 seconds
+Total Stage 1 time: 4.587715625 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.039652625 seconds
+Stage2State application on blocks: 4.080797958 seconds
+Total stage 2 time: 4.122018084 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120258
+Canonical copies: 387313726
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.711730875 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001641834 seconds
+Stage 1 sieve time: 3.69083E-4 seconds
+Stage 1 chain build time: 0.003371334 seconds
+Stage 1 chain application time: 4.648533 seconds
+Total Stage 1 time: 4.652546917 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.042901583 seconds
+Stage2State application on blocks: 4.612409125 seconds
+Total stage 2 time: 4.656867833 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120142
+Canonical copies: 387313842
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.311145791 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001337167 seconds
+Stage 1 sieve time: 3.71083E-4 seconds
+Stage 1 chain build time: 0.003364959 seconds
+Stage 1 chain application time: 4.66651025 seconds
+Total Stage 1 time: 4.670557792 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.037563666 seconds
+Stage2State application on blocks: 4.043088208 seconds
+Total stage 2 time: 4.082181459 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120724
+Canonical copies: 387313260
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 8.754257166 seconds
+
+Number entering ECM: 2495548629059024515688900862988888716886391316198261572994324995693258294552763459239610186233(94 digits)
+64 curves tried with bounds 2000 and 200000; 64 being useful
+Time for creating all the curves: 0.004568708 seconds
+Stage 1 sieve time: 3.0083E-5 seconds
+Stage 1 chain build time: 3.47834E-4 seconds
+Stage 1 chain application time: 0.062252084 seconds
+Total Stage 1 time: 0.062895958 seconds
+Stage 2 block count: 64
+Stage2State construction: 0.093992333 seconds
+Stage2State application on blocks: 0.074421542 seconds
+Total stage 2 time: 0.170035583 seconds
+Montgomery multiplications: 3613952
+Montgomery squares: 725120
+Reduction calls: 4339840
+Nonzero carries: 21683840
+Propagated limbs: 0
+Canonical subtractions: 1339
+Canonical copies: 4338501
+Point doubling counts: 20224
+Point differential additions: 314176
+Point doubling + differential addition fusions: 14080
+PRAC multiplications: 19392
+PRAC case SWAP: 139328
+PRAC case 1: 6400
+PRAC case 2/4: 5824
+PRAC case 3: 191808
+PRAC case 5: 5952
+PRAC case 6: 1536
+PRAC case 7: 768
+PRAC case 8: 0
+PRAC case 9: 0
+Total time for this batch: 0.24319275 seconds
+
+64 curves tried with bounds 11000 and 1100000; 64 being useful
+Time for creating all the curves: 0.001324584 seconds
+Stage 1 sieve time: 6.3375E-5 seconds
+Stage 1 chain build time: 0.001401375 seconds
+Stage 1 chain application time: 0.208939834 seconds
+Total Stage 1 time: 0.210654375 seconds
+Stage 2 block count: 128
+Stage2State construction: 0.0465675 seconds
+Stage2State application on blocks: 0.211733667 seconds
+Total stage 2 time: 0.267502083 seconds
+Montgomery multiplications: 14779136
+Montgomery squares: 3372160
+Reduction calls: 18152256
+Nonzero carries: 90745920
+Propagated limbs: 0
+Canonical subtractions: 5568
+Canonical copies: 18146688
+Point doubling counts: 86592
+Point differential additions: 1390720
+Point doubling + differential addition fusions: 104384
+PRAC multiplications: 85504
+PRAC case SWAP: 816192
+PRAC case 1: 29824
+PRAC case 2/4: 49920
+PRAC case 3: 1081152
+PRAC case 5: 38016
+PRAC case 6: 8128
+PRAC case 7: 6144
+PRAC case 8: 1088
+PRAC case 9: 1088
+Total time for this batch: 0.479583375 seconds
+
+64 curves tried with bounds 11000 and 1100000; 64 being useful
+Time for creating all the curves: 0.001194417 seconds
+Stage 1 sieve time: 1.4792E-5 seconds
+Stage 1 chain build time: 9.51833E-4 seconds
+Stage 1 chain application time: 0.202007709 seconds
+Total Stage 1 time: 0.2032495 seconds
+Stage 2 block count: 128
+Stage2State construction: 0.04248225 seconds
+Stage2State application on blocks: 0.218529291 seconds
+Total stage 2 time: 0.263691208 seconds
+Montgomery multiplications: 14779136
+Montgomery squares: 3372160
+Reduction calls: 18152256
+Nonzero carries: 90745920
+Propagated limbs: 0
+Canonical subtractions: 5717
+Canonical copies: 18146539
+Point doubling counts: 86592
+Point differential additions: 1390720
+Point doubling + differential addition fusions: 104384
+PRAC multiplications: 85504
+PRAC case SWAP: 816192
+PRAC case 1: 29824
+PRAC case 2/4: 49920
+PRAC case 3: 1081152
+PRAC case 5: 38016
+PRAC case 6: 8128
+PRAC case 7: 6144
+PRAC case 8: 1088
+PRAC case 9: 1088
+Total time for this batch: 0.470358584 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001263083 seconds
+Stage 1 sieve time: 1.21458E-4 seconds
+Stage 1 chain build time: 0.003403125 seconds
+Stage 1 chain application time: 0.940558708 seconds
+Total Stage 1 time: 0.944418583 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.040930542 seconds
+Stage2State application on blocks: 0.954255375 seconds
+Total stage 2 time: 0.99664225 seconds
+Montgomery multiplications: 63332288
+Montgomery squares: 14891648
+Reduction calls: 78225472
+Nonzero carries: 391112000
+Propagated limbs: 0
+Canonical subtractions: 24290
+Canonical copies: 78201182
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.942463166 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001215959 seconds
+Stage 1 sieve time: 7.7084E-5 seconds
+Stage 1 chain build time: 0.001222334 seconds
+Stage 1 chain application time: 0.960597584 seconds
+Total Stage 1 time: 0.962203583 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.039675958 seconds
+Stage2State application on blocks: 0.965611041 seconds
+Total stage 2 time: 1.006775875 seconds
+Montgomery multiplications: 63332288
+Montgomery squares: 14891648
+Reduction calls: 78225472
+Nonzero carries: 391112000
+Propagated limbs: 0
+Canonical subtractions: 24399
+Canonical copies: 78201073
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.970321541 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.00119375 seconds
+Stage 1 sieve time: 8.4833E-5 seconds
+Stage 1 chain build time: 0.001045208 seconds
+Stage 1 chain application time: 0.9800775 seconds
+Total Stage 1 time: 0.981521459 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.040724333 seconds
+Stage2State application on blocks: 0.867581708 seconds
+Total stage 2 time: 0.909711583 seconds
+Montgomery multiplications: 63332288
+Montgomery squares: 14891648
+Reduction calls: 78225472
+Nonzero carries: 391112000
+Propagated limbs: 0
+Canonical subtractions: 24350
+Canonical copies: 78201122
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.892549166 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001018708 seconds
+Stage 1 sieve time: 7.9375E-5 seconds
+Stage 1 chain build time: 6.40666E-4 seconds
+Stage 1 chain application time: 1.062294667 seconds
+Total Stage 1 time: 1.063296375 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.045985458 seconds
+Stage2State application on blocks: 0.971970792 seconds
+Total stage 2 time: 1.019408084 seconds
+Montgomery multiplications: 63332288
+Montgomery squares: 14891648
+Reduction calls: 78225472
+Nonzero carries: 391112000
+Propagated limbs: 0
+Canonical subtractions: 24440
+Canonical copies: 78201032
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 2.083868125 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.001520375 seconds
+Stage 1 sieve time: 8.4875E-5 seconds
+Stage 1 chain build time: 6.745E-4 seconds
+Stage 1 chain application time: 1.190158 seconds
+Total Stage 1 time: 1.191174084 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.055649167 seconds
+Stage2State application on blocks: 0.925381167 seconds
+Total stage 2 time: 0.982439375 seconds
+Montgomery multiplications: 63332288
+Montgomery squares: 14891648
+Reduction calls: 78225472
+Nonzero carries: 391112000
+Propagated limbs: 0
+Canonical subtractions: 24268
+Canonical copies: 78201204
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 2.175273333 seconds
+
+64 curves tried with bounds 50000 and 5000000; 64 being useful
+Time for creating all the curves: 0.00138175 seconds
+Stage 1 sieve time: 9.1917E-5 seconds
+Stage 1 chain build time: 7.16708E-4 seconds
+Stage 1 chain application time: 0.956154083 seconds
+Total Stage 1 time: 0.957232375 seconds
+Stage 2 block count: 320
+Stage2State construction: 0.040420208 seconds
+Stage2State application on blocks: 0.870385167 seconds
+Total stage 2 time: 0.912316042 seconds
+Montgomery multiplications: 63332288
+Montgomery squares: 14891648
+Reduction calls: 78225472
+Nonzero carries: 391112000
+Propagated limbs: 0
+Canonical subtractions: 24403
+Canonical copies: 78201069
+Point doubling counts: 329792
+Point differential additions: 6108416
+Point doubling + differential addition fusions: 503808
+PRAC multiplications: 328640
+PRAC case SWAP: 3840128
+PRAC case 1: 145024
+PRAC case 2/4: 240576
+PRAC case 3: 4991104
+PRAC case 5: 183680
+PRAC case 6: 36416
+PRAC case 7: 30464
+PRAC case 8: 4480
+PRAC case 9: 8192
+Total time for this batch: 1.871137833 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001351083 seconds
+Stage 1 sieve time: 3.93542E-4 seconds
+Stage 1 chain build time: 0.003325916 seconds
+Stage 1 chain application time: 4.877029167 seconds
+Total Stage 1 time: 4.88102325 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.040992 seconds
+Stage2State application on blocks: 4.511919041 seconds
+Total stage 2 time: 4.554452542 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154559
+Propagated limbs: 0
+Canonical subtractions: 120517
+Canonical copies: 387313467
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.43709575 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001079083 seconds
+Stage 1 sieve time: 4.53541E-4 seconds
+Stage 1 chain build time: 0.00349075 seconds
+Stage 1 chain application time: 5.083658667 seconds
+Total Stage 1 time: 5.087863917 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038826208 seconds
+Stage2State application on blocks: 4.62991925 seconds
+Total stage 2 time: 4.67010075 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120122
+Canonical copies: 387313862
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.759186583 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001093542 seconds
+Stage 1 sieve time: 3.745E-4 seconds
+Stage 1 chain build time: 0.003377708 seconds
+Stage 1 chain application time: 5.204931208 seconds
+Total Stage 1 time: 5.208971625 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.042892375 seconds
+Stage2State application on blocks: 4.360071875 seconds
+Total stage 2 time: 4.404478625 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120507
+Canonical copies: 387313477
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.614663542 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001108167 seconds
+Stage 1 sieve time: 3.91584E-4 seconds
+Stage 1 chain build time: 0.003434042 seconds
+Stage 1 chain application time: 4.951663292 seconds
+Total Stage 1 time: 4.9557935 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.041644625 seconds
+Stage2State application on blocks: 4.438479875 seconds
+Total stage 2 time: 4.48173075 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120520
+Canonical copies: 387313464
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.43876375 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001326333 seconds
+Stage 1 sieve time: 3.81708E-4 seconds
+Stage 1 chain build time: 0.00344425 seconds
+Stage 1 chain application time: 4.777904125 seconds
+Total Stage 1 time: 4.782044375 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.039527416 seconds
+Stage2State application on blocks: 4.514382583 seconds
+Total stage 2 time: 4.55537325 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 119938
+Canonical copies: 387314046
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.338861792 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001292583 seconds
+Stage 1 sieve time: 3.94458E-4 seconds
+Stage 1 chain build time: 0.003552667 seconds
+Stage 1 chain application time: 5.0499415 seconds
+Total Stage 1 time: 5.054146959 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.039398208 seconds
+Stage2State application on blocks: 4.439531083 seconds
+Total stage 2 time: 4.480385916 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120648
+Canonical copies: 387313336
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.535946208 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001028417 seconds
+Stage 1 sieve time: 3.59917E-4 seconds
+Stage 1 chain build time: 0.003153834 seconds
+Stage 1 chain application time: 4.798680417 seconds
+Total Stage 1 time: 4.802482792 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038317792 seconds
+Stage2State application on blocks: 4.556876333 seconds
+Total stage 2 time: 4.596676416 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120493
+Canonical copies: 387313491
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.400309834 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001060167 seconds
+Stage 1 sieve time: 3.89209E-4 seconds
+Stage 1 chain build time: 0.003290209 seconds
+Stage 1 chain application time: 5.007194959 seconds
+Total Stage 1 time: 5.011230417 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.040148375 seconds
+Stage2State application on blocks: 4.442385167 seconds
+Total stage 2 time: 4.484070333 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120321
+Canonical copies: 387313663
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.496725 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.00111925 seconds
+Stage 1 sieve time: 3.9E-4 seconds
+Stage 1 chain build time: 0.003440667 seconds
+Stage 1 chain application time: 5.076551792 seconds
+Total Stage 1 time: 5.080691667 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.039220417 seconds
+Stage2State application on blocks: 4.654102583 seconds
+Total stage 2 time: 4.694843125 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154559
+Propagated limbs: 0
+Canonical subtractions: 119915
+Canonical copies: 387314069
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.776750584 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001079167 seconds
+Stage 1 sieve time: 3.97584E-4 seconds
+Stage 1 chain build time: 0.003545625 seconds
+Stage 1 chain application time: 4.929681375 seconds
+Total Stage 1 time: 4.933913541 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.041997333 seconds
+Stage2State application on blocks: 4.416608208 seconds
+Total stage 2 time: 4.460152375 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120450
+Canonical copies: 387313534
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.395249584 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 9.66417E-4 seconds
+Stage 1 sieve time: 3.85208E-4 seconds
+Stage 1 chain build time: 0.003602083 seconds
+Stage 1 chain application time: 4.775563667 seconds
+Total Stage 1 time: 4.77982825 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.040347875 seconds
+Stage2State application on blocks: 4.330887875 seconds
+Total stage 2 time: 4.372764458 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154559
+Propagated limbs: 0
+Canonical subtractions: 120806
+Canonical copies: 387313178
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.153756583 seconds
+
+64 curves tried with bounds 250000 and 25000000; 64 being useful
+Time for creating all the curves: 0.001041541 seconds
+Stage 1 sieve time: 3.65125E-4 seconds
+Stage 1 chain build time: 0.003230333 seconds
+Stage 1 chain application time: 4.646512042 seconds
+Total Stage 1 time: 4.650392708 seconds
+Stage 2 block count: 1536
+Stage2State construction: 0.038859292 seconds
+Stage2State application on blocks: 4.3920675 seconds
+Total stage 2 time: 4.432398166 seconds
+Montgomery multiplications: 313081920
+Montgomery squares: 74346880
+Reduction calls: 387433984
+Nonzero carries: 1937154560
+Propagated limbs: 0
+Canonical subtractions: 120149
+Canonical copies: 387313835
+Point doubling counts: 1412288
+Point differential additions: 30282752
+Point doubling + differential addition fusions: 2739200
+PRAC multiplications: 1410944
+PRAC case SWAP: 19792832
+PRAC case 1: 665536
+PRAC case 2/4: 1275520
+PRAC case 3: 25314688
+PRAC case 5: 1003328
+PRAC case 6: 199872
+PRAC case 7: 176000
+PRAC case 8: 24640
+PRAC case 9: 59840
+Total time for this batch: 9.084002208 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001084 seconds
+Stage 1 sieve time: 0.001411125 seconds
+Stage 1 chain build time: 0.012789459 seconds
+Stage 1 chain application time: 18.774989791 seconds
+Total Stage 1 time: 18.789474416 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.037708375 seconds
+Stage2State application on blocks: 17.043506833 seconds
+Total stage 2 time: 17.082613583 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784639
+Propagated limbs: 0
+Canonical subtractions: 481400
+Canonical copies: 1547078600
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.873736875 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001008625 seconds
+Stage 1 sieve time: 0.001399416 seconds
+Stage 1 chain build time: 0.012615958 seconds
+Stage 1 chain application time: 18.952336167 seconds
+Total Stage 1 time: 18.9666365 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038685875 seconds
+Stage2State application on blocks: 17.83902275 seconds
+Total stage 2 time: 17.880191041 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480211
+Canonical copies: 1547079789
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.847950209 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001015625 seconds
+Stage 1 sieve time: 0.00137975 seconds
+Stage 1 chain build time: 0.0125765 seconds
+Stage 1 chain application time: 20.985133875 seconds
+Total Stage 1 time: 20.999388708 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040159375 seconds
+Stage2State application on blocks: 17.380354042 seconds
+Total stage 2 time: 17.421980792 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 479742
+Canonical copies: 1547080258
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 38.422461042 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001020917 seconds
+Stage 1 sieve time: 0.001345 seconds
+Stage 1 chain build time: 0.01249325 seconds
+Stage 1 chain application time: 19.21770325 seconds
+Total Stage 1 time: 19.231836792 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039906416 seconds
+Stage2State application on blocks: 17.337070709 seconds
+Total stage 2 time: 17.378433708 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480691
+Canonical copies: 1547079309
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.611412833 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001047416 seconds
+Stage 1 sieve time: 0.001328416 seconds
+Stage 1 chain build time: 0.012467208 seconds
+Stage 1 chain application time: 19.1363065 seconds
+Total Stage 1 time: 19.150423583 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040092209 seconds
+Stage2State application on blocks: 17.997645084 seconds
+Total stage 2 time: 18.039200625 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480294
+Canonical copies: 1547079706
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 37.190933583 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001127125 seconds
+Stage 1 sieve time: 0.00151225 seconds
+Stage 1 chain build time: 0.0141665 seconds
+Stage 1 chain application time: 19.268592292 seconds
+Total Stage 1 time: 19.284542834 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.046975583 seconds
+Stage2State application on blocks: 17.634588042 seconds
+Total stage 2 time: 17.683045958 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784639
+Propagated limbs: 0
+Canonical subtractions: 481137
+Canonical copies: 1547078863
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.968869 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001563625 seconds
+Stage 1 sieve time: 0.001413041 seconds
+Stage 1 chain build time: 0.01340075 seconds
+Stage 1 chain application time: 18.889385333 seconds
+Total Stage 1 time: 18.904528167 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040509833 seconds
+Stage2State application on blocks: 17.414752042 seconds
+Total stage 2 time: 17.456723834 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 481630
+Canonical copies: 1547078370
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.362906292 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001284833 seconds
+Stage 1 sieve time: 0.001323208 seconds
+Stage 1 chain build time: 0.012375917 seconds
+Stage 1 chain application time: 19.845337458 seconds
+Total Stage 1 time: 19.859317542 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.03764375 seconds
+Stage2State application on blocks: 17.334086 seconds
+Total stage 2 time: 17.373174667 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 479469
+Canonical copies: 1547080531
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 37.233971334 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001241 seconds
+Stage 1 sieve time: 0.001340375 seconds
+Stage 1 chain build time: 0.012410333 seconds
+Stage 1 chain application time: 19.285045292 seconds
+Total Stage 1 time: 19.29914625 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038878 seconds
+Stage2State application on blocks: 17.597819083 seconds
+Total stage 2 time: 17.638135708 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480385
+Canonical copies: 1547079615
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.938783542 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001076875 seconds
+Stage 1 sieve time: 0.001320208 seconds
+Stage 1 chain build time: 0.012344042 seconds
+Stage 1 chain application time: 19.152920916 seconds
+Total Stage 1 time: 19.166887167 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038421334 seconds
+Stage2State application on blocks: 18.040926083 seconds
+Total stage 2 time: 18.080764542 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480386
+Canonical copies: 1547079614
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 37.248889709 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.00104325 seconds
+Stage 1 sieve time: 0.001338125 seconds
+Stage 1 chain build time: 0.012565459 seconds
+Stage 1 chain application time: 18.999593625 seconds
+Total Stage 1 time: 19.013839083 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040523958 seconds
+Stage2State application on blocks: 17.219394459 seconds
+Total stage 2 time: 17.261399583 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 481467
+Canonical copies: 1547078533
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.276515916 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001049375 seconds
+Stage 1 sieve time: 0.001290375 seconds
+Stage 1 chain build time: 0.012504042 seconds
+Stage 1 chain application time: 19.006445125 seconds
+Total Stage 1 time: 19.020512958 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039821458 seconds
+Stage2State application on blocks: 17.260928958 seconds
+Total stage 2 time: 17.302195916 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480529
+Canonical copies: 1547079471
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.323898833 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001013667 seconds
+Stage 1 sieve time: 0.001370708 seconds
+Stage 1 chain build time: 0.014410083 seconds
+Stage 1 chain application time: 19.447365125 seconds
+Total Stage 1 time: 19.463407792 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.042882834 seconds
+Stage2State application on blocks: 17.479295 seconds
+Total stage 2 time: 17.523819292 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480112
+Canonical copies: 1547079888
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.988393625 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001077916 seconds
+Stage 1 sieve time: 0.00140425 seconds
+Stage 1 chain build time: 0.0134435 seconds
+Stage 1 chain application time: 19.130061625 seconds
+Total Stage 1 time: 19.145197583 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039728125 seconds
+Stage2State application on blocks: 18.152573875 seconds
+Total stage 2 time: 18.193733 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 481034
+Canonical copies: 1547078966
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 37.340628958 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001022583 seconds
+Stage 1 sieve time: 0.001295125 seconds
+Stage 1 chain build time: 0.012869625 seconds
+Stage 1 chain application time: 19.465864958 seconds
+Total Stage 1 time: 19.480339166 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038017375 seconds
+Stage2State application on blocks: 17.62296375 seconds
+Total stage 2 time: 17.662361958 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 479880
+Canonical copies: 1547080120
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 37.143914875 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001106208 seconds
+Stage 1 sieve time: 0.001411042 seconds
+Stage 1 chain build time: 0.013188417 seconds
+Stage 1 chain application time: 18.84596175 seconds
+Total Stage 1 time: 18.8608925 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038612833 seconds
+Stage2State application on blocks: 17.012618791 seconds
+Total stage 2 time: 17.05268775 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784639
+Propagated limbs: 0
+Canonical subtractions: 480969
+Canonical copies: 1547079031
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.914797125 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001054042 seconds
+Stage 1 sieve time: 0.00134275 seconds
+Stage 1 chain build time: 0.012788708 seconds
+Stage 1 chain application time: 19.250292416 seconds
+Total Stage 1 time: 19.264727667 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040740125 seconds
+Stage2State application on blocks: 17.642528917 seconds
+Total stage 2 time: 17.684713334 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 479547
+Canonical copies: 1547080453
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.950640667 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001120083 seconds
+Stage 1 sieve time: 0.001390792 seconds
+Stage 1 chain build time: 0.012983625 seconds
+Stage 1 chain application time: 19.247537625 seconds
+Total Stage 1 time: 19.26230125 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039575666 seconds
+Stage2State application on blocks: 17.530659791 seconds
+Total stage 2 time: 17.572352667 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480193
+Canonical copies: 1547079807
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.835890834 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 9.82667E-4 seconds
+Stage 1 sieve time: 0.001343167 seconds
+Stage 1 chain build time: 0.012503791 seconds
+Stage 1 chain application time: 18.9976455 seconds
+Total Stage 1 time: 19.011826625 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038442084 seconds
+Stage2State application on blocks: 17.336214458 seconds
+Total stage 2 time: 17.37605125 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 482076
+Canonical copies: 1547077924
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.389027084 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001012709 seconds
+Stage 1 sieve time: 0.001324542 seconds
+Stage 1 chain build time: 0.012449917 seconds
+Stage 1 chain application time: 19.118422166 seconds
+Total Stage 1 time: 19.132496166 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040387042 seconds
+Stage2State application on blocks: 17.428767917 seconds
+Total stage 2 time: 17.470620917 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 481397
+Canonical copies: 1547078603
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.604348375 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001661834 seconds
+Stage 1 sieve time: 0.001427583 seconds
+Stage 1 chain build time: 0.012402958 seconds
+Stage 1 chain application time: 19.1608 seconds
+Total Stage 1 time: 19.174926125 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038963708 seconds
+Stage2State application on blocks: 17.282781209 seconds
+Total stage 2 time: 17.323193208 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 479760
+Canonical copies: 1547080240
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.499967792 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001036125 seconds
+Stage 1 sieve time: 0.001308875 seconds
+Stage 1 chain build time: 0.012323084 seconds
+Stage 1 chain application time: 18.775505792 seconds
+Total Stage 1 time: 18.789461416 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038894958 seconds
+Stage2State application on blocks: 17.267024083 seconds
+Total stage 2 time: 17.307403625 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480525
+Canonical copies: 1547079475
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.098089 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001069208 seconds
+Stage 1 sieve time: 0.001301584 seconds
+Stage 1 chain build time: 0.012271 seconds
+Stage 1 chain application time: 18.721023167 seconds
+Total Stage 1 time: 18.734925083 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040166208 seconds
+Stage2State application on blocks: 17.139946458 seconds
+Total stage 2 time: 17.181558375 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480624
+Canonical copies: 1547079376
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.917774583 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001043458 seconds
+Stage 1 sieve time: 0.001333542 seconds
+Stage 1 chain build time: 0.01247675 seconds
+Stage 1 chain application time: 18.879320584 seconds
+Total Stage 1 time: 18.89344025 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.03850375 seconds
+Stage2State application on blocks: 17.156990666 seconds
+Total stage 2 time: 17.196897167 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 478532
+Canonical copies: 1547081468
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.091548208 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001094 seconds
+Stage 1 sieve time: 0.001385792 seconds
+Stage 1 chain build time: 0.012950708 seconds
+Stage 1 chain application time: 18.803277291 seconds
+Total Stage 1 time: 18.817947875 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039355417 seconds
+Stage2State application on blocks: 17.025948459 seconds
+Total stage 2 time: 17.066772166 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 481180
+Canonical copies: 1547078820
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.885972417 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001057667 seconds
+Stage 1 sieve time: 0.001349417 seconds
+Stage 1 chain build time: 0.012599083 seconds
+Stage 1 chain application time: 18.756917334 seconds
+Total Stage 1 time: 18.771218959 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039187583 seconds
+Stage2State application on blocks: 17.063102833 seconds
+Total stage 2 time: 17.103779792 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480055
+Canonical copies: 1547079945
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.876160458 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001008375 seconds
+Stage 1 sieve time: 0.001337875 seconds
+Stage 1 chain build time: 0.012585583 seconds
+Stage 1 chain application time: 18.789719625 seconds
+Total Stage 1 time: 18.803983291 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.040102417 seconds
+Stage2State application on blocks: 17.014746208 seconds
+Total stage 2 time: 17.056309916 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784639
+Propagated limbs: 0
+Canonical subtractions: 479929
+Canonical copies: 1547080071
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.861441625 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001082709 seconds
+Stage 1 sieve time: 0.001396625 seconds
+Stage 1 chain build time: 0.012841708 seconds
+Stage 1 chain application time: 18.796310459 seconds
+Total Stage 1 time: 18.810872 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.039092291 seconds
+Stage2State application on blocks: 17.232348125 seconds
+Total stage 2 time: 17.273312833 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480559
+Canonical copies: 1547079441
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 36.085468708 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001138084 seconds
+Stage 1 sieve time: 0.001447458 seconds
+Stage 1 chain build time: 0.013994083 seconds
+Stage 1 chain application time: 18.916871875 seconds
+Total Stage 1 time: 18.93265575 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.038505666 seconds
+Stage2State application on blocks: 16.946913 seconds
+Total stage 2 time: 16.986956 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 481110
+Canonical copies: 1547078890
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.92097525 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.001069584 seconds
+Stage 1 sieve time: 0.001294916 seconds
+Stage 1 chain build time: 0.012423792 seconds
+Stage 1 chain application time: 18.575757833 seconds
+Total Stage 1 time: 18.589751208 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.037891458 seconds
+Stage2State application on blocks: 16.841545875 seconds
+Total stage 2 time: 16.880777875 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480494
+Canonical copies: 1547079506
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.471743875 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 0.00110375 seconds
+Stage 1 sieve time: 0.001392875 seconds
+Stage 1 chain build time: 0.012874042 seconds
+Stage 1 chain application time: 18.5472345 seconds
+Total Stage 1 time: 18.561802042 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.037004083 seconds
+Stage2State application on blocks: 16.907115375 seconds
+Total stage 2 time: 16.945439792 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 480434
+Canonical copies: 1547079566
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.508484458 seconds
+
+64 curves tried with bounds 1000000 and 100000000; 64 being useful
+Time for creating all the curves: 9.86208E-4 seconds
+Stage 1 sieve time: 0.001295333 seconds
+Stage 1 chain build time: 0.012176917 seconds
+Stage 1 chain application time: 18.525163959 seconds
+Total Stage 1 time: 18.538917959 seconds
+Stage 2 block count: 6080
+Stage2State construction: 0.036268042 seconds
+Stage2State application on blocks: 17.000323834 seconds
+Total stage 2 time: 17.0379015 seconds
+Montgomery multiplications: 1250109760
+Montgomery squares: 297431424
+Reduction calls: 1547560000
+Nonzero carries: 7737784640
+Propagated limbs: 0
+Canonical subtractions: 479380
+Canonical copies: 1547080620
+Point doubling counts: 5025600
+Point differential additions: 121079424
+Point doubling + differential addition fusions: 11305344
+PRAC multiplications: 5024000
+PRAC case SWAP: 80732032
+PRAC case 1: 2541376
+PRAC case 2/4: 5197696
+PRAC case 3: 102041856
+PRAC case 5: 4120256
+PRAC case 6: 862592
+PRAC case 7: 791296
+PRAC case 8: 132544
+PRAC case 9: 200960
+Total time for this batch: 35.577998791 seconds
+
+SWITCHED TO QS

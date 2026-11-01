@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class LargeMap<K, V> implements Cloneable{
+public final class LargeMap<K, V> implements Cloneable{
     private final LargeList<K> keys;
     private final LargeList<V> values;
     public LargeMap(){
@@ -61,22 +61,15 @@ public class LargeMap<K, V> implements Cloneable{
         checkInvariant();
         return true;
     }
-    public void replace(LargeInteger index, K key, V value){
-        if (key == null || value == null)
-            throw new IllegalArgumentException("Null keys/values not allowed");
-        keys.set(index, key);
-        values.set(index, value);
-        checkInvariant();
-    }
     public V remove(K key) {
         LargeInteger index = indexOfKey(key);
-        if (index.isNegative()) return null;
+        if (index.isNegative()) throw new IllegalArgumentException("Key not in map");
         keys.remove(index);
         V val = values.remove(index);
         checkInvariant();
         return val;
     }
-    public boolean containsKey(K key) {return indexOfKey(key).doesntEqual(LargeInteger.NEGATIVE_ONE);}
+    public boolean containsKey(K key) {return !indexOfKey(key).isNegative();}
     public LargeInteger indexOfKey(K key) {
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(keys.size()); i = i.add(1))
             if (keys.get(i).equals(key))
@@ -104,5 +97,12 @@ public class LargeMap<K, V> implements Cloneable{
     public void swapIndices(LargeInteger i, LargeInteger j) {
         keys.swap(i, j);
         values.swap(i, j);
+    }
+    public void set(K key, V value) {
+        if (key == null || value == null)
+            throw new IllegalArgumentException("Null keys/values not allowed");
+        LargeInteger index = indexOfKey(key);
+        if (index.isNegative()) put(key, value);
+        else values.set(index, value);
     }
 }

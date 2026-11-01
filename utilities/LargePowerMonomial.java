@@ -12,7 +12,7 @@ public final class LargePowerMonomial extends ScalarAtom {
         // Handle exponent first, because 0^0 must not become 0.
         if (exponent.isZero()) {
             if (base.isZero())
-                throw new IllegalArgumentException("Indeterminate form 0^0");
+                throw new ArithmeticException("Indeterminate form 0^0");
             this.base = LargeFraction.ONE;
             this.exponent = LargeFraction.ONE;
             this.exponent2 = exponent2.mod(LargeFraction.TWO);
@@ -21,7 +21,7 @@ public final class LargePowerMonomial extends ScalarAtom {
         // 0^negative is undefined; 0^positive = 0.
         if (base.isZero()) {
             if (exponent.isNegative())
-                throw new IllegalArgumentException("Cannot divide by 0");
+                throw new ArithmeticException("Cannot divide by 0");
             this.base = LargeFraction.ZERO;
             this.exponent = LargeFraction.ONE;
             this.exponent2 = LargeFraction.ZERO;
@@ -83,31 +83,29 @@ public final class LargePowerMonomial extends ScalarAtom {
             return;
         }
         R = Parser.parse(R.toString());
-        if (R instanceof LargeInteger integer) {
-            base = LargeFraction.valueOf(integer);
-            exponent = LargeFraction.ONE;
-            exponent2 = LargeFraction.ZERO;
-            return;
-        } else if (R instanceof LargeFraction F) {
-            base = F;
-            exponent = LargeFraction.ONE;
-            exponent2 = LargeFraction.ZERO;
-            return;
-        } else if (R instanceof LargePowerMonomial LPM) {
-            base = LPM.base;
-            exponent = LPM.exponent;
-            exponent2 = LPM.exponent2;
-            return;
-        } else if (R instanceof RadicalTerm RT) {
-            if(!RT.rationalPart.isZero())
-                throw new IllegalArgumentException("Inputted expression does not evaluate to a power monomial");
-            LargePowerMonomial LM = (LargePowerMonomial) RT.exponent.multiply(RT.coefficient);
-            base = LM.base;
-            exponent = LM.exponent;
-            exponent2 = LM.exponent2;
-            return;
+        switch (R) {
+            case LargeInteger integer -> {
+                base = LargeFraction.valueOf(integer);
+                exponent = LargeFraction.ONE;
+                exponent2 = LargeFraction.ZERO;
+            } case LargeFraction F -> {
+                base = F;
+                exponent = LargeFraction.ONE;
+                exponent2 = LargeFraction.ZERO;
+            } case LargePowerMonomial LPM -> {
+                base = LPM.base;
+                exponent = LPM.exponent;
+                exponent2 = LPM.exponent2;
+            } case RadicalTerm RT -> {
+                if (!RT.rationalPart.isZero())
+                    throw new IllegalArgumentException("Inputted expression does not evaluate to a power monomial");
+                LargePowerMonomial LM = (LargePowerMonomial) RT.exponent.multiply(RT.coefficient);
+                base = LM.base;
+                exponent = LM.exponent;
+                exponent2 = LM.exponent2;
+            } case null, default ->
+                    throw new IllegalArgumentException("Inputted expression does not evaluate to a power monomial");
         }
-        throw new IllegalArgumentException("Inputted expression does not evaluate to a power monomial");
     }
     @Override
     public LargePowerMonomial clone() {
@@ -298,8 +296,6 @@ public final class LargePowerMonomial extends ScalarAtom {
         return RT.multiply(new LargePowerMonomial(base, exponent));
     }
     @Override
-    public ScalarAtom imagPart(){return subtract(this.realPart()).divide(I);}
-    @Override
     public LargeInteger floor() {
         if(this.isComplex()) throw new IllegalStateException("Cannot floor a non-real atom");
         else if(this.isRational()) return base.floor();
@@ -412,7 +408,6 @@ public final class LargePowerMonomial extends ScalarAtom {
                 (LargeFraction) exponent2.multiply(I));}
     public LargePowerMonomial power(LargeFraction f){ return new LargePowerMonomial(base, exponent.multiply(f),
             exponent2.multiply(f));}
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     public LargeMap<LargeInteger, LargeFraction> factor() {
         LargeMap<LargeInteger, LargeFraction> map = new LargeMap<>();
         if(!exponent2.isZero()) map.put(LargeInteger.NEGATIVE_ONE, exponent2);
@@ -420,36 +415,50 @@ public final class LargePowerMonomial extends ScalarAtom {
         for(LargeInteger I : map2.keys()) map.put(I, map2.get(I).multiply(exponent));
         return map;
     }
-    public static LargePowerMonomial buildFromFactors(LargeMap<LargeInteger, LargeFraction> pr) {
+    public static LargePowerMonomial buildFromFactors(
+            LargeMap<LargeInteger, LargeFraction> pr) {
+
         LargeFraction base = LargeFraction.ONE;
         LargeFraction exponent2 = LargeFraction.ZERO;
-        if(pr.size().isZero()) return ONE;
-        else if(pr.size().isOne())
-            return new LargePowerMonomial(LargeFraction.valueOf(pr.keyAtIndex(LargeInteger.ZERO)),
-                    pr.get(pr.keyAtIndex(LargeInteger.ZERO)));
-        LargeFraction G = LargeFraction.ONE;
-        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(pr.size()); i = i.add(1)){
-            LargeInteger I = pr.keyAtIndex(i);
-            if(I.isNegative()){
-                exponent2 = exponent2.add(pr.get(I));
+        LargeFraction G = LargeFraction.ZERO;
+
+        // Determine the common exponent and phase.
+        for (LargeInteger I : pr.keys()) {
+            LargeFraction power = pr.get(I);
+
+            if (I.equals(LargeInteger.NEGATIVE_ONE)) {
+                exponent2 = exponent2.add(power);
                 continue;
             }
-            G = G.gcd(pr.get(I));
+
+            if (power.isZero()) continue;
+
+            G = G.isZero()
+                    ? power.abs()
+                    : G.gcd(power.abs());
         }
-        for(LargeInteger I: pr.keys()){
-            LargeInteger expTemp = pr.get(I).divide(G).numerator;
-            LargeInteger basTemp = I.clone();
-            while(!expTemp.isZero()){
-                if(expTemp.isOdd()){
-                    if(expTemp.isNegative())
-                        base = (LargeFraction) base.divide(basTemp);
-                    else base = (LargeFraction) base.multiply(basTemp);
-                    if(expTemp.abs().isOne()) break;
-                }
-                basTemp = basTemp.square();
-                expTemp = expTemp.shiftRight(1);
-            }
+
+        // No positive-base factors remain.
+        if (G.isZero())
+            return new LargePowerMonomial(
+                    LargeFraction.ONE,
+                    LargeFraction.ONE,
+                    exponent2);
+
+        // Reconstruct the common base.
+        for (LargeInteger I : pr.keys()) {
+            if (I.equals(LargeInteger.NEGATIVE_ONE))
+                continue;
+
+            LargeFraction power = pr.get(I).divide(G);
+
+            if (!power.denominator.isOne())
+                throw new AssertionError(
+                        "Nonintegral reconstruction exponent: " + power);
+
+            base = base.multiply(I.power(power.numerator));
         }
+
         return new LargePowerMonomial(base, G, exponent2);
     }
     @Override

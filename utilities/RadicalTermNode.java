@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class RadicalTermNode extends ScalarAtom{
+public final class RadicalTermNode extends ScalarAtom{
     public final LargeFraction rationalPart;
     public final LargeFraction coefficient;
     public final LargePowerNode exponent;
@@ -56,8 +56,6 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public ScalarAtom realPart(){return this.sign().realPart().multiply(this.abs());}
     @Override
-    public ScalarAtom imagPart(){return this.sign().imagPart().multiply(this.abs());}
-    @Override
     public ScalarAtom abs() {throw new UnsupportedOperationException("Operation with this type together not supported yet");}
     @Override
     public LargeInteger floor() {throw new UnsupportedOperationException("Operation with this type not supported yet");}
@@ -79,8 +77,6 @@ public class RadicalTermNode extends ScalarAtom{
     public ScalarAtom reciprocal(){return new LargePowerNode(this, LargeFraction.NEGATIVE_ONE, LargeFraction.ZERO);}
     @Override
     public ScalarAtom power(LargeFraction f) {return new LargePowerNode(this, f, LargeFraction.ZERO);}
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
     public boolean equals(Atom other) {throw new UnsupportedOperationException("Operation with these types together not supported yet");}
 }

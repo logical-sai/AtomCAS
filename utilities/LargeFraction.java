@@ -3,16 +3,28 @@ package com.AtomCAS.utilities;
 public final class LargeFraction extends ScalarAtom {
     final LargeInteger numerator;
     final LargeInteger denominator;
-    public static final LargeFraction NEGATIVE_ONE = new LargeFraction(LargeInteger.NEGATIVE_ONE);
+    public static final LargeFraction NEGATIVE_ONE;
     public static final LargeFraction ZERO = new LargeFraction(LargeInteger.ZERO);
     public static final LargeFraction HALF = LargeInteger.TWO.reciprocal();
-    public static final LargeFraction ONE = new LargeFraction(LargeInteger.ONE);
-    public static final LargeFraction TWO = new LargeFraction(LargeInteger.TWO);
+    public static final LargeFraction ONE;
+    public static final LargeFraction TWO;
+
+    private static final int CACHE_COUNT = 31;
+    private static final LargeFraction[] POS_SMALL = new LargeFraction[CACHE_COUNT];
+    private static final LargeFraction[] NEG_SMALL = new LargeFraction[CACHE_COUNT];
     private LargeFraction(LargeInteger in) {
         numerator = in;
         denominator = LargeInteger.ONE;
     }
-    public static LargeFraction valueOf(LargeInteger in) {return new LargeFraction(in);}
+    static {
+        for (int i = 1; i < CACHE_COUNT; i++) {
+            POS_SMALL[i] = new LargeFraction(LargeInteger.valueOf(i));
+            NEG_SMALL[i] = new LargeFraction(LargeInteger.valueOf(-i));
+        }
+        NEGATIVE_ONE = NEG_SMALL[1];
+        ONE = POS_SMALL[1];
+        TWO = POS_SMALL[2];
+    }
     public LargeFraction(LargeInteger numerator, LargeInteger denominator) {
         if (denominator.isNegative()) {
             numerator = numerator.negate();
@@ -26,37 +38,52 @@ public final class LargeFraction extends ScalarAtom {
     }
     public LargeFraction(String str) {
         ScalarAtom R = Parser.parse(str);
-        if(R instanceof LargeInteger I) {
+        if (R instanceof LargeInteger I) {
             numerator = I;
             denominator = LargeInteger.ONE;
             return;
-        } else if(R instanceof LargeFraction F) {
+        } else if (R instanceof LargeFraction F) {
             numerator = F.numerator;
             denominator = F.denominator;
             return;
         }
         R = Parser.parse(R.toString());
-        if(R instanceof LargeInteger I) {
+        if (R instanceof LargeInteger I) {
             numerator = I;
             denominator = LargeInteger.ONE;
-            return;
-        } else if(R instanceof LargeFraction F) {
+        } else if (R instanceof LargeFraction F) {
             numerator = F.numerator;
             denominator = F.denominator;
-            return;
-        }
-        throw new IllegalArgumentException("Inputted expression does not evaluate to a rational number");
+        } else throw new IllegalArgumentException("Inputted expression does not evaluate to a rational number");
     }
-    public static LargeFraction valueOf(long n) {return valueOf(LargeInteger.valueOf(n));}
+    public static LargeFraction valueOf(long n) {
+        if (n == 0) return ZERO;
+        if (n > 0 && n < CACHE_COUNT)
+            return POS_SMALL[(int) n];
+        if (n < 0 && n > -CACHE_COUNT)
+            return NEG_SMALL[-(int) n];
+        boolean negative = n < 0;
+        return new LargeFraction(new LargeInteger(new long[]{negative ? -n : n}, negative));
+    }
+    public static LargeFraction valueOf(double val) {
+        if (!Double.isFinite(val))
+            throw new NumberFormatException("Infinite or NaN");
+        return new LargeFraction(Double.toString(val));
+    }
+    public static LargeFraction valueOf(LargeInteger in) {
+        if (in.isZero()) return ZERO;
+        if (in.greaterThan(LargeInteger.ZERO) && in.lessThan(LargeInteger.valueOf(CACHE_COUNT)))
+            return POS_SMALL[in.intValue()];
+        if (in.isNegative() && in.greaterThan(LargeInteger.valueOf(-CACHE_COUNT)))
+            return NEG_SMALL[-in.intValue()];
+        return new LargeFraction(in);
+    }
     @Override
     public LargeFraction clone() {return new LargeFraction(numerator.clone(), denominator.clone());}
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(numerator.toString());
-        return denominator.isOne() ? sb.toString() : sb.append('/').append(denominator).toString();
+        return denominator.isOne() ? numerator.toString() : numerator.toString() + "/" + denominator;
     }
-    public int hashCode() {return CASHash.rational(numerator, denominator);}
     @Override
     public String toLatex() {
         if (denominator.isOne())
@@ -130,7 +157,7 @@ public final class LargeFraction extends ScalarAtom {
     @Override
     public ScalarAtom realPart() {return this;}
     @Override
-    public ScalarAtom imagPart() {return LargeInteger.ZERO;}
+    public LargeInteger imagPart() {return LargeInteger.ZERO;}
     @Override
     public LargeInteger floor() {
         LargeInteger[] pair = numerator.quotientAndRemainder(denominator);
@@ -149,7 +176,7 @@ public final class LargeFraction extends ScalarAtom {
     }
     PowerFormFraction asPowerForm() {
         PowerFormInteger num = numerator.asPowerForm();
-        if(denominator.isOne()) return new PowerFormFraction(new LargeFraction(num.base()), num.exponent());
+        if(denominator.isOne()) return new PowerFormFraction(valueOf(num.base()), num.exponent());
         PowerFormInteger den = denominator.asPowerForm();
         long exponent = LargeInteger.gcdLong(num.exponent(), den.exponent());
         if (exponent == 1) return new PowerFormFraction(this, 1);
@@ -163,16 +190,6 @@ public final class LargeFraction extends ScalarAtom {
         LargeMap<LargeInteger, LargeFraction> D = denominator.factor();
         for(LargeInteger I: D.keys()) N.put(I, D.get(I).negate());
         return N;
-    }
-    public static LargeFraction buildFromFactors(LargeMap<LargeInteger, LargeFraction> pr) {
-        LargeMap<LargeInteger, LargeFraction> N = new LargeMap<>();
-        LargeMap<LargeInteger, LargeFraction> D = new LargeMap<>();
-        for(LargeInteger I: pr.keys()) {
-            if(!pr.get(I).numerator.isNegative())
-                N.put(I, pr.get(I));
-            else D.put(I, pr.get(I).negate());
-        }
-        return new LargeFraction(LargeInteger.buildFromFactors(N), LargeInteger.buildFromFactors(D));
     }
     public LargeFraction add(LargeFraction F) {
         LargeInteger l = denominator.lcm(F.denominator);
@@ -232,8 +249,6 @@ public final class LargeFraction extends ScalarAtom {
         return n.divide(d);
     }
     public LargePowerMonomial power(LargeFraction exp) {return new LargePowerMonomial(this, exp);}
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
     public LargeFraction reciprocal() {return new LargeFraction(denominator, numerator);}
     public LargeFraction divide(LargeFraction other) {

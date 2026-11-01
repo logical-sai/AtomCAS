@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class Exp extends ScalarAtom {
+public final class Exp extends ScalarAtom {
     ScalarAtom addend;
     ScalarAtom coefficient;
     ScalarAtom power;
@@ -85,11 +85,6 @@ public class Exp extends ScalarAtom {
     }
 
     @Override
-    public ScalarAtom imagPart() {
-        return null;
-    }
-
-    @Override
     public ScalarAtom add(ScalarAtom other) {
         return null;
     }
@@ -105,8 +100,4 @@ public class Exp extends ScalarAtom {
     }
     @Override
     public ScalarAtom power(LargeFraction f) {return new Exp(this.addend.power(f), this.coefficient.power(f), this.power.multiply(f));}
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
-        return null;
-    }
 }

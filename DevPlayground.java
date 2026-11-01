@@ -3,15 +3,95 @@ import com.AtomCAS.utilities.*;
 import java.math.BigInteger;
 import java.util.*;
 
-class DevPlayground {
+final class DevPlayground {
     public static void testReciprocal(String input) {
         ScalarAtom x = Parser.parse(input);
-        ScalarAtom y = x.reciprocal();
-        if(x.multiply(y).doesntEqual(LargeInteger.ONE))
-            throw new AssertionError("Reciprocal of " + x + " is wrong");
-        System.out.println("1/(" + x + ") = " + y);
+        ScalarAtom inverse = x.reciprocal();
+        ScalarAtom product = x.multiply(inverse);
+
+        if (!product.isOne())
+            throw new AssertionError("Reciprocal of " + x + " is wrong. \nComputed reciprocal: "
+                    + inverse + "\nProduct: " + product
+                    + "\nExpected product: 1");
+        System.out.println("1/(" + x + ") = " + inverse);
     }
     public static volatile Object sink = new Object();
+    public static void testAdd() {
+        int BI_Wins = 0;
+        int LI_Wins = 0;
+        int[] sizes = {3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536,
+                2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536, 98304, 131072, 196608,
+                262144, 393216, 524288, 786432, 1048576};
+        int pairs = 10;
+        double[] ratios = new double[sizes.length*pairs];
+        for (int k = 0; k < sizes.length; k++) {
+            int trials = (3 << 23)/sizes[k];
+            System.out.println("Bits tried: " + sizes[k] + " with " + pairs + " pairs and " + trials + " trials per pair");
+            double[] sizeRatios = new double[pairs];
+            for (int l = 0; l < pairs; l++) {
+                LargeInteger A = LargeInteger.randomBits(sizes[k]);
+                LargeInteger B = LargeInteger.randomBits(sizes[k]);
+                BigInteger BA = A.toBigInteger();
+                BigInteger BB = B.toBigInteger();
+                LargeInteger LResult = A.add(B);
+                BigInteger BResult = BA.add(BB);
+                if (!LResult.toBigInteger().equals(BResult))
+                    throw new AssertionError("Sum is wrong");
+                long liTime;
+                long biTime;
+                long t0;
+                long t1;
+                if (((k * pairs + l) & 1) == 1){
+                    for (int i = 0; i < trials; i++) {
+                        sink = A.add(B);
+                        sink = BA.add(BB);
+                    }
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = A.add(B);
+                    t1 = System.nanoTime();
+                    liTime = t1 - t0;
+
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = BA.add(BB);
+                    t1 = System.nanoTime();
+                    biTime = t1 - t0;
+
+                } else {
+                    for (int i = 0; i < trials; i++) {
+                        sink = BA.add(BB);
+                        sink = A.add(B);
+                    }
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = BA.add(BB);
+                    t1 = System.nanoTime();
+                    biTime = t1 - t0;
+                    t0 = System.nanoTime();
+                    for (int i = 0; i < trials; i++)
+                        sink = A.add(B);
+                    t1 = System.nanoTime();
+                    liTime = t1 - t0;
+                }
+                double ratio = (double) liTime / biTime;
+                if (ratio < 1.0) LI_Wins++;
+                else BI_Wins++;
+                System.out.println("LargeInteger time: " + liTime / (1e9 * trials) + " seconds/trial");
+                System.out.println("BigInteger time: " + biTime / (1e9 * trials) + " seconds/trial");
+                System.out.println("Ratio: " + ratio);
+                sizeRatios[l] = ratio;
+                ratios[k * pairs + l] = ratio;
+            }
+            Arrays.sort(sizeRatios);
+            System.out.println("Median for size: " + (sizeRatios[sizeRatios.length/2-1] + sizeRatios[sizeRatios.length/2])/2.0);
+            System.out.println();
+        }
+        System.out.println("Times LargeInteger won: " + LI_Wins);
+        System.out.println("Times BigInteger won: " + BI_Wins);
+        Arrays.sort(ratios);
+        System.out.println("Median ratio: " + (ratios[ratios.length/2-1] + ratios[ratios.length/2])/2.0);
+    }
     public static void testMultiply() {
         int BI_Wins = 0;
         int LI_Wins = 0;
@@ -88,38 +168,231 @@ class DevPlayground {
         Arrays.sort(ratios);
         System.out.println("Median ratio: " + (ratios[ratios.length/2-1] + ratios[ratios.length/2])/2.0);
     }
+
+    public static void testDivideAndRemainder() {
+        int[] sizes = {
+                64, 96, 128, 192, 256, 384, 512, 768,
+                1024, 1536, 2048, 3072, 4096, 6144,
+                8192, 12288, 16384, 24576, 32768,
+                40960, 49152, 65536, 98304, 131072
+        };
+
+        String[] regimes = {
+                "Balanced (1:1)",
+                "Moderately unbalanced (2:1)",
+                "Unbalanced (4:1)",
+                "Very unbalanced (16:1)"
+        };
+
+        int[] divisors = {1, 2, 4, 16};
+
+        int pairs = 10;
+        int regimeCount = regimes.length;
+
+        int[] LI_Wins = new int[regimeCount];
+        int[] BI_Wins = new int[regimeCount];
+
+        double[][] ratios =
+                new double[regimeCount][sizes.length * pairs];
+
+        for (int k = 0; k < sizes.length; k++) {
+            int aBits = sizes[k];
+            int trials = Math.clamp(
+                    (1 << 18) / aBits, 1, 4096
+            );
+
+            System.out.println();
+            System.out.println("================================");
+            System.out.println("Dividend bits: " + aBits);
+            System.out.println("Pairs per regime: " + pairs);
+            System.out.println("Trials per pair: " + trials);
+            System.out.println("================================");
+
+            for (int r = 0; r < regimeCount; r++) {
+                int bBits = Math.max(2, aBits / divisors[r]);
+
+                System.out.println();
+                System.out.println("Regime: " + regimes[r]);
+                System.out.println(
+                        "Operand bits: " + aBits + " / " + bBits
+                );
+
+                double[] sizeRatios = new double[pairs];
+
+                for (int l = 0; l < pairs; l++) {
+                    LargeInteger A = LargeInteger.randomBits(aBits);
+                    LargeInteger B = LargeInteger.randomBits(bBits);
+
+                    // Ensure dividend >= divisor for 1:1.
+                    if (A.lessThan(B)) {
+                        LargeInteger temp = A;
+                        A = B;
+                        B = temp;
+                    }
+
+                    BigInteger BA = A.toBigInteger();
+                    BigInteger BB = B.toBigInteger();
+
+                    // Correctness check, outside timing.
+                    LargeInteger[] LResult =
+                            A.quotientAndRemainder(B);
+                    BigInteger[] BResult =
+                            BA.divideAndRemainder(BB);
+
+                    if (!LResult[0].toBigInteger().equals(BResult[0])
+                            || !LResult[1].toBigInteger().equals(BResult[1]))
+                        throw new AssertionError(
+                                "Division mismatch for " +
+                                        aBits + " / " + bBits
+                        );
+
+                    // Warmup.
+                    int warmups = Math.min(20, trials);
+                    for (int i = 0; i < warmups; i++) {
+                        sink = A.quotientAndRemainder(B);
+                        sink = BA.divideAndRemainder(BB);
+                    }
+
+                    long liTime;
+                    long biTime;
+                    long t0;
+                    long t1;
+
+                    boolean liFirst =
+                            (((k * regimeCount + r) * pairs + l) & 1) == 1;
+
+                    t0 = System.nanoTime();
+                    if (liFirst) {
+                        for (int i = 0; i < trials; i++)
+                            sink = A.quotientAndRemainder(B);
+                        t1 = System.nanoTime();
+                        liTime = t1 - t0;
+
+                        t0 = System.nanoTime();
+                        for (int i = 0; i < trials; i++)
+                            sink = BA.divideAndRemainder(BB);
+                        t1 = System.nanoTime();
+                        biTime = t1 - t0;
+
+                    } else {
+                        for (int i = 0; i < trials; i++)
+                            sink = BA.divideAndRemainder(BB);
+                        t1 = System.nanoTime();
+                        biTime = t1 - t0;
+
+                        t0 = System.nanoTime();
+                        for (int i = 0; i < trials; i++)
+                            sink = A.quotientAndRemainder(B);
+                        t1 = System.nanoTime();
+                        liTime = t1 - t0;
+                    }
+
+                    double ratio = (double) liTime / biTime;
+
+                    if (ratio < 1.0)
+                        LI_Wins[r]++;
+                    else
+                        BI_Wins[r]++;
+
+                    System.out.println(
+                            "Pair " + (l + 1) +
+                                    " | LI: " + liTime / (1e9 * trials) +
+                                    " s/trial | BI: " +
+                                    biTime / (1e9 * trials) +
+                                    " s/trial | Ratio: " + ratio
+                    );
+
+                    sizeRatios[l] = ratio;
+                    ratios[r][k * pairs + l] = ratio;
+                }
+
+                Arrays.sort(sizeRatios);
+
+                double median =
+                        (sizeRatios[pairs / 2 - 1]
+                                + sizeRatios[pairs / 2]) / 2.0;
+
+                System.out.println(
+                        "Median for " + regimes[r] +
+                                " at " + aBits + " bits: " + median
+                );
+            }
+        }
+
+        System.out.println();
+        System.out.println("========== FINAL RESULTS ==========");
+
+        for (int r = 0; r < regimeCount; r++) {
+            Arrays.sort(ratios[r]);
+
+            int n = ratios[r].length;
+            double median =
+                    (ratios[r][n / 2 - 1]
+                            + ratios[r][n / 2]) / 2.0;
+
+            System.out.println();
+            System.out.println("Regime: " + regimes[r]);
+            System.out.println("Times LargeInteger won: " + LI_Wins[r]);
+            System.out.println("Times BigInteger won: " + BI_Wins[r]);
+            System.out.println("Median ratio: " + median);
+        }
+    }
     public static void testPrimeExponents(){
         long startTime = System.nanoTime();
-        for (int i: LargeInteger.sieve(10000)) {
+        int[] primes = LargeInteger.sieve(10000);
+        for (int k = 0; k < primes.length; k++) {
+            int i = primes[k];
             LargeInteger n = LargeInteger.powerOfTwo(i).subtract(LargeInteger.ONE);
-            BigInteger b = n.toBigInteger();
-            for(int k = 0; k < 10000-i; k++){
-                sink = n.isProbablyPrime();
-                sink = b.isProbablePrime(100);
-            }
-
-            long t1 = System.nanoTime();
             boolean li = n.isProbablyPrime();
-            long t2 = System.nanoTime();
+            BigInteger b = n.toBigInteger();
             boolean bi = b.isProbablePrime(100);
-            long t3 = System.nanoTime();
-
-            System.out.printf("p=%d limbs=%d LI=%.6fms BI=%.6fms ", i, i/64, (t2 - t1) / 1e6, (t3 - t2) / 1e6);
             if (li != bi)
                 throw new AssertionError("Mismatch on " + n + "\nLI = " + li + " \nBI = " + bi);
+            int trials = Math.max(10, 200000 / i);
+            long t1;
+            long t2;
+            long t3;
+            if ((k & 1) == 0) {
+                for (int j = 0; j < trials/2; j++) {
+                    sink = n.isProbablyPrime();
+                    sink = b.isProbablePrime(100);
+                }
+                t1 = System.nanoTime();
+                for (int j = 0; j < trials; j++)
+                    sink = n.isProbablyPrime();
+                t2 = System.nanoTime();
+                for (int j = 0; j < trials; j++)
+                    sink = b.isProbablePrime(100);
+                t3 = System.nanoTime();
+                System.out.printf("p=%d limbs=%d LI=%.6fms BI=%.6fms ", i, i/64 + 1, (t2 - t1) / 1e6 / trials, (t3 - t2) / 1e6 / trials);
+            } else {
+                for (int j = 0; j < trials/2; j++) {
+                    sink = b.isProbablePrime(100);
+                    sink = n.isProbablyPrime();
+                }
+                t1 = System.nanoTime();
+                for (int j = 0; j < trials; j++)
+                    sink = b.isProbablePrime(100);
+                t2 = System.nanoTime();
+                for (int j = 0; j < trials; j++)
+                    sink = n.isProbablyPrime();
+                t3 = System.nanoTime();
+                System.out.printf("p=%d limbs=%d LI=%.6fms BI=%.6fms ", i, i/64 + 1, (t3 - t2) / 1e6 / trials, (t2 - t1) / 1e6 / trials);
+            }
             System.out.println("Prime? " + li);
         }
         long elapsedTime = System.nanoTime() - startTime;
         System.out.println("Elapsed time: " + elapsedTime/1e9 + " seconds");
     }
     public static void testPowMod(){
-        for(int k: new int[]{32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224}){
+        for(int k: new int[]{1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536,
+                2048, 3072, 4096, 6144, 8192}){
             long LI_time = 0;
             long BI_time = 0;
             int trials = 49152/k;
             for(int j = 0; j < 100; j++){
                 LargeInteger base = LargeInteger.randomBits(k);
-                LargeInteger exponent = LargeInteger.powerOfTwo(k).subtract(LargeInteger.ONE);
+                LargeInteger exponent = LargeInteger.randomBits(k);
                 LargeInteger modulus = LargeInteger.randomBits(k).or(LargeInteger.ONE);
                 BigInteger bigBase = base.toBigInteger();
                 BigInteger bigExponent = exponent.toBigInteger();
@@ -154,25 +427,12 @@ class DevPlayground {
         for (int size : new int[]{1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536, 2048}) {
             long LI_time = 0;
             long BI_time = 0;
-            int trials;
-            if (size <= 16)        trials = 5000;
-            else if (size <= 64)   trials = 2000;
-            else if (size <= 256)  trials = 500;
-            else if (size <= 512)  trials = 200;
-            else if (size <= 1024) trials = 50;
-            else                   trials = 20;
+            int trials = 49152/size;
             System.out.println("Chunk size: " + size);
             for (int k = 0; k < 100; k++) {
                 LargeInteger L5 = LargeInteger.randomChunks(size);
-                LargeInteger L6 = LargeInteger.randomChunks(size);
-                if(L5.lessThan(L6)){
-                    LargeInteger temp =  L5;
-                    L5 = L6;
-                    L6 = temp;
-                }
                 BigInteger B5 = L5.toBigInteger();
-                BigInteger B6 = L6.toBigInteger();
-                if(!L5.remainder(L6).toBigInteger().equals(B5.remainder(B6)))
+                if(!L5.toString().equals(B5.toString()))
                     throw new AssertionError("toString is wrong");
                 if ((k & 1) == 1) {
                     for (int i = 0; i < trials / 2; i++) {
@@ -210,54 +470,187 @@ class DevPlayground {
             System.out.println();
         }
     }
-    public static void testGCD(){
-        int trials = 150;
-        int total = 101;
-        long[] LI_times = new long[total];
-        long[] BI_times = new long[total];
-        for (int j = 0; j < total; j++) {
-            LargeInteger A = LargeInteger.randomChunks(150);
-            LargeInteger B = LargeInteger.randomChunks(75);
-            BigInteger BA = A.toBigInteger();
-            BigInteger BB = B.toBigInteger();
-            if(!A.gcd(B).toBigInteger().equals(BA.gcd(BB)))
-                throw new AssertionError("gcd is wrong");
-            //warmup
-            for (int k = 0; k < trials/2; k++) {
-                sink = A.gcd(B);
-                sink = BA.gcd(BB);
-            }
-            long t0 = System.nanoTime();
-            if ((j & 1) == 0) {
-                for (int i = 0; i < trials; i++)
-                    sink = A.gcd(B);
-                long t1 = System.nanoTime();
-                for (int i = 0; i < trials; i++)
-                    sink = BA.gcd(BB);
-                long t2 = System.nanoTime();
-                LI_times[j] = t1 - t0;
-                BI_times[j] = t2 - t1;
-            } else {
-                for (int i = 0; i < trials; i++)
-                    sink = BA.gcd(BB);
-                long t1 = System.nanoTime();
-                for (int i = 0; i < trials; i++)
-                    sink = A.gcd(B);
-                long t2 = System.nanoTime();
-                BI_times[j] = t1 - t0;
-                LI_times[j] = t2 - t1;
+
+    private static long[] randomLongArray(Random random, long bits) {
+        if (bits <= 0 || (bits + 63) / 64 > Integer.MAX_VALUE)
+            throw new IllegalArgumentException("Invalid bit count");
+        int size = (int) ((bits - 1) / 64 + 1);
+        long[] array = new long[size];
+        for (int i = 0; i < size; i++)
+            array[i] = random.nextLong();
+        int remaining = (int) (bits & 63);
+        if (remaining != 0)
+            array[size - 1] &= -1L >>> (64 - remaining);
+        // Guarantee exactly 'bits' significant bits.
+        array[size - 1] |= 1L << ((bits - 1) & 63);
+        return array;
+    }
+
+    public static void testGCD() {
+        int[] sizes = {
+                64, 96, 128, 192, 256, 384, 512, 768,
+                1024, 1536, 2048, 3072, 4096, 6144,
+                8192, 12288, 16384, 24576, 32768,
+                49152, 65536
+        };
+
+        String[] regimes = {
+                "Balanced (1:1)",
+                "Comparatively unbalanced (2:1)",
+                "Very unbalanced (16:1)"
+        };
+
+        Random rng = new Random(137);
+
+        int pairs = 10;
+        int regimeCount = regimes.length;
+
+        int[] LI_Wins = new int[regimeCount];
+        int[] BI_Wins = new int[regimeCount];
+
+        double[][] ratios =
+                new double[regimeCount][sizes.length * pairs];
+
+        for (int k = 0; k < sizes.length; k++) {
+            int aBits = sizes[k];
+
+            int trials = Math.clamp((1 << 20) / aBits, 1, 10_000);
+
+            System.out.println();
+            System.out.println("================================");
+            System.out.println("Bits tried: " + aBits);
+            System.out.println("Pairs per regime: " + pairs);
+            System.out.println("Trials per pair: " + trials);
+            System.out.println("================================");
+
+            for (int r = 0; r < regimeCount; r++) {
+                int bBits = switch (r) {
+                    case 0 -> aBits;
+                    case 1 -> Math.max(2, aBits / 2);
+                    case 2 -> Math.max(2, aBits / 16);
+                    default -> throw new AssertionError();
+                };
+
+                System.out.println();
+                System.out.println("Regime: " + regimes[r]);
+                System.out.println("Operand bits: " + aBits + " x " + bBits);
+
+                double[] sizeRatios = new double[pairs];
+
+                for (int l = 0; l < pairs; l++) {
+                    LargeInteger A = new LargeInteger(randomLongArray(rng, aBits), false);
+                    LargeInteger B = new LargeInteger(randomLongArray(rng, bBits), false);
+
+                    BigInteger BA = A.toBigInteger();
+                    BigInteger BB = B.toBigInteger();
+
+                    LargeInteger LResult = A.gcd(B);
+                    BigInteger BResult = BA.gcd(BB);
+
+                    if (!LResult.toBigInteger().equals(BResult))
+                        throw new AssertionError("GCD is wrong for " + aBits + " x " + bBits);
+
+                    int warmups = Math.min(16, trials);
+
+                    for (int i = 0; i < warmups; i++) {
+                        sink = A.gcd(B);
+                        sink = BA.gcd(BB);
+                    }
+
+                    long liTime;
+                    long biTime;
+                    long t0;
+                    long t1;
+
+                    boolean liFirst = (((k * regimeCount + r) * pairs + l) & 1) == 1;
+
+                    t0 = System.nanoTime();
+                    if (liFirst) {
+                        for (int i = 0; i < trials; i++)
+                            sink = A.gcd(B);
+                        t1 = System.nanoTime();
+                        liTime = t1 - t0;
+
+                        t0 = System.nanoTime();
+                        for (int i = 0; i < trials; i++)
+                            sink = BA.gcd(BB);
+                        t1 = System.nanoTime();
+                        biTime = t1 - t0;
+                    } else {
+                        for (int i = 0; i < trials; i++)
+                            sink = BA.gcd(BB);
+                        t1 = System.nanoTime();
+                        biTime = t1 - t0;
+
+                        t0 = System.nanoTime();
+                        for (int i = 0; i < trials; i++)
+                            sink = A.gcd(B);
+                        t1 = System.nanoTime();
+                        liTime = t1 - t0;
+                    }
+
+                    double ratio = (double) liTime / biTime;
+
+                    if (ratio < 1.0)
+                        LI_Wins[r]++;
+                    else
+                        BI_Wins[r]++;
+
+                    System.out.println(
+                            "Pair " + (l + 1) +
+                                    " | LI: " +
+                                    liTime / (1e9 * trials) +
+                                    " s/trial | BI: " +
+                                    biTime / (1e9 * trials) +
+                                    " s/trial | Ratio: " + ratio
+                    );
+                    if (ratio >= 1.0 && aBits >= 4096) {
+                        System.out.println("EDGE CASE");
+                        System.out.println("A = " + A);
+                        System.out.println("B = " + B);
+                        System.out.println();
+                    }
+
+                    sizeRatios[l] = ratio;
+                    ratios[r][k * pairs + l] = ratio;
+                }
+
+                Arrays.sort(sizeRatios);
+
+                double median =
+                        (sizeRatios[pairs / 2 - 1] +
+                                sizeRatios[pairs / 2]) / 2.0;
+
+                System.out.println(
+                        "Median for " + regimes[r] +
+                                " at " + aBits + " bits: " + median
+                );
             }
         }
-        double[] ratios = new double[total];
-        for (int j = 0; j < total; j++)
-            ratios[j] = (double) LI_times[j] / BI_times[j];
-        Arrays.sort(ratios);
-        Arrays.sort(LI_times);
-        Arrays.sort(BI_times);
-        System.out.println("LI median: " + LI_times[LI_times.length / 2]/1e9/trials + " seconds/trial");
-        System.out.println("BI median: " + BI_times[BI_times.length / 2]/1e9/trials + " seconds/trial");
-        System.out.println("Median LI/BI ratio: " + ratios[total / 2]);
+
+        System.out.println();
+        System.out.println("========== FINAL RESULTS ==========");
+
+        for (int r = 0; r < regimeCount; r++) {
+            Arrays.sort(ratios[r]);
+
+            int n = ratios[r].length;
+            double median =
+                    (ratios[r][n / 2 - 1] +
+                            ratios[r][n / 2]) / 2.0;
+
+            System.out.println();
+            System.out.println("Regime: " + regimes[r]);
+            System.out.println(
+                    "Times LargeInteger won: " + LI_Wins[r]
+            );
+            System.out.println(
+                    "Times BigInteger won: " + BI_Wins[r]
+            );
+            System.out.println("Median ratio: " + median);
+        }
     }
+
 
     record FactorBoss(String value, String origin, String notes) {}
     @SuppressWarnings("unused")
@@ -285,7 +678,7 @@ class DevPlayground {
             new FactorBoss(
                     "300932863707222380064047767986506993480747134074482327493193906987568752931846264493277211892465666521176460891605373427957891512801",
                     "132-digit factor of 10^370+1",
-                    "\"insanity is doing the same thing over and over and expecting different results\" -this BALANCED P66*P67"),
+                    "\"insanity is doing the same thing over and over and expecting different results\" -this P66*P67"),
             new FactorBoss(
                     "1542640683424132399232471221044907051052572151832476120359456130667480485184999280119584639349554309571691938515526407159478857314501",
                     "133-digit factor of 10^182+1",
@@ -343,25 +736,20 @@ class DevPlayground {
                     "204-digit factor of 10^229+1",
                     "A P41. Then a P59"),
             new FactorBoss(
-                    "1098901098901098901098901098901098901098901098901098901098901098901098901098901098901098901098900989010989010989010989010989010989010989010989010989010989010989010989010989010989010989010989011",
-                    "193-digit factor of 10^291+1",
-                    "P42 this time. My next target is obvious"),
-            new FactorBoss(
                     "23745522635916420509212937025036341721288549626793287444171791964097702703756675293617858214186414108961",
                     "104-digit factor 3^370+1",
                     "BALANCED: is P52*P52. Wait until GNFS is complete")
             );
 
     static void main() {
-        LargeInteger N = new LargeInteger("10^258+1");
-        System.out.println(N + " = " + N.factor());
+        demoRadicalReciprocals();
     }
     public static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
 
         LargeInteger a = LargeInteger.valueOf(1234567890L);
         LargeInteger b = LargeInteger.valueOf(9876543210L);
-        LargeInteger c = LargeInteger.valueOf(1000L);
+        LargeInteger c = LargeInteger.valueOf(1_800_000_000_001L);
 
         System.out.println("a = " + a);
         System.out.println("b = " + b);
@@ -373,9 +761,9 @@ class DevPlayground {
         System.out.println("b^3 = " + b.cube());
         System.out.println("c^3 = " + c.cube());
         System.out.println("gcd(a, b) = " + a.gcd(b));
-        System.out.println("lcm(a, b) = " + a.lcm(b));
+        System.out.println("lcm(b, c) = " + b.lcm(c));
         System.out.println("factor(-a*b+c) = " + a.negate().multiply(b).add(c).factor());
-        System.out.println("totient(a+b+c) = " + a.add(b).add(c).totient());
+        System.out.println("totient(a+b*c) = " + a.add(b).multiply(c).totient());
         System.out.println();
     }
     public static void demoFractions() {
@@ -383,6 +771,7 @@ class DevPlayground {
 
         LargeFraction f = new LargeFraction(LargeInteger.valueOf(6), LargeInteger.valueOf(8));
         LargeFraction g = new LargeFraction(LargeInteger.valueOf(5), LargeInteger.valueOf(120));
+        LargeFraction b = new LargeFraction(LargeInteger.valueOf(67), LargeInteger.valueOf(373));
 
         System.out.println("6/8 simplifies to " + f);
         System.out.println("0.041{6} = " + g);
@@ -390,6 +779,8 @@ class DevPlayground {
         System.out.println("6/8 * 5/120 = " + f.multiply(g));
         System.out.println("6/8 / 5/120 = " + f.divide(g));
         System.out.println("1/5 + 1/2 = " + new LargeFraction("1/5 + 1/2"));
+        System.out.println("1/65 - 67/373 = " + new LargeFraction("1/65").subtract(b));
+        System.out.println("6/8 + 67/373*2 = " + f.add(b.multiply(LargeFraction.TWO)));
         System.out.println();
     }
     public static void demoRadicals() {
@@ -414,7 +805,7 @@ class DevPlayground {
         testReciprocal("√2");
         testReciprocal("3√5");
         testReciprocal("-7√11");
-        testReciprocal("4*108^(-1/3)");
+        testReciprocal("4*109^(-1/3)");
 
         // Binomial radical sums
         testReciprocal("1+√2");
@@ -426,7 +817,7 @@ class DevPlayground {
         testReciprocal("1+√2+√3");
         testReciprocal("5+2√2-3√3");
         testReciprocal("√2+√3+√5");
-        testReciprocal("3^(1/3) - 17^(1/3) + 11^(1/3)");
+        testReciprocal("3^(1/3) - 17^(1/3) + 11^(1/5)");
 
         // Products that should simplify after reciprocal
         testReciprocal("(1+√2)(3-√2)");
@@ -444,6 +835,7 @@ class DevPlayground {
         testReciprocal("16^(1/4) - 2^(1/2)");
         testReciprocal("27^(1/7) + 3^(1/3)");
         testReciprocal("-5^(99/50) + 5");
+        testReciprocal("2^(1/2) - 3^(1/3) + 5^(1/5) - 7^(1/7)");
 
         // Powers / fractional exponents
         testReciprocal("2^(1/3)+1");

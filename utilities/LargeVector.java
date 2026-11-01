@@ -1,7 +1,7 @@
 package com.AtomCAS.utilities;
-public class LargeVector extends TensorAtom {
-    private final LargeList<LargeInteger> list;
-    LargeFraction factor;
+public final class LargeVector extends TensorAtom {
+    final LargeList<LargeInteger> list;
+    final LargeFraction factor;
     LargeVector(LargeList<LargeInteger> list, LargeFraction factor){
         this.list = new LargeList<>();
         if(list.isEmpty()){
@@ -28,16 +28,6 @@ public class LargeVector extends TensorAtom {
         for(LargeFraction f: liste) this.list.add(((LargeFraction)f.multiply(lc)).numerator);
         this.factor = lc.reciprocal();
     }
-    public LargeVector(LargeInteger dimension){
-        list = new LargeList<>();
-        factor = LargeFraction.ONE;
-        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(dimension); i = i.add(1))
-            list.add(LargeInteger.ZERO);
-    }
-    public LargeVector() {
-        list = new LargeList<>();
-        factor = LargeFraction.ONE;
-    }
     public LargeVector clone() {return new LargeVector(list.clone(), factor.clone());}
     @Override
     public String toString() {
@@ -53,12 +43,6 @@ public class LargeVector extends TensorAtom {
     @Override
     public String toLatex() {
         return "";
-    }
-    public LargeList<LargeInteger> rawList(){
-        LargeList<LargeInteger> bf = new LargeList<>();
-        for(LargeInteger I: list)
-            bf.add(I.clone());
-        return bf;
     }
     public LargeList<LargeFraction> list(){
         LargeList<LargeFraction> bf = new LargeList<>();
@@ -82,7 +66,8 @@ public class LargeVector extends TensorAtom {
         return res;
     }
     public LargeInteger dimension() {return list.size();}
-    public boolean isDifferentDimension(LargeVector other) {return this.dimension().doesntEqual(other.dimension());}
+    private boolean isDifferentDimensionFrom(LargeVector other)
+    {return this.dimension().doesntEqual(other.dimension());}
     public boolean isZero() {
         for (LargeInteger f: list) if (!f.isZero()) return false;
         return true;
@@ -90,7 +75,7 @@ public class LargeVector extends TensorAtom {
     @SuppressWarnings("unused")
     public boolean isUnit() {return this.magnitude().isOne();}
     public LargeVector add(LargeVector other) {
-        if(other.isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
+        if(other.isDifferentDimensionFrom(this)) throw new IllegalStateException("Dimension mismatch");
         LargeList<LargeFraction> liste = new LargeList<>();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
             liste.add((LargeFraction) list.get(i).multiply(factor).add(other.list.get(i).multiply(other.factor)));
@@ -103,7 +88,7 @@ public class LargeVector extends TensorAtom {
         throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public LargeVector subtract(LargeVector other){
-        if(other.isDifferentDimension(this)) throw new IllegalStateException("Dimension mismatch");
+        if(other.isDifferentDimensionFrom(this)) throw new IllegalStateException("Dimension mismatch");
         LargeList<LargeFraction> liste = new LargeList<>();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
             liste.add((LargeFraction) list.get(i).multiply(factor).subtract(
@@ -116,7 +101,7 @@ public class LargeVector extends TensorAtom {
         else throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public LargeVector hadamardProduct(LargeVector LV){
-        if (LV.isDifferentDimension(this))
+        if (LV.isDifferentDimensionFrom(this))
             throw new IllegalArgumentException("Dimension mismatch");
         LargeList<LargeInteger> result = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
@@ -129,7 +114,7 @@ public class LargeVector extends TensorAtom {
         throw new UnsupportedOperationException("Operation with these types together not supported yet");
     }
     public LargeFraction dotProduct(LargeVector other){
-        if (other.isDifferentDimension(this))
+        if (other.isDifferentDimensionFrom(this))
             throw new IllegalArgumentException("Dimension mismatch");
         LargeFraction result = LargeFraction.ZERO;
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(dimension()); i = i.add(1))
@@ -165,13 +150,15 @@ public class LargeVector extends TensorAtom {
         return new LargeVector(this.list, scalar.multiply(factor));}
     @Override
     public boolean equals(Atom other) {
-        if(other instanceof LargeVector LV) {
-            if (LV.isDifferentDimension(this))
+        if (this == other) return true;
+        if (other instanceof LargeVector LV) {
+            if (LV.isDifferentDimensionFrom(this))
                 return false;
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.dimension()); i = i.add(1))
                 if(this.list.get(i).doesntEqual(LV.list.get(i))) return false;
             return this.factor.equals(LV.factor);
-        }
+        } else if (other instanceof LargeMatrix M)
+            return M.equals(this);
         return false;
     }
     @SuppressWarnings("unused")

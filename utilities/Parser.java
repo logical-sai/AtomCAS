@@ -1,12 +1,10 @@
 package com.AtomCAS.utilities;
 public final class Parser{
-    private Parser() {
-        throw new UnsupportedOperationException(
-                "N O  P A R S E R  I N S T A N C E S  F O R  Y O U,  Y O U  D I R T Y  T H I E F");
-    }
+    private Parser() {throw new AssertionError("No instances");}
     public static ScalarAtom parse(String str) {
         return CASTrace.call("Parser.parse", str, () -> {
             String S = str;
+            if (S == null) throw new NullPointerException("Null inputs not permitted");
             S = S.replaceAll("\\s+", "");
             S = stripOuterParentheses(S);
             if (S.isEmpty())
@@ -278,7 +276,7 @@ public final class Parser{
         }else{
             if(str.contains("{") || str.contains("}"))
                 throw new IllegalArgumentException("Invalid input");
-            num = (LargeInteger) Parser.parse(str);
+            num = new LargeInteger(str);
             return new LargeFraction(num, dem);
         }
         return new LargeFraction(num, dem);

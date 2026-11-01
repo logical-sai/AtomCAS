@@ -25,13 +25,21 @@ public final class ModPolynomial implements Cloneable{
         this.coefficients = len == reducer.length ? reducer : Arrays.copyOf(reducer, len);
         this.modulus = modulus;
     }
+    public static ModPolynomial ONE(LargeInteger modulus) {
+        return new ModPolynomial(new LargeInteger[]{LargeInteger.ONE}, modulus);
+    }
     public boolean isZero() { return isZeroArray(coefficients); }
     public int degree() { return coefficients.length-1; }
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof ModPolynomial other)) return false;
         if (this == obj) return true;
-        return modulus.equals(other.modulus) && Arrays.equals(coefficients, other.coefficients);
+        return obj instanceof ModPolynomial other && modulus.equals(other.modulus) && Arrays.equals(coefficients, other.coefficients);
+    }
+    public static ModPolynomial random(int degree, LargeInteger modulus) {
+        LargeInteger[] coefficients = new LargeInteger[degree];
+        for (int i = 0; i < degree; i++)
+            coefficients[i] = LargeInteger.random(LargeInteger.ZERO, modulus);
+        return new ModPolynomial(coefficients, modulus);
     }
     @Override
     public int hashCode() {return 31 * modulus.hashCode() + Arrays.hashCode(coefficients);}
@@ -52,7 +60,9 @@ public final class ModPolynomial implements Cloneable{
     public ModPolynomial clone() {
         try {
             ModPolynomial clone = (ModPolynomial) super.clone();
-            return new ModPolynomial(clone.coefficients.clone(), clone.modulus.clone());
+            for(int i = 0; i < coefficients.length; i++)
+                clone.coefficients[i] = coefficients[i].clone();
+            return new ModPolynomial(clone.coefficients.clone(), modulus.clone());
         } catch (CloneNotSupportedException e) {throw new AssertionError(e);}
     }
     public ModPolynomial negate() {
@@ -239,8 +249,7 @@ public final class ModPolynomial implements Cloneable{
         addShifted(out, infinity, degree * pivot);
         return trim(out);
     }
-    record DivisionResult(ModPolynomial quotient, ModPolynomial remainder) {}
-    DivisionResult divideAndRemainder(ModPolynomial divisor) {
+    public ModPolynomial[] divideAndRemainder(ModPolynomial divisor) {
         if (modulus.doesntEqual(divisor.modulus))
             throw new IllegalArgumentException("Moduli must match");
         if (divisor.isZero())
@@ -248,7 +257,7 @@ public final class ModPolynomial implements Cloneable{
         int n = degree();
         int m = divisor.degree();
         if (n < m)
-            return new DivisionResult(new ModPolynomial(ZERO_POLY, modulus), this);
+            return new ModPolynomial[]{new ModPolynomial(ZERO_POLY, modulus), this};
         LargeInteger inverse = divisor.coefficients[m].modInverse(modulus);
         LargeInteger[] q = new LargeInteger[n - m + 1];
         Arrays.fill(q, LargeInteger.ZERO);
@@ -260,14 +269,11 @@ public final class ModPolynomial implements Cloneable{
             for (int j = 0; j <= m; j++)
                 r[j + k] = r[j + k].subtract(c.multiply(divisor.coefficients[j])).mod(modulus);
         }
-        return new DivisionResult(new ModPolynomial(q, modulus, true),
-                new ModPolynomial(r, modulus, true));
+        return new ModPolynomial[]{new ModPolynomial(q, modulus, true),
+                new ModPolynomial(r, modulus, true)};
     }
-    public ModPolynomial divide(ModPolynomial divisor) {return divideAndRemainder(divisor).quotient();}
+    public ModPolynomial divide(ModPolynomial divisor) {return divideAndRemainder(divisor)[0];}
     public ModPolynomial remainder(ModPolynomial divisor) {
-        return remainderSchoolbook(divisor);
-    }
-    private ModPolynomial remainderSchoolbook(ModPolynomial divisor) {
         if (modulus.doesntEqual(divisor.modulus))
             throw new IllegalArgumentException("Moduli must match");
         if (divisor.isZero())
@@ -290,7 +296,6 @@ public final class ModPolynomial implements Cloneable{
         }
         return new ModPolynomial(Arrays.copyOf(r, Math.max(1, m)), modulus, true);
     }
-
     public ModPolynomial gcd(ModPolynomial other) {
         if (modulus.doesntEqual(other.modulus))
             throw new IllegalArgumentException("Moduli must match");
@@ -311,16 +316,6 @@ public final class ModPolynomial implements Cloneable{
             out[i] = coefficients[i].multiply(inverse).mod(modulus);
         return new ModPolynomial(out, modulus);
     }
-    private static ModPolynomial linearProduct(LargeInteger modulus, int from, int to, boolean negativeRoots) {
-        if (from == to)
-            return new ModPolynomial(new LargeInteger[]{LargeInteger.ONE}, modulus);
-        if (to - from == 1) {
-            long p = LargeInteger.SMALL_PRIMES[from];
-            return new ModPolynomial(new LargeInteger[]{LargeInteger.valueOf(negativeRoots ? p : -p), LargeInteger.ONE}, modulus);
-        }
-        int mid = from + (to - from) / 2;
-        return linearProduct(modulus, from, mid, negativeRoots).multiply(linearProduct(modulus, mid, to, negativeRoots));
-    }
     public ModPolynomial derivative() {
         LargeInteger[] out = new LargeInteger[degree()];
         if(out.length == 0) return new ModPolynomial(ZERO_POLY, modulus);
@@ -329,30 +324,11 @@ public final class ModPolynomial implements Cloneable{
             out[j] = out[j].multiply(j+1);
         return new ModPolynomial(out, modulus);
     }
-    /*private ModPolynomial multiplyModXPower(ModPolynomial other, int power) {
-
-    }
     public ModPolynomial modXPower(int power) {
         LargeInteger[] out = new LargeInteger[power+1];
         System.arraycopy(coefficients, 1, out, 0, power);
         return new ModPolynomial(out, modulus);
     }
-    private ModPolynomial inverseSeries(int precision) {
-        if (precision < 1)
-            throw new IllegalArgumentException("Precision must be positive");
-        LargeInteger inverse = coefficients[0].modInverse(modulus);
-        ModPolynomial g = new ModPolynomial(new LargeInteger[]{inverse}, modulus, true);
-        ModPolynomial two = new ModPolynomial(new LargeInteger[]{LargeInteger.TWO}, modulus);
-        int p = 1;
-        while (p < precision) {
-            int next = (int) Math.min(2L * p, precision);
-            ModPolynomial fg = this.multiplyModXPower(g, next);
-            ModPolynomial correction = two.subtract(fg);
-            g = g.multiplyModXPower(correction, next);
-            p = next;
-        }
-        return g.modXPower(precision);
-    }*/
     public ModPolynomial powMod(LargeInteger exponent, ModPolynomial polynomialModulus) {
         if (modulus.doesntEqual(polynomialModulus.modulus))
             throw new IllegalArgumentException("Moduli must match");
@@ -372,30 +348,65 @@ public final class ModPolynomial implements Cloneable{
         }
         return result.remainder(polynomialModulus);
     }
-    static void main(String[] args) {
-        LargeInteger modulus = LargeInteger.randomPrimeBits(27);
-        // 500 shared linear factors
-        ModPolynomial common = linearProduct(modulus, 0, 1000, false);
-        // 500 additional factors each
-        ModPolynomial positive = linearProduct(modulus, 1000, 2000, false);
-
-        ModPolynomial negative = linearProduct(modulus, 1000, 3000, true);
-        // Both degree 1000
-        ModPolynomial A = common.multiply(positive);
-        ModPolynomial B = common.multiply(negative);
-
-        long start = System.nanoTime();
-        ModPolynomial G = A.gcd(B);
-        long elapsed = System.nanoTime() - start;
-
-        System.out.println("A degree: " + A.degree());
-        System.out.println("B degree: " + B.degree());
-        System.out.println("GCD degree: " + G.degree());
-
-        System.out.println("Correct: " + G.equals(common));
-
-        System.out.printf("GCD time: %.6f seconds%n", elapsed / 1e9);
-        if (!G.equals(common))
-            throw new AssertionError("Incorrect polynomial GCD");
+    ModPolynomial linearFactorPart() {
+        if (degree() == 0)
+            return new ModPolynomial(new LargeInteger[]{LargeInteger.ONE}, modulus);
+        ModPolynomial x = new ModPolynomial(new LargeInteger[]{LargeInteger.ZERO, LargeInteger.ONE}, modulus);
+        ModPolynomial xp = x.powMod(modulus, this);
+        return gcd(xp.subtract(x));
     }
+    private ModPolynomial extractALinearFactor() {
+        ModPolynomial h = clone();
+        if (h.degree() == 0)
+            throw new IllegalArgumentException();
+        if (h.degree() == 1)
+            return h;
+        // Special case: F_2 has only two possible roots.
+        if (modulus.equals(LargeInteger.TWO))
+            // A square-free polynomial of degree > 1 that
+            // splits into linear factors over F_2 has root 0.
+            return new ModPolynomial(new LargeInteger[]{LargeInteger.ZERO, LargeInteger.ONE}, modulus);
+        LargeInteger exponent = modulus.subtract(1).shiftRight(1);
+        ModPolynomial one = ONE(modulus);
+        while (h.degree() > 1) {
+            boolean split = false;
+            for (int attempt = 0; attempt < 32; attempt++) {
+                ModPolynomial a = random(h.degree(), modulus).remainder(h);
+                ModPolynomial factor = h.gcd(a);
+                if (factor.degree() > 0 && factor.degree() < h.degree()) {
+                    h = factor;
+                    split = true;
+                    break;
+                }
+                ModPolynomial power = a.powMod(exponent, h);
+                factor = h.gcd(power.subtract(one));
+                if (factor.degree() > 0 && factor.degree() < h.degree()) {
+                    h = factor;
+                    split = true;
+                    break;
+                }
+                factor = h.gcd(power.add(one));
+                if (factor.degree() > 0 && factor.degree() < h.degree()) {
+                    h = factor;
+                    split = true;
+                    break;
+                }
+            }
+            if (!split)
+                throw new ArithmeticException("Cantor-Zassenhaus failed after 32 attempts");
+        }
+        return h;
+    }
+    LargeInteger[] rootsModPrime() {
+        ModPolynomial remaining = linearFactorPart();
+        LargeInteger[] roots = new LargeInteger[remaining.degree()];
+        for (int i = 0; i < roots.length; i++) {
+            ModPolynomial linear = remaining.extractALinearFactor();
+            // linear is monic: x + c
+            roots[i] = modulus.subtract(linear.coefficients[0]);
+            remaining = remaining.divide(linear);
+        }
+        return roots;
+    }
+
 }

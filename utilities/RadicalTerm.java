@@ -3,7 +3,7 @@ public final class RadicalTerm extends ScalarAtom{
     final LargeFraction rationalPart;
     final LargeFraction coefficient;
     final LargePowerMonomial exponent;
-    public RadicalTerm(LargeFraction r, LargeFraction c, LargePowerMonomial E){
+    public RadicalTerm(LargeFraction r, LargeFraction c, LargePowerMonomial E) {
         if(c.isZero() || E.isZero()){
             rationalPart = r.clone();
             coefficient = LargeFraction.ZERO;
@@ -18,41 +18,32 @@ public final class RadicalTerm extends ScalarAtom{
             exponent = LargePowerMonomial.ZERO;
             return;
         }
-        LargeFraction tempR = r.clone();
         LargeFraction tempC = c.clone();
-        //make real radicand an integer
-        LargePowerMonomial Enum = new LargePowerMonomial(LargeFraction.valueOf(E.base.numerator), E.exponent, E.exponent2);
-        LargePowerMonomial Edem = new LargePowerMonomial(LargeFraction.valueOf(E.base.denominator), E.exponent);
-        LargePowerMonomial Edem2 = new LargePowerMonomial(LargeFraction.valueOf(E.base.denominator), (LargeFraction) LargeInteger.ONE.subtract(E.exponent.mod(LargeInteger.ONE)));
-        Enum = Enum.multiply(Edem2);
-        Edem = Edem.multiply(Edem2);
-        tempC = tempC.divide(Edem.base);
-        LargeMap<LargeInteger, LargeFraction> pr = Enum.factor();
-        for(LargeInteger I: pr.keys()){
-            LargeInteger expTemp = pr.get(I).floor();
-            LargeInteger basTemp = I.clone();
-            while(!expTemp.isZero()){
-                if(expTemp.isOdd()){
-                    if(expTemp.isNegative())
-                        tempC = (LargeFraction) tempC.divide(basTemp);
-                    else tempC = (LargeFraction) tempC.multiply(basTemp);
-                    if(expTemp.abs().isOne()) break;
-                }
-                basTemp = basTemp.square();
-                expTemp = expTemp.shiftRight(1);
-            }
-            pr.put(I, pr.get(I).fracPart());
+        LargeMap<LargeInteger, LargeFraction> factors = E.factor();
+        LargeMap<LargeInteger, LargeFraction> remainder = new LargeMap<>();
+        for (LargeInteger prime : factors.keys()) {
+            LargeFraction power = factors.get(prime);
+            LargeInteger whole = power.floor();
+            LargeFraction fractional = power.subtract(LargeFraction.valueOf(whole));
+            // Extract the integer power into the coefficient.
+            if (!whole.isZero())
+                tempC = tempC.multiply(LargeFraction.valueOf(prime).power(whole));
+            // Keep only the fractional power.
+            if (!fractional.isZero())
+                remainder.put(prime, fractional);
         }
-        Enum = LargePowerMonomial.buildFromFactors(pr);
-        if(Enum.isOne()){
-            rationalPart = tempR.add(tempC);
+        LargePowerMonomial reduced = LargePowerMonomial.buildFromFactors(remainder);
+        if (reduced.isRational()) {
+            LargeFraction value = reduced.exponent2.isOne() ? reduced.base.negate() : reduced.base;
+            rationalPart = r.add(tempC.multiply(value));
             coefficient = LargeFraction.ZERO;
             exponent = LargePowerMonomial.ZERO;
-            return;
+        } else {
+            rationalPart = r.clone();
+            coefficient = tempC;
+            exponent = reduced;
         }
-        rationalPart = tempR;
-        coefficient = tempC;
-        exponent = Enum;
+
     }
     @Override
     public RadicalTerm clone(){return new RadicalTerm(rationalPart.clone(), coefficient.clone(), exponent.clone());}
@@ -134,8 +125,6 @@ public final class RadicalTerm extends ScalarAtom{
     public boolean isAlgebraic() {return true;}
     @Override
     public ScalarAtom realPart(){return sign().realPart().multiply(abs());}
-    @Override
-    public ScalarAtom imagPart(){return sign().imagPart().multiply(abs());}
     @Override
     public ScalarAtom abs(){
         if(isReal()){
@@ -256,8 +245,6 @@ public final class RadicalTerm extends ScalarAtom{
     }
     @Override
     public LargePowerNode power(LargeFraction f){return new LargePowerNode(this, f, LargeFraction.ONE);}
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {return null;}
     @Override
     public ScalarAtom reciprocal(){
         if(coefficient.isZero())

@@ -57,11 +57,6 @@ public class RadicalExpression extends ScalarAtom{
     }
 
     @Override
-    public ScalarAtom imagPart() {
-        return null;
-    }
-
-    @Override
     public ScalarAtom add(ScalarAtom other) {
         return null;
     }
@@ -78,11 +73,6 @@ public class RadicalExpression extends ScalarAtom{
 
     @Override
     public ScalarAtom power(LargeFraction f) {
-        return null;
-    }
-
-    @Override
-    public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return null;
     }
 

@@ -1,0 +1,65 @@
+Number entering ECM: 31905465608907942498661292828252155369279364090950257965016747258493552420434301673784024151083001925781221966475743126588401(125 digits)
+64 curves tried with bounds 2000 and 200000; 64 being useful
+Time for creating all the curves: 0.00436875 seconds
+Stage 1 sieve time: 3.0834E-5 seconds
+Stage 1 chain build time: 3.18958E-4 seconds
+Stage 1 chain application time: 0.090325458 seconds
+Total Stage 1 time: 0.091374167 seconds
+Stage 2 block count: 64
+Stage2State construction: 0.135885709 seconds
+Stage2State application on blocks: 0.073383584 seconds
+Total stage 2 time: 0.213215958 seconds
+Montgomery multiplications: 3613952
+Montgomery squares: 725120
+Reduction calls: 4339840
+Nonzero carries: 30357376
+Propagated limbs: 0
+Canonical subtractions: 0
+Canonical copies: 4339840
+Point doubling counts: 20224
+Point differential additions: 314176
+Point doubling + differential addition fusions: 14080
+PRAC multiplications: 19392
+PRAC case SWAP: 139328
+PRAC case 1: 6400
+PRAC case 2/4: 5824
+PRAC case 3: 191808
+PRAC case 5: 5952
+PRAC case 6: 1536
+PRAC case 7: 768
+PRAC case 8: 0
+PRAC case 9: 0
+Total time for this batch: 0.314138666 seconds
+
+64 curves tried with bounds 11000 and 1100000; 64 being useful
+Time for creating all the curves: 0.001581708 seconds
+Stage 1 sieve time: 5.775E-5 seconds
+Stage 1 chain build time: 9.97916E-4 seconds
+Stage 1 chain application time: 0.379882042 seconds
+Total Stage 1 time: 0.381536625 seconds
+Stage 2 block count: 128
+Stage2State construction: 0.077739167 seconds
+Stage2State application on blocks: 0.37061425 seconds
+Total stage 2 time: 0.458000125 seconds
+Montgomery multiplications: 14779136
+Montgomery squares: 3372160
+Reduction calls: 18152256
+Nonzero carries: 127044288
+Propagated limbs: 0
+Canonical subtractions: 0
+Canonical copies: 18152256
+Point doubling counts: 86592
+Point differential additions: 1390720
+Point doubling + differential addition fusions: 104384
+PRAC multiplications: 85504
+PRAC case SWAP: 816192
+PRAC case 1: 29824
+PRAC case 2/4: 49920
+PRAC case 3: 1081152
+PRAC case 5: 38016
+PRAC case 6: 8128
+PRAC case 7: 6144
+PRAC case 8: 1088
+PRAC case 9: 1088
+Total time for this batch: 0.841223167 seconds
+

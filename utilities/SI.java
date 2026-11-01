@@ -31,8 +31,6 @@ public class SI extends PhysicalAtom{
     @Override
     public String toString() {return "";}
     @Override
-    public int hashCode(){return 0;}
-    @Override
     public String toLatex() {return "";}
     @Override
     public boolean equals(Atom other) {return false;}

@@ -9,7 +9,6 @@ public class Quantity extends PhysicalAtom {
     public String toLatex() {
         return "";
     }
-    public int hashCode(){return 0;}
     @Override
     public boolean equals(Atom other) {return false;}
 }

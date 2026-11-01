@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class LargePolynomial implements Cloneable {
+public final class LargePolynomial extends Polynomial implements Cloneable {
     final LargeList<LargeFraction> coefficients; //higher degrees come first
     public LargePolynomial(){coefficients = new LargeList<>(); coefficients.add(LargeFraction.ZERO);}
     public LargePolynomial(LargeList<LargeFraction> coefficients){
@@ -9,10 +9,11 @@ public class LargePolynomial implements Cloneable {
         this.coefficients = coefficients;
     }
     public LargePolynomial clone() {
-        try {
-            LargePolynomial clone = (LargePolynomial) super.clone();
-            return new LargePolynomial(clone.coefficients.clone());
-        } catch (CloneNotSupportedException e) {throw new AssertionError(e);}
+        Polynomial clone = super.clone();
+        LargeList<LargeFraction> cloneCoefficients = new LargeList<>();
+        for (ScalarAtom atom : clone.coefficients)
+            cloneCoefficients.add((LargeFraction) atom.clone());
+        return new LargePolynomial(cloneCoefficients);
     }
     public static LargePolynomial monomial(LargeFraction coefficient, LargeInteger deg){
         LargeList<LargeFraction> coefficients = new LargeList<>();

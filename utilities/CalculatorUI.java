@@ -57,7 +57,7 @@ public class CalculatorUI {
         traceWindow.setLocationRelativeTo(frame);
 
         frame.add(bottomPanel, BorderLayout.CENTER);
-        traceTree.addTreeSelectionListener(e -> {
+        traceTree.addTreeSelectionListener(_ -> {
             DefaultMutableTreeNode selected =
                     (DefaultMutableTreeNode) traceTree.getLastSelectedPathComponent();
             if (selected == null) return;

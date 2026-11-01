@@ -6,7 +6,7 @@ public class Base{
     boolean sign;
     long base;
     public Base(LargeFraction N, long B){
-        sign = N.lessThan(LargeFraction.ZERO);
+        sign = N.isNegative();
         if(B <= 1) throw new IllegalArgumentException("Error: Invalid base");
         base = B;
         LargeInteger bigBase = LargeInteger.valueOf(B);
@@ -26,7 +26,7 @@ public class Base{
         }
         //terminating part
         long terminatingDigits = 0;
-        while (copy2.denominator.gcd(bigBase).doesntEqual(LargeInteger.ONE)) {
+        while (!copy2.denominator.gcd(bigBase).isOne()) {
             copy2 = copy2.multiply(B);
             terminatingDigits++;
         }
@@ -40,7 +40,7 @@ public class Base{
         //repeating part
         copy2 = copy2.fracPart();
         repeatingPart = new LargeList<>();
-        if(copy2.equals(LargeFraction.ZERO)) return;
+        if(copy2.isZero()) return;
         LargeInteger start = copy2.numerator;
         LargeInteger R = start;
         do{
