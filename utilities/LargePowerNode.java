@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class LargePowerNode extends ScalarAtom{
+public final class LargePowerNode extends ScalarAtom{
     final ScalarAtom signFactor; //MUST have magnitude 1
     final ScalarAtom base;
     final LargeFraction exponent;
@@ -58,11 +58,10 @@ public class LargePowerNode extends ScalarAtom{
                 }
                 if (xAtom.isRational() && yAtom.isRational()) {
                     RadicalTermSum result = new RadicalTermSum();
-                    ScalarAtom sqrtX = xAtom.rationalPart.power(LargeFraction.HALF);
-                    ScalarAtom sqrtY = yAtom.rationalPart.power(LargeFraction.HALF);
+                    LargePowerMonomial sqrtX = xAtom.rationalPart.power(LargeFraction.HALF);
+                    LargePowerMonomial sqrtY = yAtom.rationalPart.power(LargeFraction.HALF);
                     result = (RadicalTermSum) result.add(sqrtX);
-
-                    if (BCoefficient.sign().equals(LargeInteger.NEGATIVE_ONE))
+                    if (BCoefficient.isNegative())
                         result = (RadicalTermSum) result.subtract(sqrtY);
                     else
                         result = (RadicalTermSum) result.add(sqrtY);
@@ -91,12 +90,11 @@ public class LargePowerNode extends ScalarAtom{
         ScalarAtom basTemp = base.clone();
         LargeInteger expTemp = exponent.numerator.clone();
         ScalarAtom res = LargeFraction.ONE;
-        while(true){
-            if(expTemp.isOdd()){
+        while(!expTemp.isZero()) {
+            if(expTemp.isOdd())
                 res = res.multiply(basTemp);
-                if(expTemp.isOne()) break;
-            }
-            basTemp = basTemp.square();
+            if(!expTemp.isOne())
+                basTemp = basTemp.square();
             expTemp = expTemp.shiftRight(1);
         }
         this.base = res;

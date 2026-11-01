@@ -23,8 +23,9 @@ public abstract class ScalarAtom extends Atom implements Comparable<ScalarAtom>{
     public abstract ScalarAtom abs();
     public abstract boolean isRational();
     public abstract boolean isReal();
-    public boolean isNotReal() {return !isReal();}
+    public final boolean isComplex() {return !isReal();}
     public abstract boolean isAlgebraic();
+    public final boolean isNotAlgebraic() {return !isAlgebraic();}
     public abstract ScalarAtom realPart();
     public abstract ScalarAtom imagPart();
     public abstract ScalarAtom add(ScalarAtom other);

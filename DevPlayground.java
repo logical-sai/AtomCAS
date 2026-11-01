@@ -12,7 +12,7 @@ class DevPlayground {
         System.out.println("1/(" + x + ") = " + y);
     }
     public static volatile Object sink = new Object();
-    public static void testMultiply(){
+    public static void testMultiply() {
         int BI_Wins = 0;
         int LI_Wins = 0;
         int[] sizes = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128, 192, 256, 384, 512, 768, 1024, 1536,
@@ -21,7 +21,7 @@ class DevPlayground {
         int pairs = 10;
         double[] ratios = new double[sizes.length*pairs];
         for (int k = 0; k < sizes.length; k++) {
-            int trials = (3 << 21)/sizes[k];
+            int trials = (3 << 22)/sizes[k];
             System.out.println("Bits tried: " + sizes[k] + " with " + pairs + " pairs and " + trials + " trials per pair");
             double[] sizeRatios = new double[pairs];
             for (int l = 0; l < pairs; l++) {
@@ -59,7 +59,6 @@ class DevPlayground {
                         sink = BA.multiply(BB);
                         sink = A.multiply(B);
                     }
-
                     t0 = System.nanoTime();
                     for (int i = 0; i < trials; i++)
                         sink = BA.multiply(BB);
@@ -332,10 +331,6 @@ class DevPlayground {
                     "141-digit factor of 10^212+1",
                     "I'm just going through the triangle because ye. P65s can wait"),
             new FactorBoss(
-                    "4699647704310958756172428094989827379269964500718279672842668516597679787731613620656744089391648173777",
-                    "103-digit factor of 10^216+1",
-                    "FINALLY another P47. At peace again"),
-            new FactorBoss(
                     "497589584370643651833411052136403857469855512021216681367094246340846264306841359259739399116532272051367234127695381400591250742929694843555904520509603702962028539798720834254409924410330623440892183",
                     "201-digit factor of 10^223+1",
                     "P. seventy. three."),
@@ -350,7 +345,7 @@ class DevPlayground {
             new FactorBoss(
                     "1098901098901098901098901098901098901098901098901098901098901098901098901098901098901098901098900989010989010989010989010989010989010989010989010989010989010989010989010989010989010989010989011",
                     "193-digit factor of 10^291+1",
-                    "P43 this time. My next target is obvious"),
+                    "P42 this time. My next target is obvious"),
             new FactorBoss(
                     "23745522635916420509212937025036341721288549626793287444171791964097702703756675293617858214186414108961",
                     "104-digit factor 3^370+1",
@@ -358,7 +353,7 @@ class DevPlayground {
             );
 
     static void main() {
-        LargeInteger N = new LargeInteger("10^349+1");
+        LargeInteger N = new LargeInteger("10^258+1");
         System.out.println(N + " = " + N.factor());
     }
     public static void demoIntegers() {

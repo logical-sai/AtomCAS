@@ -3,7 +3,7 @@ public class Logarithm extends ScalarAtom {
     public ScalarAtom argument;
     public Logarithm(ScalarAtom a) {argument = a;}
     @Override
-    public ScalarAtom clone() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
+    public Logarithm clone() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
     @Override
     public LargeInteger floor() {throw new UnsupportedOperationException("Operation with these two types together not supported yet");}
     @Override

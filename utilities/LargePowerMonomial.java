@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class LargePowerMonomial extends ScalarAtom {
+public final class LargePowerMonomial extends ScalarAtom {
     final LargeFraction base;
     final LargeFraction exponent;
     final LargeFraction exponent2;
@@ -58,8 +58,8 @@ public class LargePowerMonomial extends ScalarAtom {
     }
     public LargePowerMonomial(String str) {
         ScalarAtom R = Parser.parse(str);
-        if (R instanceof LargeInteger) {
-            base = LargeFraction.valueOf((LargeInteger) R);
+        if (R instanceof LargeInteger integer) {
+            base = LargeFraction.valueOf(integer);
             exponent = LargeFraction.ONE;
             exponent2 = LargeFraction.ZERO;
             return;
@@ -83,8 +83,8 @@ public class LargePowerMonomial extends ScalarAtom {
             return;
         }
         R = Parser.parse(R.toString());
-        if (R instanceof LargeInteger) {
-            base = LargeFraction.valueOf((LargeInteger) R);
+        if (R instanceof LargeInteger integer) {
+            base = LargeFraction.valueOf(integer);
             exponent = LargeFraction.ONE;
             exponent2 = LargeFraction.ZERO;
             return;
@@ -226,7 +226,7 @@ public class LargePowerMonomial extends ScalarAtom {
     }
     @Override
     public int compareTo(ScalarAtom other) {
-        if(isNotReal() || other.isNotReal())
+        if(isComplex() || other.isComplex())
             throw new IllegalStateException("Complex numbers cannot be compared");
         return switch (other) {
             case LargeFraction largeFraction -> compareTo(new LargePowerMonomial(largeFraction, LargeFraction.ONE));
@@ -301,7 +301,7 @@ public class LargePowerMonomial extends ScalarAtom {
     public ScalarAtom imagPart(){return subtract(this.realPart()).divide(I);}
     @Override
     public LargeInteger floor() {
-        if(this.isNotReal()) throw new IllegalStateException("Cannot floor a non-real atom");
+        if(this.isComplex()) throw new IllegalStateException("Cannot floor a non-real atom");
         else if(this.isRational()) return base.floor();
         boolean negativeResult = exponent2.isOne();
         LargeFraction begun = base.numerator.abs().power(exponent.numerator);

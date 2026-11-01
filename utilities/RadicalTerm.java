@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class RadicalTerm extends ScalarAtom{
+public final class RadicalTerm extends ScalarAtom{
     final LargeFraction rationalPart;
     final LargeFraction coefficient;
     final LargePowerMonomial exponent;
@@ -99,7 +99,7 @@ public class RadicalTerm extends ScalarAtom{
     public boolean isZero() {return coefficient.isZero() && rationalPart.isZero() && exponent.isZero();}
     @Override
     public LargeInteger floor() {
-        if(isNotReal()) throw new IllegalStateException("Cannot floor or apply ceiling a non-real atom");
+        if(isComplex()) throw new IllegalStateException("Cannot floor or apply ceiling a non-real atom");
         if (coefficient.isZero())
             return rationalPart.floor();
         LargeFraction lower = LargeFraction.valueOf(exponent.floor());
@@ -166,7 +166,7 @@ public class RadicalTerm extends ScalarAtom{
     @Override
     public int compareTo(ScalarAtom other) {
         if(equals(other)) return 0;
-        if(isNotReal() || other.isNotReal())
+        if(isComplex() || other.isComplex())
             throw new IllegalStateException("Complex numbers cannot be compared");
         return switch (other) {
             case LargeInteger _, LargeFraction _ ->{

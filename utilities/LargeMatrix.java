@@ -102,7 +102,7 @@ public class LargeMatrix extends TensorAtom {
     @Override
     public String toLatex() {return "";}
     @Override
-    public LargeMatrix clone() {return new LargeMatrix(this.list.copy(), this.factor.clone());}
+    public LargeMatrix clone() {return new LargeMatrix(this.list.clone(), this.factor.clone());}
     public LargeInteger rows(){return list.size();}
     public LargeInteger cols(){return list.getFirst().size();}
     private LargeInteger getRaw(LargeInteger i, LargeInteger j){return list.get(i).get(j);}

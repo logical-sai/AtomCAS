@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class LargeMap<K, V>{
+public class LargeMap<K, V> implements Cloneable{
     private final LargeList<K> keys;
     private final LargeList<V> values;
     public LargeMap(){
@@ -7,12 +7,16 @@ public class LargeMap<K, V>{
         values = new LargeList<>();
     }
     private LargeMap(LargeList<K> keys, LargeList<V> values) {
-        if(keys.size().doesntEqual(values.size()))
-            throw new IllegalArgumentException();
         this.keys = keys;
         this.values = values;
     }
-    public LargeMap<K, V> copy() {return new LargeMap<>(keys.copy(), values.copy());}
+    public LargeMap<K, V> clone() {
+        try {
+            @SuppressWarnings("unchecked")
+            LargeMap<K, V> clone = (LargeMap<K, V>) super.clone();
+            return new LargeMap<>(clone.keys.clone(), clone.values.clone());
+        } catch (CloneNotSupportedException e) {throw new AssertionError(e);}
+    }
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append("{");
@@ -64,12 +68,13 @@ public class LargeMap<K, V>{
         values.set(index, value);
         checkInvariant();
     }
-    public void remove(K key) {
+    public V remove(K key) {
         LargeInteger index = indexOfKey(key);
-        if (index.isNegative()) return;
+        if (index.isNegative()) return null;
         keys.remove(index);
-        values.remove(index);
+        V val = values.remove(index);
         checkInvariant();
+        return val;
     }
     public boolean containsKey(K key) {return indexOfKey(key).doesntEqual(LargeInteger.NEGATIVE_ONE);}
     public LargeInteger indexOfKey(K key) {
@@ -78,7 +83,7 @@ public class LargeMap<K, V>{
                 return i;
         return LargeInteger.NEGATIVE_ONE;
     }
-    public boolean isEmpty() {return keys.size().isZero();}
+    public boolean isEmpty() {return keys.isEmpty();}
     public V get(K key) {
         LargeInteger index = indexOfKey(key);
         if (index.isNegative())

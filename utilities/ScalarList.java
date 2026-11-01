@@ -8,13 +8,13 @@ public class ScalarList{
     public LargeInteger size(){return list.size();}
     private void requireReal(String operation) {
         for (ScalarAtom atom : list) {
-            if (atom.isNotReal())
+            if (atom.isComplex())
                 throw new IllegalStateException(operation + " is only defined for real-valued ScalarLists");
         }
     }
     public boolean sorted(){
         requireReal("checking if sorted list");
-        ScalarAtom previous = get(0);
+        ScalarAtom previous = list.getFirst();
         for(ScalarAtom atom : list){
             if(atom.lessThan(previous))
                 return false;
@@ -45,7 +45,7 @@ public class ScalarList{
         while (i.lessThan(mid) && j.lessThan(top)) {
             ScalarAtom a = list.get(i);
             ScalarAtom b = list.get(j);
-            if (compareScalars(a, b) <= 0) {
+            if (compare(a, b) <= 0) {
                 temp.add(a);
                 i = i.add(1);
             } else {
@@ -69,11 +69,11 @@ public class ScalarList{
         ArrayList<ScalarAtom> copy = new ArrayList<>(n);
         for (int i = 0; i < n; i++)
             copy.add(list.get(bottom.add(i)));
-        copy.sort(ScalarList::compareScalars);
+        copy.sort(ScalarList::compare);
         for (int i = 0; i < n; i++)
             list.set(bottom.add(i), copy.get(i));
     }
-    private static int compareScalars(ScalarAtom a, ScalarAtom b) {return a.compareTo(b);}
+    private static int compare(ScalarAtom a, ScalarAtom b) {return a.compareTo(b);}
     public ScalarAtom range(){
         requireReal("range");
         return max().subtract(min());
@@ -121,7 +121,7 @@ public class ScalarList{
             copy.add(l.subtract(m).abs());
         return new ScalarList(copy).median();
     }
-    public ScalarAtom mode() throws CloneNotSupportedException {
+    public ScalarAtom mode() {
         ScalarList copy = new ScalarList(list);
         LargeInteger frequency = LargeInteger.ONE;
         LargeList<LargeInteger> frequencies = new LargeList<>();
@@ -146,7 +146,7 @@ public class ScalarList{
         return copy.get(maxIndex);
     }
     public ScalarAtom variancePopulation() {
-        if (list.size().equals(LargeInteger.ZERO))
+        if (list.isEmpty())
             throw new ArithmeticException("Cannot compute variance of empty list");
         ScalarAtom mean = mean();
         ScalarAtom sum = LargeInteger.ZERO;
@@ -159,14 +159,14 @@ public class ScalarList{
 
     public ScalarAtom varianceSample() {
         if (list.size().lesserThanOrEqualTo(LargeInteger.ONE))
-            throw new ArithmeticException("Sample variance requires at least TWO values");
+            throw new ArithmeticException("Sample variance requires at least 2 values");
         ScalarAtom mean = mean();
         ScalarAtom sum = LargeInteger.ZERO;
         for (ScalarAtom atom : list) {
             ScalarAtom diff = atom.subtract(mean);
             sum = sum.add(diff.abs().square());
         }
-        return sum.divide(list.size().subtract(LargeInteger.ONE));
+        return sum.divide(list.size().subtract(1));
     }
     public LargePowerNode standardDeviation() {return (LargePowerNode) varianceSample().power(LargeFraction.HALF);}
     public LargePowerNode standardDeviationPopulation() {return (LargePowerNode) variancePopulation().power(LargeFraction.HALF);}

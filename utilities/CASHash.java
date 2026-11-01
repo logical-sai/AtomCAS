@@ -1,6 +1,6 @@
 package com.AtomCAS.utilities;
 final class CASHash {
-    private CASHash(){}
+    private CASHash() {throw new UnsupportedOperationException("Oh no you DON'T");}
     static int mix(int h, int... xs) {
         for (int x : xs) {
             h ^= x;
@@ -36,7 +36,7 @@ final class CASHash {
     }
     static int rational(LargeInteger numerator, LargeInteger denominator){
         return (denominator.isOne()) ? numerator.hashCode() : mix(numerator.hashCode(), denominator.hashCode());}
-    static int powerMonomial(LargePowerMonomial x) {
+    static int powerMonomial(LargePowerMonomial ignored) {
         throw new UnsupportedOperationException("LargePowerMonomial");
 //        if (x.isRational()) {
 //            LargeFraction frac = x.exponent2.equals(LargeInteger.ONE) ? x.base.negate() : x.base;
@@ -44,25 +44,25 @@ final class CASHash {
 //        }
 //        return mix(TAG_POWER_MONOMIAL, x.base.hashCode(), x.exponent.hashCode(), x.exponent2.hashCode());
     }
-    static int decimal(LargeDecimal x) {
+    static int decimal(LargeDecimal ignored) {
         throw new UnsupportedOperationException("LargeDecimal");
 //        if(x.decPart.isEmpty())
 //            return x.intPart.hashCode();
     }
-    static int powerNode(LargePowerNode x) {
+    static int powerNode(LargePowerNode ignored) {
         throw new UnsupportedOperationException("LargePowerNode");
     }
-    static int radicalTerm(RadicalTerm x){
+    static int radicalTerm(RadicalTerm ignored){
         throw new UnsupportedOperationException("RadicalTerm");
     }
-    static int radicalTermSum(RadicalTermSum x){
+    static int radicalTermSum(RadicalTermSum ignored){
         throw new UnsupportedOperationException("RadicalTermSum");
     }
-    static int logarithm(Logarithm x) {
+    static int logarithm(Logarithm ignored) {
         throw new UnsupportedOperationException("Logarithm");
 //        return mix(TAG_LOG, x.argument.hashCode());
     }
-    static int vector(LargeVector x) {
+    static int vector(LargeVector ignored) {
         throw new UnsupportedOperationException("LargeVector");
 //        int h = TAG_VECTOR;
 //        h = mix(h, x.dimension().hashCode());
@@ -73,7 +73,7 @@ final class CASHash {
 //        }
 //        return finish(h);
     }
-    static int matrix(LargeMatrix x) {
+    static int matrix(LargeMatrix ignored) {
         throw new UnsupportedOperationException("LargeMatrix");
 //        int h = TAG_MATRIX;
 //        h = mix(h, x.rows().hashCode());
@@ -83,10 +83,10 @@ final class CASHash {
 //                h = mix(h, x.get(i, j).hashCode());
 //        return finish(h);
     }
-    static int radicalExpression(RadicalExpression x){
+    static int radicalExpression(RadicalExpression ignored){
         throw new UnsupportedOperationException("RadicalExpression");
     }
-    static int exp(Exp x) {
+    static int exp(Exp ignored) {
         throw new UnsupportedOperationException("Exp");
 //        if (x.coefficient.equals(LargeInteger.ZERO))
 //            return x.addend.hashCode();

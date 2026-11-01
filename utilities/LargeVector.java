@@ -1,6 +1,6 @@
 package com.AtomCAS.utilities;
 public class LargeVector extends TensorAtom {
-    private LargeList<LargeInteger> list;
+    private final LargeList<LargeInteger> list;
     LargeFraction factor;
     LargeVector(LargeList<LargeInteger> list, LargeFraction factor){
         this.list = new LargeList<>();
@@ -38,7 +38,7 @@ public class LargeVector extends TensorAtom {
         list = new LargeList<>();
         factor = LargeFraction.ONE;
     }
-    public LargeVector clone(){return new LargeVector(list.copy(),factor.clone());}
+    public LargeVector clone() {return new LargeVector(list.clone(), factor.clone());}
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -71,24 +71,6 @@ public class LargeVector extends TensorAtom {
     @Override
     public LargeInteger[] shape() {return new LargeInteger[]{this.dimension()};}
     public LargeFraction get(LargeInteger index) {return (LargeFraction) list.get(index).multiply(factor);}
-    public void append(LargeFraction f) {
-        LargeList<LargeFraction> lk = new  LargeList<>();
-        for(LargeInteger I: this.list)
-            lk.add((LargeFraction) I.multiply(factor));
-        lk.add(f);
-        LargeVector vK = new LargeVector(lk);
-        list = vK.list;
-        factor = vK.factor;
-    }
-    public void set(LargeInteger index, LargeFraction f){
-        LargeList<LargeFraction> lk = new LargeList<>();
-        for(LargeInteger I: this.list)
-            lk.add((LargeFraction) I.multiply(factor));
-        lk.set(index, f);
-        LargeVector vK = new LargeVector(lk);
-        list = vK.list;
-        factor = vK.factor;
-    }
     public LargeFraction sum() {
         LargeFraction res = LargeFraction.ZERO;
         for(LargeInteger I: this.list) res = (LargeFraction) res.add(I.multiply(factor));
@@ -99,7 +81,6 @@ public class LargeVector extends TensorAtom {
         for(LargeInteger I: this.list) res = (LargeFraction) res.multiply(I.multiply(factor));
         return res;
     }
-    public void remove(LargeInteger index) {list.remove(index);}
     public LargeInteger dimension() {return list.size();}
     public boolean isDifferentDimension(LargeVector other) {return this.dimension().doesntEqual(other.dimension());}
     public boolean isZero() {

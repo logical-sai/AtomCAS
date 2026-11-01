@@ -1,19 +1,24 @@
 package com.AtomCAS.utilities;
-public class LargePolynomial{
-    LargeList<LargeFraction> coefficients; //higher degrees come first
+public class LargePolynomial implements Cloneable {
+    final LargeList<LargeFraction> coefficients; //higher degrees come first
     public LargePolynomial(){coefficients = new LargeList<>(); coefficients.add(LargeFraction.ZERO);}
     public LargePolynomial(LargeList<LargeFraction> coefficients){
-        this.coefficients = new LargeList<>();
-        for(LargeFraction I: coefficients) this.coefficients.add(I.clone());
-        while(this.coefficients.size().greaterThan(LargeInteger.ONE)
-                && this.coefficients.getFirst().isZero())
-            this.coefficients.removeFirst();
+        while(coefficients.size().greaterThan(LargeInteger.ONE)
+                && coefficients.getFirst().isZero())
+            coefficients.removeFirst();
+        this.coefficients = coefficients;
     }
-    public LargePolynomial copy(){return new LargePolynomial(coefficients);}
+    public LargePolynomial clone() {
+        try {
+            LargePolynomial clone = (LargePolynomial) super.clone();
+            return new LargePolynomial(clone.coefficients.clone());
+        } catch (CloneNotSupportedException e) {throw new AssertionError(e);}
+    }
     public static LargePolynomial monomial(LargeFraction coefficient, LargeInteger deg){
         LargeList<LargeFraction> coefficients = new LargeList<>();
         coefficients.add(coefficient);
-        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(deg); i = i.add(1)) coefficients.add(LargeFraction.ZERO);
+        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(deg); i = i.add(1))
+            coefficients.add(LargeFraction.ZERO);
         return new LargePolynomial(coefficients);
     }
     public LargePolynomial monic(){
@@ -118,19 +123,19 @@ public class LargePolynomial{
         if(i.isNegative()) throw new IllegalArgumentException("Input means decreasing the degree");
         if(this.isZero()) return new LargePolynomial();
         LargeList<LargeFraction> out = new LargeList<>();
-        for(LargeFraction I: coefficients) out.add(I);
+        out.addAll(coefficients);
         for(LargeInteger j = LargeInteger.ZERO; j.lessThan(i); j = j.add(1)) out.add(LargeFraction.ZERO);
         return new LargePolynomial(out);
     }
     public LargePolynomial add(LargeFraction other){
         LargeList<LargeFraction> out = new LargeList<>();
-        for(LargeFraction I: coefficients) out.add(I);
+        out.addAll(coefficients);
         out.set(out.size().subtract(1), out.get(out.size().subtract(1)).add(other));
         return new LargePolynomial(out);
     }
     public LargePolynomial add(LargePolynomial other){
         LargeList<LargeFraction> out = new LargeList<>();
-        if(this.coefficients.size().greaterThan(other.coefficients.size())){
+        if(coefficients.size().greaterThan(other.coefficients.size())){
             LargeInteger diff = this.coefficients.size().subtract(other.coefficients.size());
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1)){
                 if(i.greaterThanOrEqualTo(diff))
@@ -226,7 +231,7 @@ public class LargePolynomial{
     public LargePolynomial remainder(LargePolynomial divisor){return divideAndRemainder(divisor)[1];}
     private LargePolynomial[] divideAndRemainder(LargePolynomial divisor) {
         if (divisor.isZero()) throw new ArithmeticException("Cannot divide by 0");
-        LargePolynomial remainder = this.copy();
+        LargePolynomial remainder = this.clone();
         LargePolynomial quotient = new LargePolynomial();
         LargeInteger divisorDegree = divisor.degree();
         LargeFraction divisorLead = divisor.coefficients.getFirst();
@@ -240,8 +245,8 @@ public class LargePolynomial{
         return new LargePolynomial[]{quotient, remainder};
     }
     public LargePolynomial gcd(LargePolynomial other) {
-        LargePolynomial a = this.copy();
-        LargePolynomial b = other.copy();
+        LargePolynomial a = this.clone();
+        LargePolynomial b = other.clone();
         if (a.isZero()) return b.monic();
         if (b.isZero()) return a.monic();
         while (!b.isZero()) {
@@ -260,7 +265,7 @@ public class LargePolynomial{
             return LargePolynomial.xMinus(LargeFraction.NEGATIVE_ONE);
         if(n.isNegative())
             return cyclotomic(n.negate().shiftLeft(1));
-        if (n.isProbablyPrime()){
+        if (n.isProbablyPrime()) {
             LargeList<LargeFraction> L = new LargeList<>();
             for(LargeInteger i = LargeInteger.ZERO; i.lessThan(n); i=i.add(1))
                 L.add(LargeFraction.ONE);
@@ -295,8 +300,8 @@ public class LargePolynomial{
     }
     public ScalarAtom evaluateAt(ScalarAtom s){
         ScalarAtom result = LargeInteger.ZERO;
-        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1))
-            result = result.multiply(s).add(coefficients.get(i));
+        for(LargeFraction coefficient: this.coefficients)
+            result = result.multiply(s).add(coefficient);
         return Parser.parse(result.toString());
     }
     public LargePolynomial composeXPower(LargeInteger k) {
@@ -309,7 +314,7 @@ public class LargePolynomial{
                 LargeInteger oldPower = e.divide(k);
                 LargeInteger index = this.degree().subtract(oldPower);
                 out.add(this.coefficients.get(index));
-            }else out.add(LargeFraction.ZERO);
+            } else out.add(LargeFraction.ZERO);
             if (e.isZero()) break;
         }
 

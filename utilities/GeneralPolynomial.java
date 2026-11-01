@@ -1,5 +1,5 @@
 package com.AtomCAS.utilities;
-public class GeneralPolynomial{
+public class GeneralPolynomial extends LargePolynomial {
     LargeList<ScalarAtom> coefficients;
     public GeneralPolynomial(){
         coefficients = new LargeList<>();
@@ -12,7 +12,7 @@ public class GeneralPolynomial{
         this.coefficients = new LargeList<>();
         for(ScalarAtom coefficient : coefficients){
             if(coefficient.isAlgebraic())
-                this.coefficients.add((ScalarAtom) coefficient.clone());
+                this.coefficients.add(coefficient.clone());
             else throw new IllegalArgumentException("At least 1 coefficient is not algebraic");
         }
     }
@@ -185,8 +185,7 @@ public class GeneralPolynomial{
         if(I.isNegative()) throw new ArithmeticException("Rational functions not implemented yet");
         if(I.isZero())
             return new GeneralPolynomial().add(LargeInteger.ONE);
-        GeneralPolynomial P = new GeneralPolynomial();
-        P = P.add(LargeFraction.ONE);
+        GeneralPolynomial P = new GeneralPolynomial().add(LargeInteger.ONE);
         LargeInteger expTemp = I.clone();
         GeneralPolynomial basTemp = new GeneralPolynomial(this.coefficients);
         while(true){

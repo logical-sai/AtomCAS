@@ -2,12 +2,11 @@ package com.AtomCAS.utilities;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.function.Supplier;
-public final class CASTrace {
+final class CASTrace {
     private static boolean enabled = false;
     private static LogNode root;
     private static final Deque<LogNode> stack = new ArrayDeque<>();
-    private CASTrace() {
-        throw new UnsupportedOperationException("Why are you doing this?");}
+    private CASTrace() {throw new UnsupportedOperationException("Oh no you DON'T");}
     public static void enable() {
         enabled = true;
         root = null;

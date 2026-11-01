@@ -50,7 +50,7 @@ public class RadicalTermNode extends ScalarAtom{
     @Override
     public boolean isRational(){return coefficient.isZero();}
     @Override
-    public boolean isReal() {return !isNotReal();}
+    public boolean isReal() {return !isComplex();}
     @Override
     public boolean isAlgebraic() {return exponent.isAlgebraic();}
     @Override

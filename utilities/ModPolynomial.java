@@ -4,7 +4,7 @@ import java.util.Arrays;
 /**
  * Special modular polynomial class in which all coefficients are reduced modulo a specified modulus
  */
-public final class ModPolynomial {
+public final class ModPolynomial implements Cloneable{
     private final LargeInteger[] coefficients; //little-endian
     private final LargeInteger modulus;
     private static int effectiveLength(LargeInteger[] coefficients) {
@@ -12,8 +12,7 @@ public final class ModPolynomial {
         while(len > 1 && coefficients[len-1].isZero()) len--;
         return len;
     }
-    public ModPolynomial(LargeInteger[] coefficients, LargeInteger modulus) {
-        this(coefficients, modulus, false);}
+    public ModPolynomial(LargeInteger[] coefficients, LargeInteger modulus) {this(coefficients, modulus, false);}
     private ModPolynomial(LargeInteger[] coefficients, LargeInteger modulus, boolean reduced) {
         if (modulus.lesserThanOrEqualTo(LargeInteger.ONE))
             throw new IllegalArgumentException("Modulus must be greater than 1");
@@ -49,6 +48,12 @@ public final class ModPolynomial {
         }
         if (sb.isEmpty()) sb.append('0');
         return sb.append(" (mod ").append(modulus).append(")").toString();
+    }
+    public ModPolynomial clone() {
+        try {
+            ModPolynomial clone = (ModPolynomial) super.clone();
+            return new ModPolynomial(clone.coefficients.clone(), clone.modulus.clone());
+        } catch (CloneNotSupportedException e) {throw new AssertionError(e);}
     }
     public ModPolynomial negate() {
         LargeInteger[] out = new LargeInteger[coefficients.length];
