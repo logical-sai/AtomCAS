@@ -491,5 +491,11 @@ public abstract class ScalarAtom extends Atom
     public LargeDecimal approximateToDecimal(LargeInteger precision) {
         return this instanceof LargeDecimal D ? D : null;
     }
+    /**
+     * Returns a fractional polynomial that has a root being {@code this}.
+     */
+    public LargePolynomial annihilatingPolynomial() {
+        throw new UnsupportedOperationException("Do not use the default implementation");
+    }
 }
 

@@ -531,4 +531,115 @@ public final class RadicalTermSum extends ScalarAtom{
         }
         return new RadicalTermSum(resultMap, cons);
     }
+    @Override
+    public LargePolynomial annihilatingPolynomial() {
+        if (isRational())
+            return constant.annihilatingPolynomial();
+
+        LargeList<LargePowerMonomial> basis = new LargeList<>();
+        basis.add(LargePowerMonomial.ONE);
+
+        /*
+         * Roots of unity basis:
+         * If any term contains (-1)^(p/q), include the cyclotomic basis.
+         */
+        LargeList<LargeInteger> unityDenoms = new LargeList<>();
+
+        for (LargePowerMonomial m : this.sum.keys())
+            if (!m.exponent2.isZero() && !m.exponent2.isOne())
+                unityDenoms.add(m.exponent2.denominator);
+        if (unityDenoms.size().greaterThan(LargeInteger.ZERO)) {
+            LargeInteger q = LargeInteger.ONE;
+            for(LargeInteger I: unityDenoms) q = q.lcm(I);
+            LargeInteger degree = q.multiply(2).totient();
+            LargeList<LargePowerMonomial> next = new LargeList<>();
+            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(degree); i = i.add(1)) {
+                LargePowerMonomial zetaPower = new LargePowerMonomial(LargeFraction.ONE, LargeFraction.ONE, new LargeFraction(i, q));
+                if (!next.contains(zetaPower)) next.add(zetaPower);
+            }
+            basis = next;
+        }
+        /*
+         * Radical generator basis:
+         * For base^(a/d), include powers of base^(1/d).
+         */
+        LargeList<LargePowerMonomial> gens = new LargeList<>();
+        for (LargePowerMonomial m : sum.keys()) {
+            LargeInteger order = m.exponent.denominator;
+            if (order.equals(LargeInteger.ONE)) continue;
+            LargePowerMonomial g = new LargePowerMonomial(m.base, order.reciprocal());
+            if (!gens.contains(g)) gens.add(g);
+        }
+        //extract the prime factors
+        LargeList<LargePowerMonomial> newGens = new LargeList<>();
+        for (LargePowerMonomial g : gens) {
+            LargeMap<LargeInteger, LargeFraction> pr = g.factor();
+            for (LargeInteger I : pr.keys()) {
+                if (I.isNegative()) continue;
+                if (pr.get(I).denominator.isOne()) continue; // rational contribution; not a radical generator
+                LargePowerMonomial gen = new LargePowerMonomial(LargeFraction.valueOf(I), pr.get(I).denominator.reciprocal());
+                if (!newGens.contains(gen)) newGens.add(gen);
+            }
+        }
+        //merge same bases
+
+        LargeMap<LargeFraction, LargeInteger> baseToDenom = new LargeMap<>();
+        for (LargePowerMonomial g : newGens) {
+            if (g.exponent.denominator.isOne()) continue;
+            LargeInteger index = baseToDenom.indexOfKey(g.base);
+            if (index.isNegative()) baseToDenom.put(g.base, g.exponent.denominator);
+            else baseToDenom.set(g.base, baseToDenom.get(g.base).lcm(g.exponent.denominator));
+        }
+        LargeList<LargePowerMonomial> merged = new LargeList<>();
+        for (LargeFraction base : baseToDenom.keys()) {
+            LargeInteger denom = baseToDenom.get(base);
+            merged.add(new LargePowerMonomial(base, denom.reciprocal()));
+        }
+        gens = merged;
+        for (LargePowerMonomial g : gens) {
+            LargeList<LargePowerMonomial> next = new LargeList<>();
+            LargeInteger order = g.exponent.denominator;
+            for (LargePowerMonomial oldBasis : basis)
+                for (LargeInteger i = LargeInteger.ZERO; i.lessThan(order); i = i.add(1)) {
+                    LargePowerMonomial product =
+                            oldBasis.multiply(new LargePowerMonomial(g.base, new LargeFraction(i, order)));
+                    if (!next.contains(product)) next.add(product);
+                }
+            LargeList<LargePowerMonomial> reordered = new LargeList<>();
+            reordered.add(LargePowerMonomial.ONE);
+            for (LargePowerMonomial b : next)
+                if (!b.isOne()) reordered.add(b);
+            basis = reordered;
+        }
+        /*
+         * Solve:
+         * this * (x0*b0 + x1*b1 + ... + xn*bn) = 1
+         */
+        LargeList<LargeList<LargeFraction>> lists = new LargeList<>();
+        for (LargePowerMonomial b : basis) {
+            RadicalTermSum product = (RadicalTermSum) this.multiply(b);
+            LargeList<LargeFraction> colAsRow = new LargeList<>();
+            for (LargeInteger i = LargeInteger.ZERO; i.lessThan(basis.size()); i = i.add(1))
+                colAsRow.add(LargeFraction.ZERO);
+            if (!product.constant.isZero()) {
+                LargeFraction old = colAsRow.getFirst();
+                colAsRow.set(LargeInteger.ZERO, old.add(product.constant));
+            }
+
+            for (LargePowerMonomial m : product.sum.keys()) {
+                boolean found = false;
+                for (LargeInteger i = LargeInteger.ZERO; i.lessThan(basis.size()); i = i.add(1)) {
+                    LargeFraction ratio = rationalRatio(m, basis.get(i));
+                    if (ratio == null) continue;
+                    colAsRow.set(i, colAsRow.get(i).add(product.sum.get(m).multiply(ratio)));
+                    found = true;
+                    break;
+                }
+                if (!found)
+                    throw new IllegalStateException("Product escaped reciprocal basis: " + m + "\nbasis = " + basis);
+            }
+            lists.add(colAsRow);
+        }
+        return new LargeMatrix(lists).transpose().characteristicPolynomial();
+    }
 }

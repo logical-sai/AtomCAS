@@ -9,10 +9,8 @@ public final class LargeList<T> extends MiscellaneousAtom implements Iterable<T>
      * The value represented by this variable is 0 as the default; it changes as items are added or removed.
      */
     private int sizeInt = 0;
-
     private int height = 0; // 0 means root is a leaf Object[1000]
     private Object[] root = new Object[CHUNK_SIZE];
-
     /**
      * The default constructor. Constructs an empty LargeList with its root having an initial capacity
      * of {@link #CHUNK_SIZE}.
@@ -27,6 +25,13 @@ public final class LargeList<T> extends MiscellaneousAtom implements Iterable<T>
             ensureCapacity(initialSize.subtract(1));
         size = initialSize;
         sizeInt = initialSize.greaterThan(LargeInteger.valueOf(Integer.MAX_VALUE)) ? -1 : initialSize.intValue();
+    }
+    @SafeVarargs
+    public static <T> LargeList<T> of(T... elements) {
+        LargeList<T> result = new LargeList<>();
+        for (T element : elements)
+            result.add(element);
+        return result;
     }
     private static Object[] cloneTree(Object[] src, int height) {
         Object[] dst = src.clone();

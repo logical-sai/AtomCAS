@@ -834,7 +834,7 @@ public final class LargeInteger extends ScalarAtom {
     @Override
     public boolean isZero() {return limbs.length == 1 && limbs[0] == 0L;}
     @Override
-    public boolean isOne() {return isOneMagnitude(limbs) && !isNegative();}
+    public boolean isOne() {return !isNegative() && limbs.length == 1 && limbs[0] == 1;}
     public LargeInteger sign() {return isNegative() ? NEGATIVE_ONE : (isZero() ? ZERO : ONE);}
     public boolean isNegative() {return negative;}
     public LargeInteger negate() {return new LargeInteger(limbs, !negative, true);}
@@ -854,6 +854,9 @@ public final class LargeInteger extends ScalarAtom {
     public boolean isReal() {return true;}
     @Override
     public boolean isAlgebraic() {return true;}
+    @Override
+    public LargePolynomial annihilatingPolynomial()
+    {return new LargePolynomial(LargeList.of(LargeFraction.ONE, LargeFraction.valueOf(negate())));}
 
     //--- Addition ---//
 
@@ -2349,6 +2352,7 @@ public final class LargeInteger extends ScalarAtom {
      * @apiNote This method dispatches to {@link #square()} if the inputs are equal
      */
     public LargeInteger multiply(LargeInteger other) {
+        if (isZero() || other.isZero()) return ZERO;
         return equals(other) ? square() :
                 new LargeInteger(multiplyMagnitudes(limbs, other.limbs),
                         negative ^ other.negative, true);
@@ -2695,7 +2699,8 @@ public final class LargeInteger extends ScalarAtom {
      * @return The square of this integer
      */
     @Override
-    public LargeInteger square() {return new LargeInteger(squareMagnitude(limbs));}
+    public LargeInteger square()
+    {return isZero() ? ZERO : isOne() ? ONE : new LargeInteger(squareMagnitude(limbs));}
 
     /**
      * Returns a LargeInteger whose value is <code>this<sup>3</sup></code>.

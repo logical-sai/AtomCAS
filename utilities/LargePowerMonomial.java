@@ -463,4 +463,14 @@ public final class LargePowerMonomial extends ScalarAtom {
     }
     @Override
     public LargePowerMonomial reciprocal(){return new LargePowerMonomial(base, exponent.negate(), exponent2.negate());}
+    @Override
+    public LargePolynomial annihilatingPolynomial() {
+        LargeInteger n = exponent.denominator.lcm(exponent2.denominator);
+        LargePowerMonomial raised = power(n);
+        if (!raised.isRational())
+            throw new AssertionError("Expected rational power");
+        LargeFraction value = raised.exponent2.isOne() ? raised.base.negate() : raised.base;
+        return LargePolynomial.monomial(LargeFraction.valueOf(value.denominator), n)
+                .subtract(LargeFraction.valueOf(value.numerator));
+    }
 }

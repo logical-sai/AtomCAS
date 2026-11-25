@@ -174,6 +174,9 @@ public final class LargeFraction extends ScalarAtom {
             result = result.add(1);
         return result;
     }
+    @Override
+    public LargePolynomial annihilatingPolynomial()
+    {return new LargePolynomial(LargeList.of(valueOf(denominator), valueOf(numerator.negate())));}
     PowerFormFraction asPowerForm() {
         PowerFormInteger num = numerator.asPowerForm();
         if(denominator.isOne()) return new PowerFormFraction(valueOf(num.base()), num.exponent());

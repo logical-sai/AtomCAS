@@ -1,21 +1,22 @@
 package com.AtomCAS.utilities;
-public final class LargePolynomial extends Polynomial implements Cloneable {
+public final class LargePolynomial extends Polynomial {
     final LargeList<LargeFraction> coefficients; //higher degrees come first
-    public LargePolynomial(){coefficients = new LargeList<>(); coefficients.add(LargeFraction.ZERO);}
+    public static LargePolynomial ZERO = new LargePolynomial(LargeList.of(LargeFraction.ZERO));
+    public static LargePolynomial ONE = new LargePolynomial(LargeList.of(LargeFraction.ONE));
     public LargePolynomial(LargeList<LargeFraction> coefficients){
         while(coefficients.size().greaterThan(LargeInteger.ONE)
                 && coefficients.getFirst().isZero())
             coefficients.removeFirst();
         this.coefficients = coefficients;
     }
+    @Override
     public LargePolynomial clone() {
-        Polynomial clone = super.clone();
-        LargeList<LargeFraction> cloneCoefficients = new LargeList<>();
-        for (ScalarAtom atom : clone.coefficients)
-            cloneCoefficients.add((LargeFraction) atom.clone());
-        return new LargePolynomial(cloneCoefficients);
+        LargeList<LargeFraction> copy = new LargeList<>();
+        for (LargeFraction coefficient : this.coefficients)
+            copy.add(coefficient.clone());
+        return new LargePolynomial(copy);
     }
-    public static LargePolynomial monomial(LargeFraction coefficient, LargeInteger deg){
+    public static LargePolynomial monomial(LargeFraction coefficient, LargeInteger deg) {
         LargeList<LargeFraction> coefficients = new LargeList<>();
         coefficients.add(coefficient);
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(deg); i = i.add(1))
@@ -101,12 +102,7 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
         }
         return true;
     }
-    public static LargePolynomial ONE(){
-        LargePolynomial P = new LargePolynomial();
-        P = P.add(LargeFraction.ONE);
-        return P;
-    }
-    public static LargePolynomial x(){return new LargePolynomial().add(LargeFraction.ONE).increaseDegree(LargeInteger.ONE);}
+    public static LargePolynomial x(){return ONE.increaseDegree(LargeInteger.ONE);}
     public static LargePolynomial xMinus(LargeFraction n){
         LargeList<LargeFraction> list = new LargeList<>();
         list.add(LargeFraction.ONE);
@@ -122,7 +118,7 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
     public LargeInteger degree(){return coefficients.size().subtract(1);}
     public LargePolynomial increaseDegree(LargeInteger i){
         if(i.isNegative()) throw new IllegalArgumentException("Input means decreasing the degree");
-        if(this.isZero()) return new LargePolynomial();
+        if(this.isZero()) return ZERO;
         LargeList<LargeFraction> out = new LargeList<>();
         out.addAll(coefficients);
         for(LargeInteger j = LargeInteger.ZERO; j.lessThan(i); j = j.add(1)) out.add(LargeFraction.ZERO);
@@ -188,14 +184,14 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
         return new LargePolynomial(out);
     }
     public LargePolynomial multiply(LargeFraction other){
-        if(other.isZero() || isZero()) return new LargePolynomial();
+        if(other.isZero() || isZero()) return ZERO;
         LargeList<LargeFraction> out = new LargeList<>();
         for(LargeFraction I: coefficients)
             out.add(I.multiply(other));
         return new LargePolynomial(out);
     }
     public LargePolynomial multiply(LargePolynomial other) {
-        if (this.isZero() || other.isZero()) return new LargePolynomial();
+        if (this.isZero() || other.isZero()) return ZERO;
         if (this.isMonomial())
             return other.multiply(this.monomialCoefficient()).increaseDegree(this.monomialDegree());
         if (other.isMonomial())
@@ -204,36 +200,56 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
         LargeList<LargePolynomial> polys = new LargeList<>();
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(this.coefficients.size()); i = i.add(1))
             polys.add(other.multiply(coefficients.get(i)).increaseDegree(this.degree().subtract(i)));
-        LargePolynomial result = new LargePolynomial();
+        LargePolynomial result = ZERO;
         for (LargePolynomial P : polys) result = result.add(P);
         return result;
     }
-    public LargePolynomial square(){return this.multiply(this);}
+    public LargePolynomial square() {
+        if (isZero())
+            return ZERO;
+        if (isMonomial())
+            return monomial(monomialCoefficient().square(), monomialDegree().shiftLeft(1));
+        LargeInteger size = coefficients.size();
+        LargeInteger outSize = size.shiftLeft(1).subtract(1);
+        LargeList<LargeFraction> out = new LargeList<>(outSize);
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(outSize); i = i.add(1))
+            out.add(LargeFraction.ZERO);
+        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(size); i = i.add(1)) {
+            LargeFraction a = coefficients.get(i);
+            if (a.isZero()) continue;
+            // Diagonal product
+            LargeInteger diagonal = i.shiftLeft(1);
+            out.set(diagonal, out.get(diagonal).add(a.square()));
+            // Off-diagonal products
+            for (LargeInteger j = i.add(1); j.lessThan(size); j = j.add(1)) {
+                LargeFraction b = coefficients.get(j);
+                if (b.isZero()) continue;
+                LargeInteger index = i.add(j);
+                out.set(index, out.get(index).add(a.multiply(b).multiply(2)));
+            }
+        }
+        return new LargePolynomial(out);
+    }
     public LargePolynomial power(LargeInteger I) {
         if(I.isNegative())
             throw new ArithmeticException("Rational functions not implemented yet");
-        if(I.isZero())
-            return LargePolynomial.ONE();
-        LargePolynomial P = new LargePolynomial();
-        P = P.add(LargeFraction.ONE);
-        LargeInteger expTemp = I.clone();
+        if(I.isZero()) return ONE;
+        LargePolynomial P = ONE;
         LargePolynomial basTemp = new LargePolynomial(this.coefficients);
-        while(true){
-            if(expTemp.isOdd()){
+        for (LargeInteger expTemp = I.clone(); ; expTemp = expTemp.shiftRight(1)) {
+            if(expTemp.isOdd()) {
                 P = P.multiply(basTemp);
-                if(expTemp.isOne()) break;
+                if(expTemp.isOne()) return P;
             }
             basTemp = basTemp.square();
-            expTemp = expTemp.shiftRight(1);
         }
-        return P;
     }
-    public LargePolynomial longDivision(LargePolynomial divisor){return divideAndRemainder(divisor)[0];}
+    public LargePolynomial divide(LargePolynomial divisor){return divideAndRemainder(divisor)[0];}
     public LargePolynomial remainder(LargePolynomial divisor){return divideAndRemainder(divisor)[1];}
-    private LargePolynomial[] divideAndRemainder(LargePolynomial divisor) {
+    public LargePolynomial[] divideAndRemainder(LargePolynomial divisor) {
         if (divisor.isZero()) throw new ArithmeticException("Cannot divide by 0");
-        LargePolynomial remainder = this.clone();
-        LargePolynomial quotient = new LargePolynomial();
+        LargePolynomial remainder = clone();
+        LargePolynomial quotient = ZERO;
         LargeInteger divisorDegree = divisor.degree();
         LargeFraction divisorLead = divisor.coefficients.getFirst();
         while (!remainder.isZero() && remainder.degree().greaterThanOrEqualTo(divisorDegree)) {
@@ -246,7 +262,7 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
         return new LargePolynomial[]{quotient, remainder};
     }
     public LargePolynomial gcd(LargePolynomial other) {
-        LargePolynomial a = this.clone();
+        LargePolynomial a = clone();
         LargePolynomial b = other.clone();
         if (a.isZero()) return b.monic();
         if (b.isZero()) return a.monic();
@@ -257,7 +273,7 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
         }
         return a;
     }
-    public static LargePolynomial cyclotomic(LargeInteger n){
+    public static LargePolynomial cyclotomic(LargeInteger n) {
         if (n.isZero())
             throw new IllegalArgumentException("Cyclotomic index must be positive");
         if (n.isOne())
@@ -279,27 +295,23 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
                 return cyclotomic(m).compose(x().negate());
         }
         LargeMap<LargeInteger, LargeFraction> factors = n.factor();
-        LargePolynomial repeatedPrimeCase = tryRepeatedPrimeShortcut(n, factors);
-        if (repeatedPrimeCase != null) return repeatedPrimeCase;
-        LargePolynomial P = monomial(LargeFraction.ONE, n).subtract(LargeFraction.ONE);
-        LargeList<LargeInteger> N = n.divisors();
-        N.removeLast();
-        for(LargeInteger I: N)
-            P = P.longDivision(cyclotomic(I));
-        return P;
-    }
-    private static LargePolynomial tryRepeatedPrimeShortcut(LargeInteger n, LargeMap<LargeInteger,
-            LargeFraction> factors) {
         LargeInteger rad = LargeInteger.ONE;
         for (LargeInteger p : factors.keys()) {
             if (p.equals(LargeInteger.NEGATIVE_ONE)) continue;
             rad = rad.multiply(p);
         }
-        if (rad.equals(n)) return null; // squarefree, no help
-        LargeInteger step = n.divide(rad);
-        return cyclotomic(rad).composeXPower(step);
+        if (!rad.equals(n)) {
+            LargeInteger step = n.divide(rad);
+            return cyclotomic(rad).composeXPower(step);
+        }
+        LargePolynomial P = monomial(LargeFraction.ONE, n).subtract(LargeFraction.ONE);
+        LargeList<LargeInteger> N = n.divisors();
+        N.removeLast();
+        for(LargeInteger I: N)
+            P = P.divide(cyclotomic(I));
+        return P;
     }
-    public ScalarAtom evaluateAt(ScalarAtom s){
+    public ScalarAtom evaluateAt(ScalarAtom s) {
         ScalarAtom result = LargeInteger.ZERO;
         for(LargeFraction coefficient: this.coefficients)
             result = result.multiply(s).add(coefficient);
@@ -322,194 +334,12 @@ public final class LargePolynomial extends Polynomial implements Cloneable {
         return new LargePolynomial(out);
     }
     public LargePolynomial compose(LargePolynomial inner){
-        LargePolynomial result = new LargePolynomial();
+        LargePolynomial result = ZERO;
         for(LargeFraction coefficient: coefficients)
             result = result.multiply(inner).add(coefficient);
         return result;
     }
-    /*public static LargePolynomial annihilatingPolynomial(ScalarAtom s) throws CloneNotSupportedException {
-        if(!s.isAlgebraic()) throw new IllegalArgumentException("Transcendental numbers do not satisfy any polynomials");
-        LargePolynomial P = x();
-        return switch (s) {
-            case LargeInteger I -> P.subtract(new LargeFraction(I, LargeInteger.ONE));
-            case LargeFraction F -> {
-                P = P.multiply(new LargeFraction(F.denominator, LargeInteger.ONE));
-                P = P.add(new LargeFraction(F.numerator, LargeInteger.NEGATIVE_ONE));
-                yield P.primitivePart();
-            } case LargePowerMonomial L -> {
-                //x = (-1)^(p/q) * b^(r/s)
-                LargeInteger I = L.exponent2.denominator.lcm(L.exponent.denominator);
-                P = P.monomialPower(I);
-                LargePowerMonomial M = L.power(I);
-                if (M.exponent2.isOne()) P = P.add(M.base);
-                else P = P.add(M.base.negate());
-                yield P.primitivePart();
-            } case RadicalTerm R -> annihilatingPolynomial(new RadicalTermSum().add(R));
-            case RadicalTermSum R -> {
-                if(R.sum.isEmpty()) yield annihilatingPolynomial(R.constant);
-                LargeList<LargePowerMonomial> basis = new LargeList<>();
-                basis.add(LargePowerMonomial.ONE);
-                *//*
-                 * Roots of unity basis:
-                 * If any term contains (-1)^(p/q), include the cyclotomic basis.
-                 *//*
-                LargeList<LargeInteger> unityDenominators = new LargeList<>();
-
-                for (LargePowerMonomial m : R.sum.keys())
-                    if (m.exponent2.doesntEqual(LargeInteger.ZERO) && m.exponent2.doesntEqual(LargeInteger.ONE))
-                        unityDenominators.add(m.exponent2.denominator);
-                if (unityDenominators.size().greaterThan(LargeInteger.ZERO)) {
-                    LargeInteger q = LargeInteger.ONE;
-                    for(LargeInteger I: unityDenominators) q = q.lcm(I);
-                    LargeInteger degree = q.multiply(2).totient();
-                    LargeList<LargePowerMonomial> next = new LargeList<>();
-                    for (LargeInteger i = LargeInteger.ZERO; i.lessThan(degree); i = i.add(1)) {
-                        LargePowerMonomial zetaPower = new LargePowerMonomial(LargeFraction.ONE, LargeFraction.ONE,
-                                new LargeFraction(i, q));
-                        boolean contains = false;
-                        for(LargePowerMonomial m: next){
-                            if(m.equals(zetaPower)){
-                                contains = true;
-                                break;
-                            }
-                        }
-                        if(!contains) next.add(zetaPower);
-                    }
-                    basis = next;
-                }
-                *//*
-                 * Radical generator basis:
-                 * For base^(a/d), include powers of base^(1/d).
-                 *//*
-                LargeList<LargePowerMonomial> gens = new LargeList<>();
-                for (LargePowerMonomial m : R.sum.keys()) {
-                    LargeInteger order = m.exponent.denominator;
-                    if (order.isOne()) continue;
-                    LargePowerMonomial g = new LargePowerMonomial(m.base, new LargeFraction(LargeInteger.ONE, order));
-                    boolean contains = false;
-                    for (LargePowerMonomial b : gens)
-                        if (b.equals(g)){
-                            contains = true;
-                            break;
-                        }
-                    if(!contains) gens.add(g);
-                }
-                //extract the prime factors
-                LargeList<LargePowerMonomial> newGens = new LargeList<>();
-                for (LargePowerMonomial g : gens) {
-                    LargeMap<LargeInteger, LargeFraction> pr = g.factor();
-                    for (LargeInteger I : pr.keys()) {
-                        if (I.equals(LargeInteger.NEGATIVE_ONE))
-                            continue;
-                        if (pr.get(I).denominator.isOne())
-                            continue; // rational contribution; not a radical generator
-                        LargePowerMonomial gen = new LargePowerMonomial(
-                                new LargeFraction(I, LargeInteger.ONE),
-                                new LargeFraction(LargeInteger.ONE, pr.get(I).denominator));
-                        boolean contains = false;
-                        for (LargePowerMonomial m : newGens)
-                            if(m.equals(gen)){
-                                contains = true;
-                                break;
-                            }
-                        if(!contains) newGens.add(gen);
-                    }
-                }
-                //merge same bases
-                LargeMap<LargeFraction, LargeInteger> baseToDenominator = new LargeMap<>();
-                for (LargePowerMonomial g : newGens) {
-                    if (g.exponent.denominator.isOne())
-                        continue;
-                    if (baseToDenominator.containsKey(g.base)) {
-                        LargeInteger oldDenominator = baseToDenominator.get(g.base);
-                        baseToDenominator.put(g.base, oldDenominator.lcm(g.exponent.denominator));
-                    } else baseToDenominator.put(g.base, g.exponent.denominator);
-                }
-                LargeList<LargePowerMonomial> merged = new LargeList<>();
-                for (LargeFraction base : baseToDenominator.keys()) {
-                    LargeInteger denominator = baseToDenominator.get(base);
-                    merged.add(new LargePowerMonomial(base, new LargeFraction(LargeInteger.ONE, denominator)));
-                }
-                gens = merged;
-                for (LargePowerMonomial g : gens) {
-                    LargeList<LargePowerMonomial> next = new LargeList<>();
-                    LargeInteger order = g.exponent.denominator;
-                    for (LargePowerMonomial oldBasis : basis) {
-                        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(order); i = i.add(1)) {
-                            LargePowerMonomial powerOfG = new LargePowerMonomial(g.base, new LargeFraction(i, order));
-                            LargePowerMonomial product = oldBasis.multiply(powerOfG);
-                            boolean contains = false;
-                            for(LargePowerMonomial m: next){
-                                if(m.equals(product)){
-                                    contains = true;
-                                    break;
-                                }
-                            }
-                            if(!contains) next.add(product);
-                        }
-                    }
-                    LargeList<LargePowerMonomial> reordered = new LargeList<>();
-                    reordered.add(LargePowerMonomial.ONE);
-                    for (LargePowerMonomial b : next) {
-                        if (b.doesntEqual(LargeInteger.ONE))
-                            reordered.add(b);
-                    }
-                    basis = reordered;
-                }
-                LargeMatrix M = new LargeMatrix();
-                for (LargePowerMonomial b : basis) {
-                    RadicalTermSum product = (RadicalTermSum) s.multiply(b);
-                    LargeVector colAsRow = new LargeVector(basis.size());
-                    if (product.constant.doesntEqual(LargeInteger.ZERO)) {
-                        LargeFraction old = colAsRow.get(LargeInteger.ZERO);
-                        colAsRow.set(LargeInteger.ZERO, old.add(product.constant));
-                    }
-                    for (LargePowerMonomial m : product.sum.keys()) {
-                        LargeInteger index = LargeInteger.NEGATIVE_ONE;
-                        for(LargeInteger i = LargeInteger.ZERO; i.lessThan(basis.size()); i = i.add(1)){
-                            if(basis.get(i).equals(m)){
-                                index = i;
-                                break;
-                            }
-                        }
-                        if (index.equals(LargeInteger.NEGATIVE_ONE))
-                            throw new IllegalStateException("Product escaped reciprocal basis: " + m + "\nbasis = " + basis);
-                        LargeFraction old = colAsRow.get(index);
-                        colAsRow.set(index, old.add(product.sum.get(m)));
-                    }
-                    // append as row for now, then transpose later
-                    M.appendRow(colAsRow);
-                }
-                yield M.transpose().characteristicPolynomial().primitivePart();
-            } case LargePowerNode n -> {
-                LargePolynomial PS = minimalPolynomial(n.signFactor);
-                LargePolynomial PM = minimalPolynomial(n.base).composeXPower(n.exponent.denominator);
-                if(PS.equals(xMinus(LargeFraction.ONE))) yield PM;
-                yield null;
-            } default -> throw new UnsupportedOperationException(
-                    "Annihilating polynomial does not support this type yet");
-        };
-    }
-    public static LargePolynomial minimalPolynomial(ScalarAtom s) throws CloneNotSupportedException {
-        if (!s.isAlgebraic())
-            throw new IllegalArgumentException("Transcendental numbers do not satisfy any polynomials");
-        LargePolynomial ann = annihilatingPolynomial(s);
-        assert ann != null;
-        LargeList<LargePolynomial> LQ = ann.factorOverRationals();
-        for(LargePolynomial p: LQ){
-            if(p.evaluateAt(s).isZero())
-                return p.primitivePart();
-        }
-        throw new UnsupportedOperationException("Minimal polynomial does not support this type yet");
-    }*/
-
-    private LargePolynomial primitivePart() {
-        LargeFraction L = LargeFraction.ZERO;
-        for(LargeFraction f: coefficients) L = L.gcd(f);
-        return multiply(L.reciprocal()).multiply(LargeFraction.valueOf(coefficients.getFirst().sign()));
-    }
-
-    public LargePolynomial derivative(){
+    public LargePolynomial derivative() {
         LargeList<LargeFraction> coefficients = new LargeList<>();
         for(LargeInteger i = LargeInteger.ZERO; i.lessThan(degree()); i=i.add(1))
             coefficients.add((LargeFraction) this.coefficients.get(i).multiply(degree().subtract(i)));

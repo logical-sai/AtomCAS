@@ -16,13 +16,7 @@ public class Polynomial implements Cloneable {
             else throw new IllegalArgumentException("At least 1 coefficient is not algebraic");
         }
     }
-    public static Polynomial fromLargePolynomial(LargePolynomial p){
-        LargeList<ScalarAtom> list = new LargeList<>();
-        for(LargeFraction f : p.coefficients)
-            list.add(f.clone());
-        return new Polynomial(list);
-    }
-    public Polynomial clone(){
+    public Polynomial clone() {
         try {
             Polynomial p = (Polynomial) super.clone();
             return new Polynomial(p.coefficients.clone());
@@ -69,12 +63,6 @@ public class Polynomial implements Cloneable {
         return P;
     }
     public static Polynomial x(){return new Polynomial().add(LargeInteger.ONE).increaseDegree(LargeInteger.ONE);}
-    public static Polynomial xMinus(ScalarAtom n){
-        LargeList<ScalarAtom> list = new LargeList<>();
-        list.add(LargeFraction.ONE);
-        list.add(n.negate());
-        return new Polynomial(list);
-    }
     public Polynomial negate(){
         Polynomial P = new Polynomial();
         for(ScalarAtom f: coefficients)
@@ -98,19 +86,6 @@ public class Polynomial implements Cloneable {
         for(ScalarAtom I: coefficients) cands.add(I);
         for(LargeInteger j = LargeInteger.ZERO; j.lessThan(i); j = j.add(1)) cands.add(LargeFraction.ZERO);
         return new Polynomial(cands);
-    }
-    public Polynomial composeNegX() {
-        LargeList<ScalarAtom> result = new LargeList<>();
-        LargeInteger deg = this.degree();
-        for (LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficients.size()); i = i.add(1)) {
-            LargeInteger power = deg.subtract(i);
-            ScalarAtom c = coefficients.get(i);
-            if (power.isOdd())
-                result.add(c.negate());
-            else
-                result.add(c);
-        }
-        return new Polynomial(result);
     }
     public Polynomial add(ScalarAtom other){
         LargeList<ScalarAtom> cands = new LargeList<>();
@@ -186,24 +161,7 @@ public class Polynomial implements Cloneable {
         return result;
     }
     public Polynomial square(){return this.multiply(this);}
-    public Polynomial monomialPower(LargeInteger I){
-        if(I.isNegative()) throw new ArithmeticException("Rational functions not implemented yet");
-        if(I.isZero())
-            return new Polynomial().add(LargeInteger.ONE);
-        Polynomial P = new Polynomial().add(LargeInteger.ONE);
-        LargeInteger expTemp = I.clone();
-        Polynomial basTemp = new Polynomial(this.coefficients);
-        while(true){
-            if(expTemp.isOdd()){
-                P = P.multiply(basTemp);
-                if(expTemp.isOne()) break;
-            }
-            basTemp = basTemp.square();
-            expTemp = expTemp.shiftRight(1);
-        }
-        return P;
-    }
-    public Polynomial longDivision(Polynomial divisor){
+    public Polynomial divide(Polynomial divisor){
         //long division
         if (divisor.isZero()) throw new ArithmeticException("Cannot divide by 0");
         Polynomial remainder = new Polynomial(this.coefficients);
@@ -218,6 +176,12 @@ public class Polynomial implements Cloneable {
             remainder = remainder.subtract(term.multiply(divisor));
         }
         return quotient;
+    }
+    public ScalarAtom evaluateAt(ScalarAtom s) {
+        ScalarAtom result = LargeInteger.ZERO;
+        for(ScalarAtom coefficient: this.coefficients)
+            result = result.multiply(s).add(coefficient);
+        return Parser.parse(result.toString());
     }
     public Polynomial compose(Polynomial inner){
         Polynomial result = new Polynomial();

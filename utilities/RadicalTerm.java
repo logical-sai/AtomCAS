@@ -45,8 +45,41 @@ public final class RadicalTerm extends ScalarAtom{
         }
 
     }
+    public RadicalTerm(String str) {
+        RadicalTerm parsed = parseRadicalTerm(str);
+        rationalPart = parsed.rationalPart;
+        coefficient = parsed.coefficient;
+        exponent = parsed.exponent;
+    }
+    private static RadicalTerm parseRadicalTerm(String str) {
+        ScalarAtom R = Parser.parse(str);
+        RadicalTerm result = tryConvert(R);
+        if (result != null) return result;
+        // Attempt conversion through the canonical textual representation.
+        R = Parser.parse(R.toString());
+        result = tryConvert(R);
+        if (result != null) return result;
+        throw new IllegalArgumentException("Inputted expression does not evaluate to a radical term");
+    }
+
+    private static RadicalTerm tryConvert(ScalarAtom R) {
+        return switch (R) {
+            case LargeInteger I ->
+                    new RadicalTerm(LargeFraction.valueOf(I), LargeFraction.ZERO, LargePowerMonomial.ZERO);
+            case LargeFraction F -> new RadicalTerm(F, LargeFraction.ZERO, LargePowerMonomial.ZERO);
+            case LargePowerMonomial P -> new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, P);
+            case RadicalTerm RT -> RT;
+            case RadicalTermSum RTS -> {
+                if (RTS.sum.isEmpty())
+                    yield new RadicalTerm(RTS.constant, LargeFraction.ZERO, LargePowerMonomial.ZERO);
+                if (RTS.sum.size().isOne())
+                    yield new RadicalTerm(RTS.constant, RTS.sum.values().getFirst(), RTS.sum.keys().getFirst());
+                yield null;
+            } default -> null;
+        };
+    }
     @Override
-    public RadicalTerm clone(){return new RadicalTerm(rationalPart.clone(), coefficient.clone(), exponent.clone());}
+    public RadicalTerm clone() {return new RadicalTerm(rationalPart.clone(), coefficient.clone(), exponent.clone());}
     @Override
     public String toString(){
         StringBuilder str = new StringBuilder();
@@ -276,5 +309,26 @@ public final class RadicalTerm extends ScalarAtom{
         for (LargeInteger i = LargeInteger.ZERO; i.lessThan(coefficient.size()); i = i.add(1))
             map.add(new RadicalTerm(LargeFraction.ZERO, coefficient.get(i).divide(denominator), exponent.power(i)));
         return new RadicalTermSum(map, LargeFraction.ZERO);
+    }
+    @Override
+    public LargePolynomial annihilatingPolynomial() {
+        if (isRational())
+            return rationalPart.annihilatingPolynomial();
+        LargeInteger n = exponent.exponent.denominator.lcm(exponent.exponent2.denominator);
+        LargePowerMonomial raised = exponent.power(n);
+        LargeFraction c = raised.exponent2.isOne() ? raised.base.negate() : raised.base;
+        LargeFraction rhs = coefficient.power(n).multiply(c);
+        if (rationalPart.isZero())
+            return LargePolynomial.monomial(LargeFraction.ONE, n).subtract(rhs);
+        LargeList<LargeFraction> coefficients = new LargeList<>();
+        LargeFraction current = LargeFraction.ONE;
+        LargeFraction negativeA = rationalPart.negate();
+        coefficients.add(current);
+        for (LargeInteger k = LargeInteger.ZERO; k.lessThan(n); k = k.add(1)) {
+            current = (LargeFraction) current.multiply(negativeA).multiply(n.subtract(k)).divide(k.add(1));
+            coefficients.add(current);
+        }
+        coefficients.set(n, coefficients.get(n).subtract(rhs));
+        return new LargePolynomial(coefficients);
     }
 }

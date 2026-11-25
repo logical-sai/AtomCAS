@@ -742,7 +742,12 @@ final class DevPlayground {
             );
 
     static void main() {
-        demoRadicalReciprocals();
+        String obj = "√2+√3+√5+√7+√11+√13+√17+√19";
+        long start = System.nanoTime();
+        sink = Parser.parse(obj).annihilatingPolynomial();
+        long end = System.nanoTime();
+        System.out.println("polynomial with root " + obj + " = " + sink);
+        System.out.println((end - start) / 1e9 + " seconds");
     }
     public static void demoIntegers() {
         System.out.println("=== LargeInteger Demo ===");
