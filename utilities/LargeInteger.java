@@ -11509,23 +11509,4 @@ public final class LargeInteger extends ScalarAtom {
             throw new IllegalArgumentException("Polynomial evaluation is not divisible by N");
         return ONE_MAG;
     }
-    static void main() {
-        LargePowerMonomial a = new LargePowerMonomial(
-                LargeFraction.valueOf(2), LargeFraction.HALF);
-
-        LargePowerMonomial b = new LargePowerMonomial(
-                LargeFraction.valueOf(3), LargeFraction.HALF);
-
-        LargePowerMonomial c = a.multiply(b);
-
-        System.out.println("Raw product: " + c);
-        System.out.println("Base: " + c.base);
-        System.out.println("Exponent: " + c.exponent);
-        System.out.println("Factors: " + c.factor());
-        System.out.println("Reconstructed: " +
-                LargePowerMonomial.buildFromFactors(c.factor()));
-
-        System.out.println("Normalized: " +
-                new RadicalTerm(LargeFraction.ZERO, LargeFraction.ONE, c));
-    }
 }
